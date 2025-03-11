@@ -284,7 +284,8 @@ html, body {
 
 /* Main Options (Landing View) */
 #mainOptions {
-  margin-top: 90px;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1448,7 +1449,8 @@ html, body {
 }
 /* Dashboard Container */
 .dashboard-container {
-  margin-top: 10px; /* Reduced from 30px to position Start Quiz button right below the toolbar */
+  margin-top: -30px !important; /* Force negative margin with !important to override any other styles */
+  padding-top: 60px; /* Add padding to prevent content from going under the toolbar */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1462,11 +1464,12 @@ html, body {
 /* Start Quiz Button Section */
 /* Top button section - reduce margin */
 .dashboard-start-section {
-  width: 100%;
-  margin-top: 0; /* Remove any top margin */
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: center;
+  position: fixed !important;
+  top: 60px !important; /* Just below the 50px toolbar */
+  left: 0;
+  right: 0;
+  z-index: 1400; /* Below toolbar z-index of 1500 */
+  background: transparent;
 }
 
 .dashboard-start-btn {
