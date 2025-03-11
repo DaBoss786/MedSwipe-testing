@@ -1,0 +1,2020 @@
+/* XP System Styles */
+
+/* XP Display in Toolbar */
+#xpDisplay {
+  margin-right: 10px;
+  font-size: 0.9rem;
+  color: #0056b3;
+  font-weight: 500;
+}
+
+/* Level Circle Container */
+.level-circle-container {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+/* Level Progress Circle - Base Styles */
+.level-progress-circle {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+/* Background Circle */
+.level-circle-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  z-index: 1;
+}
+
+/* Progress Fill Circle */
+.level-circle-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(#0C72D3 var(--progress, 0%), transparent 0%);
+  z-index: 2;
+}
+
+/* Level Number */
+.level-number {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #fff;
+  background-color: #0056b3;
+  border-radius: 50%;
+  font-size: 1rem;
+  z-index: 3;
+  transform: scale(0.85); /* Make inner circle smaller */
+}
+
+/* For clickable level circles */
+.level-number.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.level-number.clickable:hover {
+  transform: scale(0.9);
+}
+
+/* User Menu XP Display */
+#userXpDisplay {
+  margin-top: 5px;
+  font-size: 0.9rem;
+  color: #0056b3;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Level Progress Bar in User Menu */
+.level-progress-bar-container {
+  width: 80%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  margin: 8px auto;
+  overflow: hidden;
+}
+
+.level-progress-bar {
+  height: 100%;
+  width: 0%;
+  background-color: #0C72D3;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* User Menu Level Circle - Larger Size */
+#userInfoSection .level-progress-circle {
+  width: 60px;
+  height: 60px;
+  margin: 10px auto;
+}
+
+#userInfoSection .level-number {
+  font-size: 1.5rem;
+}
+
+/* XP gained animation */
+@keyframes xpGained {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.xp-gained {
+  animation: xpGained 0.5s ease-in-out;
+}
+
+/* Level-up animation */
+@keyframes levelUp {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.2); box-shadow: 0 0 20px rgba(12, 114, 211, 0.8); }
+  100% { transform: scale(0.85); }
+}
+
+.level-up {
+  animation: levelUp 1s ease-in-out;
+}
+
+/* Main Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
+}
+
+/* Top Toolbar */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1500;
+}
+
+.toolbar-left, .toolbar-center, .toolbar-right {
+  flex: 1;
+}
+
+.toolbar-left { text-align: left; }
+.toolbar-center { text-align: center; }
+.toolbar-right {
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-right: 17px;
+}
+
+/* Legacy Score Circle - Replaced by Level Circle */
+#scoreCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #0C72D3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* Make score circle clickable */
+#scoreCircle.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+#scoreCircle.clickable:hover {
+  transform: scale(1.1);
+}
+
+/* User Score Circle in User Menu - Replaced by Level Circle */
+#userScoreCircle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #0C72D3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin: 10px auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+#userScoreCircle:hover {
+  transform: scale(1.1);
+}
+
+.user-score-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.user-score-container p {
+  margin: 5px 0;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.menu-button {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  transition: transform 0.2s ease;
+}
+
+.menu-button:hover {
+  transform: scale(1.1);
+}
+
+.logo img {
+  max-height: 40px;
+  cursor: pointer;
+}
+
+/* Icon Bar */
+#iconBar {
+  position: fixed;
+  top: 50px;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background-color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1450;
+}
+
+#iconBar button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  margin: 0 15px;
+  color: #0056b3;
+  transition: color 0.2s ease;
+}
+
+#iconBar button:hover {
+  color: #003f7f;
+}
+
+/* Main Options (Landing View) */
+#mainOptions {
+  margin-top: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#mainOptions button {
+  font-size: 1.2rem;
+  padding: 12px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  width: 220px;
+  transition: background-color 0.2s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+}
+
+#mainOptions button:hover {
+  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+
+/* Swiper Container */
+.swiper {
+  display: none;
+  width: 100%;
+  height: calc(100% - 50px - 40px - 50px);
+  min-height: calc(100vh - 140px);
+  margin-top: 90px;
+}
+
+.swiper-slide {
+  animation: fadeIn 0.5s ease-in-out;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-top: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Bottom Toolbar */
+#bottomToolbar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+  z-index: 1500;
+}
+
+#progressBarContainer {
+  flex: 1;
+  height: 10px;
+  background-color: #ccc;
+  border-radius: 5px;
+  margin-right: 10px;
+  overflow: hidden;
+}
+
+#progressBar {
+  height: 100%;
+  width: 0%;
+  background-color: #0056b3;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+#questionProgress {
+  font-size: 0.9rem;
+  color: #0056b3;
+  margin-right: 10px;
+  min-width: 50px;
+  text-align: center;
+}
+
+#scoreDisplay {
+  font-size: 0.9rem;
+  color: #0056b3;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Modal Forms */
+.modalForm {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  z-index: 2100;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  width: 90%;
+  max-width: 400px;
+}
+
+.modalForm h2 {
+  margin-bottom: 10px;
+  color: #0056b3;
+  text-align: center;
+}
+
+.modalForm .formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.modalForm .formGroup label {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.modalForm .formGroup select,
+.modalForm .formGroup input {
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modalForm .btnRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.modalForm button {
+  margin-left: 10px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #0056b3;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.modalForm button:hover {
+  background-color: #004a95;
+}
+
+.modalForm button.cancel {
+  background-color: #aaa;
+}
+
+/* Performance View */
+#performanceView {
+  display: none;
+  margin-top: 90px;
+  padding: 20px;
+}
+
+#performanceView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+
+#performanceView p, #performanceView div {
+  font-size: 1rem;
+  color: #333;
+  margin: 5px 0;
+}
+
+#performanceView button {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#performanceView button:hover {
+  background-color: #004a95;
+}
+
+/* Category Breakdown Progress Bars */
+.category-item {
+  margin: 10px 0;
+}
+
+.progress-bar-container {
+  width: 100%;
+  background-color: #ccc;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 5px;
+  height: 20px;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #28a745;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* Additional hint on explanation slide */
+.swipe-next-hint {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Quiz Card Styles */
+.card {
+  position: relative;
+  background: #fff;
+  border-radius: 6px;
+  padding: 20px 15px 15px 15px;
+  margin: 10px auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  text-align: center;
+}
+
+.question {
+  white-space: pre-line;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option-btn {
+  padding: 6px;
+  border: 1px solid #0056b3;
+  background: #fff;
+  color: #0056b3;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.3s ease;
+}
+
+.option-btn:hover {
+  background: #0056b3;
+  color: #fff;
+}
+
+.option-btn.correct {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.option-btn.incorrect {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.option-btn:disabled {
+  cursor: not-allowed;
+}
+
+.swipe-hint {
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: #666;
+  display: none;
+}
+
+.answer {
+  white-space: pre-line;
+  font-size: 1rem;
+  color: #333;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.question-image {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+/* Side Menu - Left Side */
+#sideMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1600;
+  padding: 20px;
+}
+
+#sideMenu.open {
+  transform: translateX(0);
+}
+
+/* User Menu - Right Side */
+#userMenu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1600;
+  padding: 20px;
+}
+
+#userMenu.open {
+  transform: translateX(0);
+}
+
+#userInfoSection {
+  margin-bottom: 30px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+}
+
+#usernameDisplay {
+  margin: 5px 0 15px 0;
+  color: #0056b3;
+  font-size: 1.3rem;
+}
+
+#menuHeader, #userMenuHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+#menuTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #0056b3;
+}
+
+#menuClose, #userMenuClose {
+  font-size: 1.5rem;
+  color: #0056b3;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+#menuClose:hover, #userMenuClose:hover {
+  color: #003f7f;
+}
+
+/* Menu Overlay */
+#menuOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 1599;
+}
+
+#menuOverlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Menu List Items */
+#menuList, #userMenuList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#menuList > li, #userMenuList > li {
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  font-size: 1.1rem;
+  color: #0056b3;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#menuList > li:hover, #userMenuList > li:hover {
+  background: rgba(0, 86, 179, 0.1);
+}
+
+#menuList > li a, #userMenuList > li a {
+  text-decoration: none;
+  color: #0056b3;
+  font-size: 1.1rem;
+}
+
+/* Leaderboard View Styles */
+#leaderboardView {
+  display: none;
+  padding: 20px;
+  margin-top: 90px;
+}
+
+#leaderboardView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+
+#leaderboardTabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.leaderboard-tab {
+  margin: 0 10px;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  background: #0C72D3;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.leaderboard-tab.active {
+  background: #0056b3;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th, .leaderboard-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.leaderboard-table th {
+  background-color: #f2f2f2;
+}
+
+.leaderboard-back-btn {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.leaderboard-back-btn:hover {
+  background-color: #004a95;
+}
+
+/* Style for Start New Quiz button to match landing page buttons */
+.start-quiz-btn {
+  font-size: 1.2rem;
+  padding: 12px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  width: 220px;
+  transition: background-color 0.2s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+}
+
+.start-quiz-btn:hover {
+  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+
+/* About Us View */
+#aboutView {
+  display: none;
+  padding: 20px;
+  margin-top: 90px;
+}
+
+#aboutView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+
+#aboutView p {
+  font-size: 1rem;
+  color: #333;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+#aboutView button {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#aboutView button:hover {
+  background-color: #004a95;
+}
+
+/* FAQ View */
+#faqView {
+  display: none;
+  padding: 20px;
+  margin-top: 90px;
+}
+
+#faqView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+
+#faqView p, #faqView li {
+  font-size: 1rem;
+  color: #333;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+#faqView ul {
+  list-style: decimal;
+  padding-left: 20px;
+}
+
+#faqView button {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#faqView button:hover {
+  background-color: #004a95;
+}
+
+/* Contact Us Modal */
+#contactModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1800;
+  justify-content: center;
+  align-items: center;
+}
+
+#contactModal > div {
+  background: #fff;
+  padding: 20px;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 400px;
+}
+
+#contactModal h3 {
+  margin-bottom: 10px;
+  color: #0056b3;
+  text-align: center;
+}
+
+#contactModal p {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+#contactModal label {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 5px;
+  display: block;
+}
+
+#contactModal input[type="email"],
+#contactModal textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+#contactModal button {
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #0056b3;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+#contactModal button:hover {
+  background-color: #004a95;
+}
+
+/* Modern Leaderboard Styles */
+#leaderboardView {
+  max-width: 800px;
+  margin: 90px auto 0;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+#leaderboardView h2 {
+  text-align: center;
+  color: #0056b3;
+  margin-bottom: 25px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* Modern tabs with pill style */
+#leaderboardTabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+  background: #f2f7ff;
+  padding: 6px;
+  border-radius: 50px;
+  max-width: 450px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.leaderboard-tab {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  margin: 0 3px;
+  border-radius: 50px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.leaderboard-tab.active {
+  background: #0C72D3;
+  color: white;
+  box-shadow: 0 3px 8px rgba(12, 114, 211, 0.3);
+}
+
+.leaderboard-tab:hover:not(.active) {
+  background: rgba(12, 114, 211, 0.1);
+  color: #0C72D3;
+}
+
+/* Card-based leaderboard entries */
+.leaderboard-entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-entry {
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 5px solid transparent;
+}
+
+.leaderboard-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Current user highlighting */
+.leaderboard-entry.current-user {
+  border-left-color: #0C72D3;
+  background-color: #f2f7ff;
+}
+
+/* Rank styles with medal colors for top 3 */
+.rank-container {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-right: 15px;
+  font-weight: bold;
+  background: #f0f0f0;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.rank-1 {
+  background: linear-gradient(45deg, #FFD700, #FFC800);
+  color: white;
+  box-shadow: 0 2px 5px rgba(255, 215, 0, 0.5);
+}
+
+.rank-2 {
+  background: linear-gradient(45deg, #C0C0C0, #D4D4D4);
+  color: white;
+  box-shadow: 0 2px 5px rgba(192, 192, 192, 0.5);
+}
+
+.rank-3 {
+  background: linear-gradient(45deg, #CD7F32, #E0916A);
+  color: white;
+  box-shadow: 0 2px 5px rgba(205, 127, 50, 0.5);
+}
+
+/* User info section */
+.user-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.username {
+  font-size: 17px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Stats section */
+.user-stats {
+  margin-left: auto;
+  text-align: right;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #0C72D3;
+  margin: 0;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* Level badge */
+.level-badge {
+  display: inline-block;
+  background: #0C72D3;
+  color: white;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 50%;
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Back button */
+.leaderboard-back-btn {
+  display: block;
+  margin: 30px auto 10px;
+  padding: 12px 25px;
+  font-size: 16px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(45deg, #0C72D3, #66a6ff);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(12, 114, 211, 0.3);
+}
+
+.leaderboard-back-btn:hover {
+  background: linear-gradient(45deg, #66a6ff, #0C72D3);
+  box-shadow: 0 6px 15px rgba(12, 114, 211, 0.4);
+}
+
+/* Your ranking section */
+.your-ranking {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f2f7ff;
+  border-radius: 10px;
+  position: relative;
+}
+
+.your-ranking h3 {
+  text-align: center;
+  color: #0056b3;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.your-ranking .leaderboard-entry {
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 30px 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  #leaderboardTabs {
+    max-width: 100%;
+  }
+  
+  .leaderboard-tab {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  
+  .leaderboard-entry {
+    padding: 12px 15px;
+  }
+  
+  .rank-container {
+    width: 35px;
+    height: 35px;
+    margin-right: 10px;
+  }
+  
+  .username {
+    font-size: 15px;
+  }
+  
+  .stat-value {
+    font-size: 16px;
+  }
+}
+/* Level-up Animation and Modal */
+@keyframes levelUpPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(12, 114, 211, 0.4); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(12, 114, 211, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(12, 114, 211, 0); }
+}
+
+@keyframes shineEffect {
+  0% { background-position: -100px; }
+  40% { background-position: 300px; }
+  100% { background-position: 300px; }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fallIn {
+  0% { transform: translateY(-40px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+}
+
+#levelUpModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#levelUpModal.show {
+  display: flex;
+  animation: fadeIn 0.5s forwards;
+}
+
+#levelUpContent {
+  background: #fff;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 360px;
+  position: relative;
+  padding: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: popIn 0.5s 0.2s both;
+}
+
+#levelUpHeader {
+  background: linear-gradient(135deg, #0C72D3, #66a6ff);
+  padding: 40px 20px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+#levelUpHeader::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-20deg);
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+  background-position: -100px;
+  animation: shineEffect 2s 0.5s ease-in-out infinite;
+}
+
+#levelUpTitle {
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  animation: fallIn 0.5s 0.4s both;
+  position: relative;
+  z-index: 10;
+}
+
+#levelUpBadge {
+  width: 120px;
+  height: 120px;
+  margin: -40px auto 0;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 10;
+  animation: levelUpPulse 2s infinite;
+}
+
+#levelNumber {
+  font-size: 48px;
+  font-weight: bold;
+  color: #0C72D3;
+}
+
+#levelUpBody {
+  padding: 60px 30px 30px;
+  text-align: center;
+}
+
+#levelUpMessage {
+  color: #333;
+  font-size: 18px;
+  margin-bottom: 15px;
+  animation: fadeInUp 0.5s 0.6s both;
+}
+
+#levelUpXP {
+  color: #0C72D3;
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 25px;
+  animation: fadeInUp 0.5s 0.8s both;
+}
+
+#levelUpButton {
+  background: linear-gradient(135deg, #0C72D3, #66a6ff);
+  border: none;
+  color: white;
+  padding: 12px 30px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 10px rgba(12, 114, 211, 0.3);
+  animation: fadeInUp 0.5s 1s both;
+}
+
+#levelUpButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(12, 114, 211, 0.4);
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #FFC700;
+  border-radius: 2px;
+  animation: confettiFall 1.5s forwards;
+}
+/* User Menu Level Circle - Match Performance View */
+#userInfoSection .level-progress-circle {
+  width: 100px;
+  height: 100px;
+  margin: 20px auto;
+  position: relative;
+}
+
+#userInfoSection .level-circle-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  z-index: 1;
+}
+
+#userInfoSection .level-circle-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(#0C72D3 var(--progress, 0%), transparent 0%);
+  z-index: 2;
+}
+
+#userInfoSection .level-number {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: 70%;
+  height: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #fff;
+  background-color: #0056b3;
+  border-radius: 50%;
+  font-size: 2rem;
+  z-index: 3;
+}
+
+/* Performance View Level Circle */
+#performanceView .level-progress-circle {
+  width: 100px;
+  height: 100px;
+  margin: 20px auto;
+  position: relative;
+}
+
+#performanceView .level-number {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: 70%;
+  height: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #fff;
+  background-color: #0056b3;
+  border-radius: 50%;
+  font-size: 2rem;
+  z-index: 3;
+}
+/* Performance View Level Circle - Force white text */
+#performanceView .level-number,
+#performanceView .level-progress-circle .level-number {
+  color: #ffffff !important;
+  background-color: #0056b3;
+  font-size: 2rem;
+}
+
+/* Just to be safe, target it with more specificity */
+#performanceLevelProgress + .level-number {
+  color: #ffffff !important;
+}
+/* Dashboard Container */
+.dashboard-container {
+  margin-top: 30px; /* Further reduced from 60px to give less space above Start Quiz button */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 10px;
+}
+
+/* Start Quiz Button Section */
+/* Top button section - reduce margin */
+.dashboard-start-section {
+  width: 100%;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+}
+
+.dashboard-start-btn {
+  font-size: 1.1rem;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  width: 100%;
+  max-width: 220px;
+  transition: background-color 0.2s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+}
+
+.dashboard-start-btn:hover {
+  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+
+/* Dashboard Cards Row */
+.dashboard-cards-row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+/* Dashboard Card Common Styles */
+.dashboard-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+  flex: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.card-header {
+  padding: 10px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0056b3;
+  text-align: center;
+}
+
+.card-content {
+  padding: 12px;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #eaeaea;
+  font-size: 0.8rem;
+  color: #0056b3;
+}
+
+.arrow-icon {
+  font-weight: bold;
+}
+
+/* User Progress Card */
+.level-progress-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-level {
+  width: 60px;
+  height: 60px;
+  margin-right: 12px;
+}
+
+.dashboard-level .level-number {
+  font-size: 1.5rem;
+}
+
+.level-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.level-xp {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #0056b3;
+}
+
+.level-next {
+  margin: 3px 0 0 0;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+/* Quick Stats Card */
+.quick-stats-container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.stats-item {
+  text-align: center;
+}
+
+.stats-value {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #0056b3;
+}
+
+.stats-label {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+/* Streak Card */
+.streak-card {
+  width: 100%;
+}
+
+.card-header .streak-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.streak-count span {
+  margin-right: 5px;
+  font-weight: 500;
+  color: #0056b3;
+}
+
+.streak-flame {
+  font-size: 1rem;
+}
+
+.streak-calendar {
+  width: 100%;
+}
+
+.day-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px;
+  margin-bottom: 5px;
+}
+
+.day-labels span {
+  width: 14%;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.day-circles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.day-circle {
+  width: 14%;
+  aspect-ratio: 1;
+  margin-bottom: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  background: #eaeaea;
+  color: #666;
+}
+
+.day-circle.active {
+  background: #0C72D3;
+  color: white;
+}
+
+.day-circle.today {
+  border: 2px solid #0C72D3;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 8px;
+  }
+  
+  /* Keep the dashboard cards row horizontal on mobile */
+  .dashboard-cards-row {
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  /* Make sure cards have equal width */
+  .dashboard-card {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .card-header h3 {
+    font-size: 0.9rem;
+  }
+  
+  .card-content {
+    padding: 8px;
+  }
+  
+  .card-footer {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+  
+  .stats-value {
+    font-size: 1rem;
+  }
+  
+  .stats-label {
+    font-size: 0.65rem;
+  }
+  
+  .level-xp {
+    font-size: 0.8rem;
+  }
+  
+  .level-next {
+    font-size: 0.65rem;
+  }
+  
+  .day-labels span {
+    font-size: 0.65rem;
+  }
+  
+  .day-circle {
+    font-size: 0.65rem;
+  }
+  
+  /* Make the level circle larger on mobile */
+  .dashboard-level {
+    width: 60px;
+    height: 60px;
+    margin-right: 5px;
+  }
+  
+  .dashboard-level .level-number {
+    font-size: 1.5rem;
+  }
+}
+/* Quick Stats Card Layout Adjustments */
+.stats-card .card-content {
+  min-height: 70px; /* Add minimum height to push footer to bottom */
+  display: flex;
+  flex-direction: column;
+}
+
+.quick-stats-container {
+  display: flex;
+  justify-content: space-around;
+  flex: 1; /* Make this take up all available space */
+}
+
+/* Ensure all card footers are at the bottom */
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-content {
+  flex: 1; /* Make content area expand to fill space */
+}
+
+.card-footer {
+  margin-top: auto; /* Push footer to bottom */
+}
+
+/* Adjust for mobile */
+@media (max-width: 480px) {
+  .stats-card .card-content {
+    min-height: 60px; /* Slightly smaller on mobile */
+  }
+}
+/* Enhanced Leaderboard Preview Card Styles for Desktop */
+.leaderboard-card {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.leaderboard-preview-entry {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 2px;
+}
+
+.leaderboard-preview-entry:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.leaderboard-rank {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-right: 10px;
+  flex-shrink: 0;
+  color: white;
+  background-color: #999; /* Default background */
+}
+
+.leaderboard-rank-1 {
+  background: linear-gradient(45deg, #FFD700, #FFC800);
+  box-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-rank-2 {
+  background: linear-gradient(45deg, #C0C0C0, #D4D4D4);
+  box-shadow: 0 2px 5px rgba(192, 192, 192, 0.3);
+}
+
+.leaderboard-rank-3 {
+  background: linear-gradient(45deg, #CD7F32, #E0916A);
+  box-shadow: 0 2px 5px rgba(205, 127, 50, 0.3);
+}
+
+/* User info section - ensures proper display on all devices */
+.leaderboard-user-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 0; /* Enables text-overflow to work */
+}
+
+.leaderboard-username {
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65%;
+  color: #333;
+}
+
+.leaderboard-user-xp {
+  font-size: 0.95rem;
+  color: #0C72D3;
+  font-weight: 500;
+  text-align: right;
+  margin-right: 5px;
+}
+
+.current-user-entry {
+  background-color: rgba(12, 114, 211, 0.1);
+  border-radius: 4px;
+}
+
+/* Loading state */
+.leaderboard-loading {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  padding: 15px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .leaderboard-username {
+    font-size: 0.85rem;
+  }
+  
+  .leaderboard-user-xp {
+    font-size: 0.85rem;
+  }
+  
+  .leaderboard-rank {
+    width: 26px;
+    height: 26px;
+    font-size: 0.8rem;
+  }
+  
+  .leaderboard-preview-entry {
+    padding: 6px 5px;
+  }
+}
+
+/* Desktop enhancements */
+@media (min-width: 768px) {
+  .leaderboard-preview-entry {
+    padding: 10px 15px;
+    margin-bottom: 4px;
+  }
+  
+  .leaderboard-rank {
+    width: 32px;
+    height: 32px;
+    margin-right: 15px;
+  }
+}
+/* Quiz Summary Slide Styles - Add to your styles.css file */
+
+.quiz-summary-card {
+  padding: 25px 20px;
+  text-align: center;
+}
+
+.summary-header {
+  margin-bottom: 20px;
+}
+
+.summary-header h2 {
+  color: #0056b3;
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.summary-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.score-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-right: 20px;
+  margin-bottom: 15px;
+}
+
+.score-circle::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  background: white;
+  border-radius: 50%;
+}
+
+.score-circle span {
+  position: relative;
+  z-index: 1;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0056b3;
+}
+
+.score-text {
+  flex: 1;
+  min-width: 200px;
+  text-align: left;
+}
+
+.score-text p {
+  margin: 5px 0;
+  font-size: 1rem;
+}
+
+.summary-xp {
+  background-color: #f2f7ff;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #0C72D3;
+}
+
+.xp-header {
+  font-weight: bold;
+  color: #0C72D3;
+  text-align: left;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.xp-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0C72D3;
+  margin: 5px 0;
+}
+
+.xp-bar-container {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.xp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0C72D3, #66a6ff);
+  border-radius: 4px;
+  transition: width 1s ease;
+  max-width: 100%;
+}
+
+.xp-total {
+  text-align: right;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.summary-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Make the buttons look good on small screens */
+@media (max-width: 600px) {
+  .score-circle {
+    margin-right: 0;
+  }
+  
+  .score-text {
+    text-align: center;
+  }
+}

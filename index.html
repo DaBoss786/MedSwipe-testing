@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Mobile Optimization Meta Tags -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#E6F0FA">
+  <title>MedSwipe</title>
+  
+  <!-- Google Fonts: Roboto -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+  
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="menu-button" id="menuToggle">&#9776;</button>
+    </div>
+    <div class="toolbar-center">
+      <div class="logo" id="logoClick">
+        <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <!-- XP Display -->
+      <div id="xpDisplay">0 XP</div>
+      <!-- Level with Progress Circle (replaces the score circle) -->
+      <div class="level-circle-container">
+        <div class="level-progress-circle">
+          <div class="level-circle-background"></div>
+          <div class="level-circle-progress" id="levelCircleProgress"></div>
+          <div class="level-number clickable" id="scoreCircle">1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Options -->
+<!-- Dashboard View with Fixed Spacing and Centered Button -->
+<div id="mainOptions" class="dashboard-container">
+  <!-- Top: Start Quiz Button (centered with reduced top margin) -->
+  <div class="dashboard-start-section" style="display: flex; justify-content: center; width: 100%; margin-top: 10px;">
+    <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
+  </div>
+  
+  <!-- First Row: Progress and Stats Cards -->
+  <div class="dashboard-cards-row">
+    <!-- User Progress Card -->
+    <div class="dashboard-card user-progress-card" id="userProgressCard">
+      <div class="card-header">
+        <h3>Your Progress</h3>
+      </div>
+      <div class="card-content">
+        <div class="level-progress-container">
+          <div class="level-progress-circle dashboard-level">
+            <div class="level-circle-background"></div>
+            <div class="level-circle-progress" id="dashboardLevelProgress"></div>
+            <div class="level-number" id="dashboardLevel">1</div>
+          </div>
+          <div class="level-info">
+            <p class="level-xp" id="dashboardXP">0 XP</p>
+            <p class="level-next" id="dashboardNextLevel">30 XP to Level 2</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>View Details</span>
+        <span class="arrow-icon">→</span>
+      </div>
+    </div>
+    
+    <!-- Quick Stats Card -->
+    <div class="dashboard-card stats-card" id="quickStatsCard">
+      <div class="card-header">
+        <h3>Quick Stats</h3>
+      </div>
+      <div class="card-content">
+        <div class="quick-stats-container">
+          <div class="stats-item">
+            <div class="stats-value" id="dashboardAnswered">0</div>
+            <div class="stats-label">Questions Answered</div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-value" id="dashboardAccuracy">0%</div>
+            <div class="stats-label">Accuracy</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>View Details</span>
+        <span class="arrow-icon">→</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Second Row: Leaderboard Preview Card (full width) -->
+  <div class="dashboard-card leaderboard-card" id="leaderboardPreviewCard" style="width: 100%; margin-bottom: 20px;">
+    <div class="card-header">
+      <h3>Leaderboard</h3>
+    </div>
+    <div class="card-content">
+      <div id="leaderboardPreview">
+        <!-- Loading state -->
+        <div class="leaderboard-loading">Loading top users...</div>
+        <!-- Entries will be populated by JavaScript -->
+      </div>
+    </div>
+    <div class="card-footer">
+      <span>View Full Leaderboard</span>
+      <span class="arrow-icon">→</span>
+    </div>
+  </div>
+  
+  <!-- Third Row: Streak Calendar Card (Full Width) -->
+  <div class="dashboard-card streak-card">
+    <div class="card-header">
+      <h3>Activity Streak</h3>
+      <div class="streak-count">
+        <span id="currentStreak">0</span>
+        <span class="streak-flame">🔥</span>
+      </div>
+    </div>
+    <div class="card-content">
+      <div class="streak-calendar">
+        <div class="day-labels">
+          <span>M</span>
+          <span>T</span>
+          <span>W</span>
+          <span>T</span>
+          <span>F</span>
+          <span>S</span>
+          <span>S</span>
+        </div>
+        <div class="day-circles" id="streakCalendar">
+          <!-- Days will be filled in by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Quiz Setup Modal -->
+<div id="quizSetupModal" class="modalForm">
+  <h2>Set Up Your Quiz</h2>
+  <div class="formGroup">
+    <label for="modalCategorySelect">Select Category</label>
+    <select id="modalCategorySelect">
+      <option value="">All Categories</option>
+      <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+      <option value="Otology">Otology</option>
+      <option value="Laryngology">Laryngology</option>
+      <option value="Rhinology">Rhinology</option>
+      <option value="Pediatric ENT">Pediatric ENT</option>
+      <option value="Facial Plastics">Facial Plastics</option>
+    </select>
+  </div>
+  <div class="formGroup">
+    <label for="modalNumQuestions">Number of Questions</label>
+    <input type="number" id="modalNumQuestions" min="1" value="10">
+  </div>
+  <div class="formGroup">
+    <label>
+      <input type="checkbox" id="modalIncludeAnswered">
+      Include answered questions
+    </label>
+  </div>
+  <div class="btnRow">
+    <button id="modalStartQuiz">Start Quiz</button>
+    <button id="modalCancelQuiz" class="cancel">Cancel</button>
+  </div>
+</div>
+  
+  <!-- Swiper Container for Quiz -->
+  <div class="swiper">
+    <div class="swiper-wrapper" id="quizSlides"></div>
+  </div>
+  
+  <!-- Bottom Toolbar for Quiz -->
+  <div id="bottomToolbar">
+    <div id="progressBarContainer">
+      <div id="progressBar"></div>
+    </div>
+    <div id="questionProgress">0 / 0</div>
+    <div id="scoreDisplay">Score: 0</div>
+  </div>
+  
+  <!-- Performance View -->
+  <div id="performanceView" style="display: none;"></div>
+  
+  <!-- Leaderboard View -->
+  <div id="leaderboardView"></div>
+  
+  <!-- FAQ View -->
+  <div id="faqView"></div>
+  
+  <!-- About Us View -->
+  <div id="aboutView"></div>
+  
+  <!-- Side Menu with Close Button (Left) -->
+  <div id="sideMenu">
+    <div id="menuHeader">
+      <span id="menuTitle">Menu</span>
+      <span id="menuClose" style="cursor:pointer;">&times;</span>
+    </div>
+    <ul id="menuList">
+      <li id="startNewQuiz">Start New Quiz</li>
+      <li id="leaderboardItem">Leaderboard</li>
+      <li id="faqItem">FAQ</li>
+      <li id="aboutItem">About Us</li>
+      <li id="contactItem">Contact Us</li>
+    </ul>
+  </div>
+  
+  <!-- User Menu with Close Button (Right) -->
+  <div id="userMenu">
+    <div id="userMenuHeader">
+      <span id="menuTitle">Profile</span>
+      <span id="userMenuClose" style="cursor:pointer;">&times;</span>
+    </div>
+    <div id="userInfoSection">
+      <h3 id="usernameDisplay">Username</h3>
+      <div class="user-score-container">
+        <p>Level</p>
+        <div class="level-progress-circle">
+          <div class="level-circle-background"></div>
+          <div class="level-circle-progress" id="userLevelProgress"></div>
+          <div class="level-number clickable" id="userScoreCircle">1</div>
+        </div>
+        <div id="userXpDisplay">0/30 XP</div>
+        <div class="level-progress-bar-container">
+          <div class="level-progress-bar" id="levelProgressBar"></div>
+        </div>
+      </div>
+    </div>
+    <ul id="userMenuList">
+      <li id="performanceItemUser">Performance</li>
+      <li><a href="#" id="bookmarksFilterUser">Bookmarks</a></li>
+      <li><a href="#" id="resetProgressUser">Reset Progress</a></li>
+    </ul>
+  </div>
+  
+  <!-- Menu Overlay -->
+  <div id="menuOverlay"></div>
+  
+  <!-- Icon Bar (Favorite & Feedback) -->
+  <div id="iconBar" style="display: none;">
+    <button id="favoriteButton">☆</button>
+    <button id="feedbackButton">💬</button>
+  </div>
+  
+  <!-- Custom Quiz Modal Form -->
+  <div id="customQuizForm" class="modalForm">
+    <h2>Custom Quiz Options</h2>
+    <div class="formGroup">
+      <label for="categorySelect">Select Category</label>
+      <select id="categorySelect">
+        <option value="">All</option>
+        <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+        <option value="Otology">Otology</option>
+        <option value="Laryngology">Laryngology</option>
+        <option value="Rhinology">Rhinology</option>
+        <option value="Pediatric ENT">Pediatric ENT</option>
+        <option value="Facial Plastics">Facial Plastics</option>
+      </select>
+    </div>
+    <div class="formGroup">
+      <label for="customNumQuestions">Number of Questions</label>
+      <input type="number" id="customNumQuestions" min="1" value="10">
+    </div>
+    <div class="formGroup">
+      <label>
+        <input type="checkbox" id="includeAnsweredCheckbox">
+        Include answered questions
+      </label>
+    </div>
+    <div class="btnRow">
+      <button id="startCustomQuiz">Start Quiz</button>
+      <button id="cancelCustomQuiz" class="cancel">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Random Quiz Modal Form -->
+  <div id="randomQuizForm" class="modalForm">
+    <h2>Random Quiz Options</h2>
+    <div class="formGroup">
+      <label for="randomNumQuestions">Number of Questions</label>
+      <input type="number" id="randomNumQuestions" min="1" value="10">
+    </div>
+    <div class="formGroup">
+      <label>
+        <input type="checkbox" id="includeAnsweredRandomCheckbox">
+        Include answered questions
+      </label>
+    </div>
+    <div class="btnRow">
+      <button id="startRandomQuiz">Start Quiz</button>
+      <button id="cancelRandomQuiz" class="cancel">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
+    <div style="background: #fff; padding: 20px; border-radius: 6px; width: 90%; max-width: 400px;">
+      <h3>Feedback</h3>
+      <p id="feedbackQuestionInfo" style="font-size:0.9rem; color:#333;"></p>
+      <textarea id="feedbackText" placeholder="Enter your feedback here" style="width:100%; height:100px;"></textarea>
+      <br>
+      <button id="submitFeedback">Submit Feedback</button>
+      <button id="closeFeedbackModal">Close</button>
+    </div>
+  </div>
+  
+  <!-- Contact Us Modal -->
+  <div id="contactModal">
+    <div>
+      <h3>Contact Us</h3>
+      <p>Please let us know your thoughts or any issues you're experiencing with MedSwipe.</p>
+      <label for="contactEmail">Your Email (Optional):</label>
+      <input type="email" id="contactEmail" placeholder="you@example.com">
+      <textarea id="contactMessage" placeholder="Enter your message here" style="height:100px;"></textarea>
+      <br>
+      <button id="submitContact">Submit</button>
+      <button id="closeContactModal">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- PapaParse for CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script type="module" src="firebase-config.js"></script>
+  
+  <!-- Include Swiper JS -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+  
+  <!-- Chart.js for the doughnut chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- App Scripts -->
+  <script src="utils.js"></script>
+  <script src="user.js"></script>
+  <script src="quiz.js"></script>
+  <script src="stats.js"></script>
+  <script src="ui.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
