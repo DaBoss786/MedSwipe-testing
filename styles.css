@@ -1449,8 +1449,7 @@ html, body {
 }
 /* Dashboard Container */
 .dashboard-container {
-  margin-top: -30px !important; /* Force negative margin with !important to override any other styles */
-  padding-top: 60px; /* Add padding to prevent content from going under the toolbar */
+  margin-top: 60px; /* Give enough space for toolbar */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1459,17 +1458,20 @@ html, body {
   margin-left: auto;
   margin-right: auto;
   padding: 10px;
+  position: relative; /* Ensure proper stacking context */
 }
 
 /* Start Quiz Button Section */
-/* Top button section - reduce margin */
+/* Position the Start Quiz button closer to top */
 .dashboard-start-section {
-  position: fixed !important;
-  top: 60px !important; /* Just below the 50px toolbar */
+  position: absolute;
+  top: -50px; /* Move it up by 50px from its normal position */
   left: 0;
   right: 0;
-  z-index: 1400; /* Below toolbar z-index of 1500 */
-  background: transparent;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: 1400;
 }
 
 .dashboard-start-btn {
@@ -1491,11 +1493,8 @@ html, body {
 
 /* Dashboard Cards Row */
 .dashboard-cards-row {
-  display: flex;
-  flex-direction: row;
+  margin-top: 30px; /* Add space to prevent overlap with the Start Quiz button */
   width: 100%;
-  gap: 10px;
-  margin-bottom: 15px;
 }
 
 /* Dashboard Card Common Styles */
