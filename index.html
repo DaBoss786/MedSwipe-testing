@@ -46,8 +46,10 @@
   <!-- Main Options -->
 <!-- Dashboard View with Fixed Spacing and Centered Button -->
 <div id="mainOptions" class="dashboard-container">
-  <!-- Modified: Removed nested div structure and applied margin directly to the button -->
-  <button id="startQuizBtn" class="dashboard-start-btn" style="margin-top: -10px; margin-bottom: 15px;">Start Quiz</button>
+  <!-- Restored the dashboard-start-section but with minimal top margin -->
+  <div class="dashboard-start-section" style="display: flex; justify-content: center; width: 100%; margin-top: 0;">
+    <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
+  </div>
   
   <!-- First Row: Progress and Stats Cards -->
   <div class="dashboard-cards-row">
@@ -176,6 +178,7 @@
   </div>
 </div>
   
+  <!-- Remaining HTML is unchanged -->
   <!-- Swiper Container for Quiz -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
