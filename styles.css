@@ -1448,7 +1448,7 @@ html, body {
 }
 /* Dashboard Container */
 .dashboard-container {
-  margin-top: 30px; /* Further reduced from 60px to give less space above Start Quiz button */
+  margin-top: 10px; /* Reduced from 30px to position Start Quiz button right below the toolbar */
   display: flex;
   flex-direction: column;
   align-items: center;
