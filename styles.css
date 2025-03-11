@@ -1449,7 +1449,7 @@ html, body {
 }
 /* Dashboard Container */
 .dashboard-container {
-  margin-top: 60px; /* Give enough space for toolbar */
+  margin-top: 55px; /* Give enough space for toolbar */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1464,14 +1464,12 @@ html, body {
 /* Start Quiz Button Section */
 /* Position the Start Quiz button closer to top */
 .dashboard-start-section {
-  position: absolute;
-  top: -50px; /* Move it up by 50px from its normal position */
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  z-index: 1400;
+  position: static; /* Reset to normal flow */
+  top: auto;
+  left: auto;
+  right: auto;
+  margin-top: 0;
+  z-index: auto;
 }
 
 .dashboard-start-btn {
@@ -1493,8 +1491,7 @@ html, body {
 
 /* Dashboard Cards Row */
 .dashboard-cards-row {
-  margin-top: 30px; /* Add space to prevent overlap with the Start Quiz button */
-  width: 100%;
+  margin-top: 15px
 }
 
 /* Dashboard Card Common Styles */
