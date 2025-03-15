@@ -281,6 +281,10 @@ function addOptionListeners() {
           // Record the answer in the database
           await recordAnswer(qId, category, isCorrect, timeSpent);
           await updateQuestionStats(qId, isCorrect);
+          // Show difficulty modal for correct answers
+if (window.createDifficultyModal && isCorrect) {
+  window.createDifficultyModal(qId, isCorrect);
+}
           
           // Prepare and show the summary button once data is loaded
           prepareSummary();
