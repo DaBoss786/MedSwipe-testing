@@ -31,6 +31,11 @@ function calculateNextReview(lastReview, difficulty) {
 
 // Review a question
 async function reviewQuestion(questionId, isCorrect, difficulty) {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated for review");
+    return;
+  }
+
   const userId = window.auth.currentUser.uid;
   const reviewRef = window.doc(window.db, 'userReviews', `${userId}_${questionId}`);
   
@@ -93,6 +98,11 @@ async function reviewQuestion(questionId, isCorrect, difficulty) {
 
 // Fetch questions due for review
 async function getQuestionsForReview() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated for review");
+    return [];
+  }
+
   const userId = window.auth.currentUser.uid;
   const now = new Date().toISOString();
   
@@ -117,7 +127,7 @@ async function getQuestionsForReview() {
   }
 }
 
-// Difficulty selection modal
+// Difficulty modal creation
 function createDifficultyModal(questionId, isCorrect) {
   // Remove any existing modals
   const existingModal = document.getElementById('difficultyModal');
@@ -140,11 +150,13 @@ function createDifficultyModal(questionId, isCorrect) {
   modal.style.zIndex = '2000';
   
   modal.innerHTML = `
-    <div style="background:white; padding:20px; border-radius:10px; text-align:center;">
+    <div style="background:white; padding:20px; border-radius:10px; text-align:center; max-width:300px;">
       <h3>How difficult was this question?</h3>
-      <button data-difficulty="easy" style="margin:10px; padding:10px; background-color:green; color:white; border:none; border-radius:5px;">Easy</button>
-      <button data-difficulty="medium" style="margin:10px; padding:10px; background-color:orange; color:white; border:none; border-radius:5px;">Medium</button>
-      <button data-difficulty="hard" style="margin:10px; padding:10px; background-color:red; color:white; border:none; border-radius:5px;">Hard</button>
+      <div style="display:flex; justify-content:space-between;">
+        <button data-difficulty="easy" style="flex:1; margin:10px; padding:10px; background-color:green; color:white; border:none; border-radius:5px;">Easy</button>
+        <button data-difficulty="medium" style="flex:1; margin:10px; padding:10px; background-color:orange; color:white; border:none; border-radius:5px;">Medium</button>
+        <button data-difficulty="hard" style="flex:1; margin:10px; padding:10px; background-color:red; color:white; border:none; border-radius:5px;">Hard</button>
+      </div>
     </div>
   `;
   
@@ -167,20 +179,7 @@ function createDifficultyModal(questionId, isCorrect) {
   }
 }
 
-// Start a review quiz
-async function startReviewQuiz() {
-  const reviewQuestions = await getQuestionsForReview();
-  
-  if (reviewQuestions.length === 0) {
-    alert("No questions due for review right now!");
-    return;
-  }
-  
-  // Load review questions
-  loadQuestions({
-    type: 'review',
-    questions: reviewQuestions.map(r => r.questionId)
-  });
-}
-</parameter>
-</invoke>
+// Make functions globally available
+window.reviewQuestion = reviewQuestion;
+window.getQuestionsForReview = getQuestionsForReview;
+window.createDifficultyModal = createDifficultyModal;
