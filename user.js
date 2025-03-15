@@ -23,6 +23,61 @@ async function fetchPersistentAnsweredIds() {
   return [];
 }
 
+// Function to update the leaderboard entry for the current user
+async function updateLeaderboardEntry() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated for leaderboard update");
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data();
+      
+      // Calculate weekly answered count
+      let weeklyAnswered = 0;
+      if (userData.answeredQuestions) {
+        const weekStart = getStartOfWeek();
+        
+        for (const key in userData.answeredQuestions) {
+          const answer = userData.answeredQuestions[key];
+          if (answer.timestamp && answer.timestamp >= weekStart) {
+            weeklyAnswered++;
+          }
+        }
+      }
+      
+      // Extract only the data needed for leaderboards
+      const leaderboardData = {
+        uid: uid,
+        username: userData.username || "Anonymous",
+        lastUpdated: window.serverTimestamp(),
+        // XP ranking data
+        xp: userData.stats?.xp || 0,
+        level: userData.stats?.level || 1,
+        // Streak data
+        currentStreak: userData.streaks?.currentStreak || 0,
+        longestStreak: userData.streaks?.longestStreak || 0,
+        // Questions answered data
+        totalAnswered: userData.stats?.totalAnswered || 0,
+        totalCorrect: userData.stats?.totalCorrect || 0,
+        weeklyAnswered: weeklyAnswered
+      };
+      
+      // Update the leaderboard collection
+      const leaderboardRef = window.doc(window.db, 'leaderboards', uid);
+      await window.setDoc(leaderboardRef, leaderboardData);
+      console.log("Leaderboard entry updated successfully");
+    }
+  } catch (error) {
+    console.error("Error updating leaderboard entry:", error);
+  }
+}
+
 // Record answer in Firestore with XP calculation
 async function recordAnswer(questionId, category, isCorrect, timeSpent) {
   if (!window.auth || !window.auth.currentUser) {
@@ -280,6 +335,9 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       initializeDashboard();
     }
     
+    // Update leaderboard entry
+    await updateLeaderboardEntry();
+    
     // Show level-up animation if level increased
     if (levelUp) {
       setTimeout(() => {
@@ -469,6 +527,9 @@ async function updateUserXP() {
           }
         });
       }
+      
+      // Update leaderboard entry after XP changes
+      await updateLeaderboardEntry();
     }
   } catch (error) {
     console.error("Error updating user XP:", error);
@@ -575,6 +636,9 @@ async function getOrGenerateUsername() {
       data.username = username;
       transaction.set(userDocRef, data, { merge: true });
     });
+    
+    // Create initial leaderboard entry for new user
+    await updateLeaderboardEntry();
   }
   return username;
 }
@@ -587,6 +651,16 @@ function generateRandomName() {
   const noun = nouns[Math.floor(Math.random() * nouns.length)];
   const num = Math.floor(Math.random() * 9000) + 1000;
   return `${adj}${noun}${num}`;
+}
+
+// Helper function to get the start of the week (for weekly leaderboards)
+function getStartOfWeek() {
+  let now = new Date();
+  let day = now.getDay();
+  let diff = now.getDate() - day + (day === 0 ? -6 : 1);
+  let weekStart = new Date(now.setDate(diff));
+  weekStart.setHours(0,0,0,0);
+  return weekStart.getTime();
 }
 
 // Bookmark functions - enhanced for toggling
@@ -739,58 +813,3 @@ function showLevelUpAnimation(newLevel, totalXP) {
       }
     }
   }
-}
-
-// Function to hide the level-up modal
-function hideLevelUpModal() {
-  const modal = document.getElementById('levelUpModal');
-  if (modal) {
-    modal.style.opacity = '0';
-    setTimeout(() => {
-      modal.style.display = 'none';
-    }, 300);
-  }
-}
-
-// Function to create confetti effect
-function createConfetti() {
-  const colors = ['#FFC700', '#FF3D00', '#00C853', '#2979FF', '#AA00FF', '#D500F9'];
-  const modal = document.getElementById('levelUpModal');
-  
-  if (!modal) return;
-  
-  // Remove old confetti
-  const oldConfetti = modal.querySelectorAll('.confetti');
-  oldConfetti.forEach(c => c.remove());
-  
-  // Create new confetti pieces
-  for (let i = 0; i < 50; i++) {
-    const confetti = document.createElement('div');
-    confetti.className = 'confetti';
-    confetti.style.left = Math.random() * 100 + '%';
-    confetti.style.top = Math.random() * 50 + '%';
-    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
-    
-    // Random size between 5px and 10px
-    const size = 5 + Math.random() * 5;
-    confetti.style.width = `${size}px`;
-    confetti.style.height = `${size}px`;
-    
-    // Random animation delay
-    confetti.style.animationDelay = Math.random() * 1.5 + 's';
-    
-    modal.appendChild(confetti);
-  }
-}
-
-// Clean up any existing LEVEL UP text on page load
-document.addEventListener('DOMContentLoaded', function() {
-  // Clean up any existing LEVEL UP text
-  const textNodes = document.querySelectorAll('body > *:not([id])');
-  textNodes.forEach(node => {
-    if (node.textContent && node.textContent.includes('LEVEL UP')) {
-      node.remove();
-    }
-  });
-});
