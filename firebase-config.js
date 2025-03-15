@@ -1,20 +1,7 @@
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-import { 
-  getFirestore, 
-  doc, 
-  runTransaction, 
-  getDoc, 
-  addDoc, 
-  collection, 
-  serverTimestamp, 
-  getDocs,
-  setDoc,
-  query,
-  orderBy,
-  limit
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 // Firebase configuration
@@ -55,7 +42,3 @@ window.addDoc = addDoc;
 window.collection = collection;
 window.serverTimestamp = serverTimestamp;
 window.getDocs = getDocs;
-window.setDoc = setDoc;
-window.query = query;
-window.orderBy = orderBy;
-window.limit = limit;
