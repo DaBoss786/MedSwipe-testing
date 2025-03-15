@@ -813,3 +813,126 @@ function showLevelUpAnimation(newLevel, totalXP) {
       }
     }
   }
+}
+}
+
+// Function to hide the level-up modal
+function hideLevelUpModal() {
+  const modal = document.getElementById('levelUpModal');
+  if (modal) {
+    modal.style.opacity = '0';
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+  }
+}
+
+// Function to create confetti effect
+function createConfetti() {
+  const colors = ['#FFC700', '#FF3D00', '#00C853', '#2979FF', '#AA00FF', '#D500F9'];
+  const modal = document.getElementById('levelUpModal');
+  
+  if (!modal) return;
+  
+  // Remove old confetti
+  const oldConfetti = modal.querySelectorAll('.confetti');
+  oldConfetti.forEach(c => c.remove());
+  
+  // Create new confetti pieces
+  for (let i = 0; i < 50; i++) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.left = Math.random() * 100 + '%';
+    confetti.style.top = Math.random() * 50 + '%';
+    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+    
+    // Random size between 5px and 10px
+    const size = 5 + Math.random() * 5;
+    confetti.style.width = `${size}px`;
+    confetti.style.height = `${size}px`;
+    
+    // Random animation delay
+    confetti.style.animationDelay = Math.random() * 1.5 + 's';
+    
+    modal.appendChild(confetti);
+  }
+}
+
+// Function to initialize all leaderboard entries (run once)
+async function initializeLeaderboardEntries() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated");
+    return;
+  }
+  
+  try {
+    console.log("Starting leaderboard initialization...");
+    
+    // Get all existing users
+    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    
+    let count = 0;
+    for (const docSnap of querySnapshot.docs) {
+      const userData = docSnap.data();
+      const uid = docSnap.id;
+      
+      // Calculate weekly answered count
+      let weeklyAnswered = 0;
+      if (userData.answeredQuestions) {
+        const weekStart = getStartOfWeek();
+        for (const key in userData.answeredQuestions) {
+          const answer = userData.answeredQuestions[key];
+          if (answer.timestamp && answer.timestamp >= weekStart) {
+            weeklyAnswered++;
+          }
+        }
+      }
+      
+      // Extract leaderboard data
+      const leaderboardData = {
+        uid: uid,
+        username: userData.username || "Anonymous",
+        lastUpdated: window.serverTimestamp(),
+        // XP ranking data
+        xp: userData.stats?.xp || 0,
+        level: userData.stats?.level || 1,
+        // Streak data
+        currentStreak: userData.streaks?.currentStreak || 0,
+        longestStreak: userData.streaks?.longestStreak || 0,
+        // Questions answered data
+        totalAnswered: userData.stats?.totalAnswered || 0,
+        totalCorrect: userData.stats?.totalCorrect || 0,
+        weeklyAnswered: weeklyAnswered
+      };
+      
+      // Create the leaderboard entry
+      const leaderboardRef = window.doc(window.db, 'leaderboards', uid);
+      await window.setDoc(leaderboardRef, leaderboardData);
+      
+      count++;
+    }
+    
+    console.log(`Leaderboard initialization complete: ${count} entries created`);
+    alert(`Leaderboard initialization complete: ${count} entries created`);
+  } catch (error) {
+    console.error("Error initializing leaderboard entries:", error);
+    alert("Error initializing leaderboard entries: " + error.message);
+  }
+}
+
+// Clean up any existing LEVEL UP text on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Clean up any existing LEVEL UP text
+  const textNodes = document.querySelectorAll('body > *:not([id])');
+  textNodes.forEach(node => {
+    if (node.textContent && node.textContent.includes('LEVEL UP')) {
+      node.remove();
+    }
+  });
+});
+
+// Expose key functions to window object
+window.updateUserXP = updateUserXP;
+window.updateLeaderboardEntry = updateLeaderboardEntry;
+window.initializeLeaderboardEntries = initializeLeaderboardEntries;
