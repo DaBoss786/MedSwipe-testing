@@ -934,5 +934,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Expose key functions to window object
 window.updateUserXP = updateUserXP;
+window.updateUserMenu = updateUserMenu;
 window.updateLeaderboardEntry = updateLeaderboardEntry;
 window.initializeLeaderboardEntries = initializeLeaderboardEntries;
+window.calculateLevelProgress = calculateLevelProgress;
+window.getLevelInfo = getLevelInfo;
+window.getBookmarks = getBookmarks;
+window.toggleBookmark = toggleBookmark;
+window.calculateLevel = calculateLevel;
