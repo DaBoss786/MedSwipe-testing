@@ -1,9 +1,6 @@
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-// In the imports section, add:
 import { 
   getFirestore, 
   doc, 
@@ -12,12 +9,13 @@ import {
   addDoc, 
   collection, 
   serverTimestamp, 
-  getDocs, 
-  setDoc, 
-  query, 
-  orderBy, 
-  limit 
+  getDocs,
+  setDoc,
+  query,
+  orderBy,
+  limit
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -57,7 +55,6 @@ window.addDoc = addDoc;
 window.collection = collection;
 window.serverTimestamp = serverTimestamp;
 window.getDocs = getDocs;
-// In the section where you make functions globally available, add:
 window.setDoc = setDoc;
 window.query = query;
 window.orderBy = orderBy;
