@@ -814,7 +814,6 @@ function showLevelUpAnimation(newLevel, totalXP) {
     }
   }
 }
-}
 
 // Function to hide the level-up modal
 function hideLevelUpModal() {
