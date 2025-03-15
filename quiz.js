@@ -262,59 +262,46 @@ function addOptionListeners() {
       if (answerSlide) {
         // If this is the last question, add a "View Summary" button directly to the explanation
         if (currentQuestion + 1 === totalQuestions) {
-  answerSlide.querySelector('.card').innerHTML = `
-    <div class="answer">
-      <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-      Correct Answer: ${correct}<br>
-      ${explanation}
-    </div>
-    <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
-      Loading Summary...
-    </button>
-  `;
-  
-  // Process the answer
-  currentQuestion++;
-  if (isCorrect) { score++; }
-  updateProgress();
-  
-  // Record the answer in the database
-  await recordAnswer(qId, category, isCorrect, timeSpent);
-  await updateQuestionStats(qId, isCorrect);
-  
-  // Show difficulty modal for correct answers
-  if (isCorrect && window.createDifficultyModal) {
-    window.createDifficultyModal(qId, isCorrect);
-  }
-  
-  // Prepare and show the summary button once data is loaded
-  prepareSummary();
-}
+          answerSlide.querySelector('.card').innerHTML = `
+            <div class="answer">
+              <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+              Correct Answer: ${correct}<br>
+              ${explanation}
+            </div>
+            <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
+              Loading Summary...
+            </button>
+          `;
+          
+          // Process the answer
+          currentQuestion++;
+          if (isCorrect) { score++; }
+          updateProgress();
+          
+          // Record the answer in the database
+          await recordAnswer(qId, category, isCorrect, timeSpent);
+          await updateQuestionStats(qId, isCorrect);
           
           // Prepare and show the summary button once data is loaded
           prepareSummary();
         } else {
-  // Regular question (not the last one)
-  answerSlide.querySelector('.card').innerHTML = `
-    <div class="answer">
-      <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-      Correct Answer: ${correct}<br>
-      ${explanation}
-    </div>
-    <p class="swipe-next-hint">Swipe up for next question</p>
-  `;
-  
-  currentQuestion++;
-  if (isCorrect) { score++; }
-  updateProgress();
-  await recordAnswer(qId, category, isCorrect, timeSpent);
-  await updateQuestionStats(qId, isCorrect);
-  
-  // Show difficulty modal for correct answers
-  if (isCorrect && window.createDifficultyModal) {
-    window.createDifficultyModal(qId, isCorrect);
-  }
-}
+          // Regular question (not the last one)
+          answerSlide.querySelector('.card').innerHTML = `
+            <div class="answer">
+              <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+              Correct Answer: ${correct}<br>
+              ${explanation}
+            </div>
+            <p class="swipe-next-hint">Swipe up for next question</p>
+          `;
+          
+          currentQuestion++;
+          if (isCorrect) { score++; }
+          updateProgress();
+          await recordAnswer(qId, category, isCorrect, timeSpent);
+          await updateQuestionStats(qId, isCorrect);
+        }
+      }
     });
   });
 }

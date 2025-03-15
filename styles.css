@@ -2062,31 +2062,3 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.quiz-type-toggle {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 15px;
-}
-
-.quiz-type-toggle button {
-  padding: 8px 15px;
-  margin: 0 5px;
-  border: none;
-  background-color: #f0f0f0;
-  color: #666;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.quiz-type-toggle button.active {
-  background-color: #0056b3;
-  color: white;
-}
-
-.review-question-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}

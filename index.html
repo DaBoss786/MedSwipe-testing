@@ -150,52 +150,29 @@
 
   <!-- Quiz Setup Modal -->
 <div id="quizSetupModal" class="modalForm">
-  <h2>Choose Your Quiz Type</h2>
-  
-  <div class="quiz-type-selector">
-    <div class="quiz-type-option" id="regularQuizOption">
-      <h3>Regular Quiz</h3>
-      <div class="formGroup">
-        <label for="modalCategorySelect">Select Category</label>
-        <select id="modalCategorySelect">
-          <option value="">All Categories</option>
-          <option value="Head & Neck Surgery">Head & Neck Surgery</option>
-          <option value="Otology">Otology</option>
-          <option value="Laryngology">Laryngology</option>
-          <option value="Rhinology">Rhinology</option>
-          <option value="Pediatric ENT">Pediatric ENT</option>
-          <option value="Facial Plastics">Facial Plastics</option>
-        </select>
-      </div>
-      <div class="formGroup">
-        <label for="modalNumQuestions">Number of Questions</label>
-        <input type="number" id="modalNumQuestions" min="1" value="10">
-      </div>
-      <div class="formGroup">
-        <label>
-          <input type="checkbox" id="modalIncludeAnswered">
-          Include answered questions
-        </label>
-      </div>
-    </div>
-    
-    <div class="quiz-type-option" id="reviewQuizOption" style="display:none;">
-      <h3>Spaced Repetition Review</h3>
-      <div id="reviewQuestionsList">
-        <p id="noReviewQuestions" style="display:none;">No questions due for review</p>
-      </div>
-      <div class="review-stats">
-        <p>Questions Available: <span id="reviewQuestionsCount">0</span></p>
-        <p>Average Mastery: <span id="reviewMasteryPercent">0</span>%</p>
-      </div>
-    </div>
+  <h2>Set Up Your Quiz</h2>
+  <div class="formGroup">
+    <label for="modalCategorySelect">Select Category</label>
+    <select id="modalCategorySelect">
+      <option value="">All Categories</option>
+      <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+      <option value="Otology">Otology</option>
+      <option value="Laryngology">Laryngology</option>
+      <option value="Rhinology">Rhinology</option>
+      <option value="Pediatric ENT">Pediatric ENT</option>
+      <option value="Facial Plastics">Facial Plastics</option>
+    </select>
   </div>
-  
-  <div class="quiz-type-toggle">
-    <button id="regularQuizToggle" class="active">Regular Quiz</button>
-    <button id="reviewQuizToggle">Review Mode</button>
+  <div class="formGroup">
+    <label for="modalNumQuestions">Number of Questions</label>
+    <input type="number" id="modalNumQuestions" min="1" value="10">
   </div>
-  
+  <div class="formGroup">
+    <label>
+      <input type="checkbox" id="modalIncludeAnswered">
+      Include answered questions
+    </label>
+  </div>
   <div class="btnRow">
     <button id="modalStartQuiz">Start Quiz</button>
     <button id="modalCancelQuiz" class="cancel">Cancel</button>
@@ -376,8 +353,6 @@
   <script src="stats.js"></script>
   <script src="ui.js"></script>
   <script src="app.js"></script>
-  <script src="quiz-setup-modal.js"></script>
-  <script src="spaced-repetition.js"></script>
   <script>
   // Register the service worker
   if ('serviceWorker' in navigator) {
