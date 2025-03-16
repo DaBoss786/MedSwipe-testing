@@ -589,3 +589,11 @@ function updateProgress() {
   window.loadQuestions = loadQuestions;
   console.log("loadQuestions globally assigned:", window.loadQuestions);
 })();
+// Ensure loadQuestions is defined globally
+if (typeof window !== 'undefined') {
+  window.loadQuestions = function(options) {
+    console.log("Global loadQuestions called with:", options);
+    return loadQuestions(options);
+  };
+  console.error("loadQuestions global assignment attempted");
+}
