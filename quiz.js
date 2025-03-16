@@ -586,9 +586,17 @@ function updateProgress() {
   }
 }
 
-// Explicitly attach loadQuestions to the window object
-window.loadQuestions = function(options) {
+// Make loadQuestions available globally right away
+function loadQuestionsGlobal(options) {
   console.log("Global loadQuestions wrapper called with options:", options);
   return loadQuestions(options);
-};
-console.log("quiz.js loaded - loadQuestions globally assigned");
+}
+
+// Attach to window immediately
+window.loadQuestions = loadQuestionsGlobal;
+
+// Log that the function is now available
+console.log("quiz.js loaded - loadQuestions globally assigned to:", window.loadQuestions);
+
+// Verify loadQuestions is now available
+console.log("loadQuestions is function:", typeof window.loadQuestions === 'function');
