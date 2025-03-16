@@ -585,5 +585,7 @@ function updateProgress() {
     updateUserXP();
   }
 }
-// Make loadQuestions globally available
-window.loadQuestions = loadQuestions;
+(function() {
+  window.loadQuestions = loadQuestions;
+  console.log("loadQuestions globally assigned:", window.loadQuestions);
+})();
