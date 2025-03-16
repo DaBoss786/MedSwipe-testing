@@ -347,10 +347,14 @@
   <!-- Chart.js for the doughnut chart -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-    <!-- Quick Fix Script -->
-  <script src="quick-fix.js"></script>
-  <!-- Script Loader (loads all app scripts in correct order) -->
-  <script src="script-loader.js"></script>
+   
+ <!-- Use simplified quiz implementation for now -->
+<script src="utils.js"></script>
+<script src="user.js"></script>
+<script src="quiz-simple.js"></script>
+<script src="stats.js"></script>
+<script src="ui.js"></script>
+<script src="app.js"></script>
   <script>
   // Register the service worker
   if ('serviceWorker' in navigator) {
