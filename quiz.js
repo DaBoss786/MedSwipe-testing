@@ -8,6 +8,7 @@ let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
+let reviewMode = false; // Track if we're in review mode
 
 // Fetch questions from CSV
 async function fetchQuestionBank() {
@@ -28,6 +29,10 @@ async function fetchQuestionBank() {
 // Load questions according to quiz options
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
+  
+  // Set review mode based on options
+  reviewMode = options.reviewMode || false;
+  
   Papa.parse(csvUrl, {
     download: true,
     header: true,
@@ -40,8 +45,22 @@ async function loadQuestions(options = {}) {
       // Start with all questions
       let filtered = allQuestions;
       
+      // In review mode, prioritize questions due for review
+      if (reviewMode) {
+        const dueReviews = await getDueReviews();
+        console.log("Due reviews found:", dueReviews.length);
+        
+        if (dueReviews.length === 0) {
+          alert("No questions due for review! Try again tomorrow or start a regular quiz.");
+          document.getElementById("mainOptions").style.display = "flex";
+          return;
+        }
+        
+        // Filter questions that are due for review
+        filtered = filtered.filter(q => dueReviews.includes(q["Question"].trim()));
+      }
       // Filter by bookmarks if in bookmarks mode
-      if (options.bookmarksOnly) {
+      else if (options.bookmarksOnly) {
         const bookmarks = await getBookmarks();
         console.log("Filtering for bookmarks:", bookmarks);
         if (bookmarks.length === 0) {
@@ -63,7 +82,9 @@ async function loadQuestions(options = {}) {
       
       // If we end up with no questions after filtering
       if (filtered.length === 0) {
-        if (options.bookmarksOnly) {
+        if (reviewMode) {
+          alert("No questions due for review! Try again tomorrow or start a regular quiz.");
+        } else if (options.bookmarksOnly) {
           alert("No bookmarked questions found. Star questions you want to review later!");
         } else if (options.type === 'custom' && options.category) {
           alert("No unanswered questions left in this category. Try including answered questions or choosing a different category.");
@@ -74,8 +95,20 @@ async function loadQuestions(options = {}) {
         return;
       }
       
-      // Shuffle and slice to limit question count
-      let selectedQuestions = shuffleArray(filtered);
+      // If in review mode, sort by how overdue they are (don't shuffle)
+      if (reviewMode) {
+        // Keep the filtered questions in the same order as dueReviews
+        const dueReviews = await getDueReviews();
+        filtered.sort((a, b) => {
+          return dueReviews.indexOf(a["Question"].trim()) - dueReviews.indexOf(b["Question"].trim());
+        });
+      } else {
+        // Shuffle for regular mode
+        filtered = shuffleArray(filtered);
+      }
+      
+      // Slice to limit question count if needed
+      let selectedQuestions = filtered;
       if (options.num && options.num < selectedQuestions.length) {
         selectedQuestions = selectedQuestions.slice(0, options.num);
       }
@@ -88,6 +121,42 @@ async function loadQuestions(options = {}) {
       alert("Error loading questions. Please try again later.");
     }
   });
+}
+
+// Get questions that are due for review
+async function getDueReviews() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated, cannot get due reviews");
+    return [];
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (!userDocSnap.exists()) {
+      return [];
+    }
+    
+    const userData = userDocSnap.data();
+    const answeredQuestions = userData.answeredQuestions || {};
+    const now = new Date();
+    
+    // Find questions where nextReviewDate is in the past
+    const dueQuestions = Object.entries(answeredQuestions)
+      .filter(([id, data]) => {
+        if (!data.nextReviewDate) return false;
+        const reviewDate = new Date(data.nextReviewDate);
+        return reviewDate <= now;
+      })
+      .map(([id]) => id);
+    
+    return dueQuestions;
+  } catch (error) {
+    console.error("Error getting due reviews:", error);
+    return [];
+  }
 }
 
 // Initialize the quiz with the selected questions
@@ -268,10 +337,62 @@ function addOptionListeners() {
               Correct Answer: ${correct}<br>
               ${explanation}
             </div>
+            
+            <!-- New difficulty rating section -->
+            <div class="difficulty-rating">
+              <p>How difficult was this question for you?</p>
+              <div class="rating-buttons">
+                <button class="rating-btn" data-difficulty="easy">Easy</button>
+                <button class="rating-btn" data-difficulty="medium">Medium</button>
+                <button class="rating-btn" data-difficulty="hard">Hard</button>
+              </div>
+            </div>
+            
             <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
               Loading Summary...
             </button>
           `;
+          
+          // Add click event listeners to the rating buttons
+          const ratingButtons = answerSlide.querySelectorAll('.rating-btn');
+          ratingButtons.forEach(button => {
+            button.addEventListener('click', function() {
+              const difficulty = this.getAttribute('data-difficulty');
+              
+              // Calculate next review date based on difficulty and correctness
+              const today = new Date();
+              let daysToAdd = 1; // Default: review tomorrow
+              
+              if (isCorrect) {
+                // If correct, vary review interval based on difficulty
+                switch(difficulty) {
+                  case 'easy':
+                    daysToAdd = 7; // Review in 7 days
+                    break;
+                  case 'medium':
+                    daysToAdd = 3; // Review in 3 days
+                    break;
+                  case 'hard':
+                    daysToAdd = 1; // Review in 1 day
+                    break;
+                }
+              }
+              
+              // Calculate the next review date
+              const nextReviewDate = new Date(today);
+              nextReviewDate.setDate(today.getDate() + daysToAdd);
+              
+              // Update the spaced repetition data for this question
+              updateSpacedRepetition(qId, difficulty, nextReviewDate.toISOString(), isCorrect);
+              
+              // Highlight the selected button and disable all buttons
+              ratingButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('selected');
+              });
+              this.classList.add('selected');
+            });
+          });
           
           // Process the answer
           currentQuestion++;
@@ -292,8 +413,63 @@ function addOptionListeners() {
               Correct Answer: ${correct}<br>
               ${explanation}
             </div>
-            <p class="swipe-next-hint">Swipe up for next question</p>
+            
+            <!-- New difficulty rating section -->
+            <div class="difficulty-rating">
+              <p>How difficult was this question for you?</p>
+              <div class="rating-buttons">
+                <button class="rating-btn" data-difficulty="easy">Easy</button>
+                <button class="rating-btn" data-difficulty="medium">Medium</button>
+                <button class="rating-btn" data-difficulty="hard">Hard</button>
+              </div>
+            </div>
+            
+            <p class="swipe-next-hint">Rate difficulty, then swipe up for next question</p>
           `;
+          
+          // Add click event listeners to the rating buttons
+          const ratingButtons = answerSlide.querySelectorAll('.rating-btn');
+          ratingButtons.forEach(button => {
+            button.addEventListener('click', function() {
+              const difficulty = this.getAttribute('data-difficulty');
+              
+              // Calculate next review date based on difficulty and correctness
+              const today = new Date();
+              let daysToAdd = 1; // Default: review tomorrow
+              
+              if (isCorrect) {
+                // If correct, vary review interval based on difficulty
+                switch(difficulty) {
+                  case 'easy':
+                    daysToAdd = 7; // Review in 7 days
+                    break;
+                  case 'medium':
+                    daysToAdd = 3; // Review in 3 days
+                    break;
+                  case 'hard':
+                    daysToAdd = 1; // Review in 1 day
+                    break;
+                }
+              }
+              
+              // Calculate the next review date
+              const nextReviewDate = new Date(today);
+              nextReviewDate.setDate(today.getDate() + daysToAdd);
+              
+              // Update the spaced repetition data for this question
+              updateSpacedRepetition(qId, difficulty, nextReviewDate.toISOString(), isCorrect);
+              
+              // Highlight the selected button and disable all buttons
+              ratingButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('selected');
+              });
+              this.classList.add('selected');
+              
+              // Update the hint text to confirm rating recorded
+              answerSlide.querySelector('.swipe-next-hint').textContent = 'Rating recorded! Swipe up for next question';
+            });
+          });
           
           currentQuestion++;
           if (isCorrect) { score++; }
@@ -304,6 +480,40 @@ function addOptionListeners() {
       }
     });
   });
+}
+
+// Update spaced repetition data in Firebase
+async function updateSpacedRepetition(questionId, difficulty, nextReviewDate, isCorrect) {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated, can't update spaced repetition data");
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    
+    await window.runTransaction(window.db, async (transaction) => {
+      const userDoc = await transaction.get(userDocRef);
+      if (!userDoc.exists()) return;
+      
+      const userData = userDoc.data();
+      if (!userData.answeredQuestions) userData.answeredQuestions = {};
+      
+      // Update the question's spaced repetition data
+      if (userData.answeredQuestions[questionId]) {
+        userData.answeredQuestions[questionId].difficulty = difficulty;
+        userData.answeredQuestions[questionId].nextReviewDate = nextReviewDate;
+        userData.answeredQuestions[questionId].lastReviewed = new Date().toISOString();
+      }
+      
+      transaction.set(userDocRef, userData, { merge: true });
+    });
+    
+    console.log(`Updated spaced repetition data for question ${questionId}. Next review: ${nextReviewDate}`);
+  } catch (error) {
+    console.error("Error updating spaced repetition data:", error);
+  }
 }
 
 // Prepare summary data and update the button
@@ -513,5 +723,16 @@ function updateProgress() {
   // Use the new function name
   if (typeof updateUserXP === 'function') {
     updateUserXP();
+  }
+}
+
+// Count how many questions are due for review
+async function getDueReviewCount() {
+  try {
+    const dueReviews = await getDueReviews();
+    return dueReviews.length;
+  } catch (error) {
+    console.error("Error getting due review count:", error);
+    return 0;
   }
 }
