@@ -81,9 +81,7 @@ async function loadQuestions(options = {}) {
       }
       
       console.log("Selected questions count:", selectedQuestions.length);
-      initializeQuiz(selectedQuestions, {
-        isReviewQuestion: options.isReviewQuestion || false
-      });
+      initializeQuiz(selectedQuestions);
     },
     error: function(error) {
       console.error("Error parsing CSV:", error);
@@ -93,7 +91,7 @@ async function loadQuestions(options = {}) {
 }
 
 // Initialize the quiz with the selected questions
-async function initializeQuiz(questions, options = {}) {
+async function initializeQuiz(questions) {
   // Get starting XP before the quiz begins
   try {
     if (window.auth && window.auth.currentUser) {
@@ -517,7 +515,3 @@ function updateProgress() {
     updateUserXP();
   }
 }
-
-// Make loadQuestions available globally right away
-window.loadQuestions = loadQuestions;
-console.log("quiz.js loaded - loadQuestions globally assigned to window");

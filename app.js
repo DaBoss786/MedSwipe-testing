@@ -792,38 +792,23 @@ function setupDashboardEvents() {
   }
   
   // Modal Start Quiz button
-const modalStartQuiz = document.getElementById("modalStartQuiz");
-if (modalStartQuiz) {
-  modalStartQuiz.addEventListener("click", function() {
-    try {
+  const modalStartQuiz = document.getElementById("modalStartQuiz");
+  if (modalStartQuiz) {
+    modalStartQuiz.addEventListener("click", function() {
       const category = document.getElementById("modalCategorySelect").value;
       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
       
       document.getElementById("quizSetupModal").style.display = "none";
       
-      console.log("Attempting to call loadQuestions");
-      console.log("window.loadQuestions exists:", !!window.loadQuestions);
-      
-      // Directly call the function that we know exists
-      if (typeof window.loadQuestions === 'function') {
-        window.loadQuestions({
-          type: category ? 'custom' : 'random',
-          category: category,
-          num: numQuestions,
-          includeAnswered: includeAnswered
-        });
-      } else {
-        console.error("loadQuestions is still not available, attempting to reload the page");
-        alert("Quiz functionality couldn't be loaded. The page will now reload.");
-        location.reload();
-      }
-    } catch (error) {
-      console.error("Error in quiz start:", error);
-      alert("There was an error starting the quiz. Please try again.");
-    }
-  });
-}
+      loadQuestions({
+        type: category ? 'custom' : 'random',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
+    });
+  }
   
   // Modal Cancel button
   const modalCancelQuiz = document.getElementById("modalCancelQuiz");
