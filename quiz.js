@@ -36,6 +36,12 @@ async function loadQuestions(options = {}) {
       allQuestions = results.data;
       const persistentAnsweredIds = await fetchPersistentAnsweredIds();
       answeredIds = persistentAnsweredIds;
+
+      // Check if spaced repetition mode is enabled
+      if (options.spacedRepetition) {
+        await loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds);
+        return;
+      }
       
       // Start with all questions
       let filtered = allQuestions;
@@ -88,6 +94,88 @@ async function loadQuestions(options = {}) {
       alert("Error loading questions. Please try again later.");
     }
   });
+}
+
+// Add this function to quiz.js
+async function loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds) {
+  try {
+    // Get user's spaced repetition data
+    const spacedRepetitionData = await fetchSpacedRepetitionData();
+    if (!spacedRepetitionData) {
+      console.log("No spaced repetition data available, falling back to regular mode");
+      // Fall back to regular mode if no spaced repetition data
+      options.spacedRepetition = false;
+      loadQuestions(options);
+      return;
+    }
+    
+    const now = new Date();
+    
+    // Get questions due for review
+    const dueQuestionIds = Object.keys(spacedRepetitionData).filter(qId => {
+      const data = spacedRepetitionData[qId];
+      const nextReviewDate = new Date(data.nextReviewDate);
+      return nextReviewDate <= now;
+    });
+    
+    console.log(`Found ${dueQuestionIds.length} questions due for review`);
+    
+    // Get unanswered questions (excluding those already due for review)
+    const unansweredQuestions = allQuestions.filter(q => {
+      const qId = q["Question"].trim();
+      return !answeredIds.includes(qId) && !dueQuestionIds.includes(qId);
+    });
+    
+    // Get due review questions
+    const dueReviewQuestions = allQuestions.filter(q => {
+      const qId = q["Question"].trim();
+      return dueQuestionIds.includes(qId);
+    });
+    
+    console.log(`Found ${unansweredQuestions.length} unanswered questions`);
+    console.log(`Found ${dueReviewQuestions.length} due review questions`);
+    
+    // Apply category filter if needed
+    let filteredUnanswered = unansweredQuestions;
+    let filteredDueReview = dueReviewQuestions;
+    
+    if (options.type === 'custom' && options.category) {
+      filteredUnanswered = filteredUnanswered.filter(q => q["Category"] && q["Category"].trim() === options.category);
+      filteredDueReview = filteredDueReview.filter(q => q["Category"] && q["Category"].trim() === options.category);
+    }
+    
+    // Shuffle both arrays
+    let shuffledUnanswered = shuffleArray(filteredUnanswered);
+    let shuffledDueReview = shuffleArray(filteredDueReview);
+    
+    // Calculate how many to take from each group
+    const totalQuestionsNeeded = options.num || 10;
+    const dueReviewCount = Math.min(shuffledDueReview.length, totalQuestionsNeeded);
+    const unansweredCount = Math.min(shuffledUnanswered.length, totalQuestionsNeeded - dueReviewCount);
+    
+    // Take the needed questions
+    const selectedDueReview = shuffledDueReview.slice(0, dueReviewCount);
+    const selectedUnanswered = shuffledUnanswered.slice(0, unansweredCount);
+    
+    // Combine and shuffle again
+    const combinedQuestions = shuffleArray([...selectedDueReview, ...selectedUnanswered]);
+    
+    console.log(`Selected ${combinedQuestions.length} total questions for spaced repetition quiz`);
+    
+    if (combinedQuestions.length === 0) {
+      alert("No questions available for review or learning at this time. Try disabling spaced repetition or check back later.");
+      document.getElementById("mainOptions").style.display = "flex";
+      return;
+    }
+    
+    // Initialize the quiz with the selected questions
+    initializeQuiz(combinedQuestions);
+    
+  } catch (error) {
+    console.error("Error in spaced repetition mode:", error);
+    alert("There was an error loading questions. Please try again.");
+    document.getElementById("mainOptions").style.display = "flex";
+  }
 }
 
 // Initialize the quiz with the selected questions
