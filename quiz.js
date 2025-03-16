@@ -586,10 +586,11 @@ function updateProgress() {
   }
 }
 
-// Ensure loadQuestions is globally available
-window.loadQuestions = async function(options = {}) {
-  console.log("Global loadQuestions wrapper called with options:", options);
-  return await loadQuestions(options);
-};
-
-console.log("quiz.js loaded - loadQuestions globally assigned");
+// At the very end of quiz.js, replace everything after the last function with:
+(function() {
+  window.loadQuestions = function(options) {
+    console.log("Global loadQuestions wrapper called with options:", options);
+    return loadQuestions(options);
+  };
+  console.log("quiz.js loaded - loadQuestions globally assigned");
+})();
