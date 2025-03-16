@@ -268,6 +268,14 @@ function addOptionListeners() {
               Correct Answer: ${correct}<br>
               ${explanation}
             </div>
+            <div class="difficulty-buttons">
+    <p class="difficulty-prompt">How difficult was this question?</p>
+    <div class="difficulty-btn-container">
+      <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+      <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+      <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+    </div>
+  </div>
             <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
               Loading Summary...
             </button>
@@ -292,6 +300,14 @@ function addOptionListeners() {
               Correct Answer: ${correct}<br>
               ${explanation}
             </div>
+            <div class="difficulty-buttons">
+    <p class="difficulty-prompt">How difficult was this question?</p>
+    <div class="difficulty-btn-container">
+      <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+      <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+      <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+    </div>
+  </div>
             <p class="swipe-next-hint">Swipe up for next question</p>
           `;
           
