@@ -966,3 +966,73 @@ document.addEventListener('DOMContentLoaded', function() {
     reviewDueQuestionsBtn.addEventListener('click', loadDueQuestions);
   }
 });
+// Function to check and load due questions
+async function loadDueQuestions() {
+  // First, check if user is authenticated
+  if (!window.auth || !window.auth.currentUser) {
+    alert("Please sign in to review due questions.");
+    return;
+  }
+
+  try {
+    // Get the current user's document
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDoc = await window.getDoc(userDocRef);
+
+    // If no spaced repetition data exists, inform the user
+    if (!userDoc.exists() || !userDoc.data().spacedRepetition) {
+      alert("No questions are currently due for review. Keep studying!");
+      return;
+    }
+
+    // Get the current date
+    const now = new Date();
+
+    // Find questions that are due for review
+    const dueQuestionIds = Object.entries(userDoc.data().spacedRepetition)
+      .filter(([questionId, reviewData]) => {
+        // Check if the question has a next review date and it's in the past
+        return reviewData.nextReviewDate && 
+               new Date(reviewData.nextReviewDate) <= now;
+      })
+      .map(([questionId]) => questionId);
+
+    // If no due questions, inform the user
+    if (dueQuestionIds.length === 0) {
+      alert("No questions are currently due for review. Keep studying!");
+      return;
+    }
+
+    // Fetch all questions
+    const allQuestions = await fetchQuestionBank();
+
+    // Filter questions to only those that are due
+    const dueQuestions = allQuestions.filter(q => 
+      dueQuestionIds.includes(q["Question"].trim())
+    );
+
+    // If we have due questions, start the quiz
+    if (dueQuestions.length > 0) {
+      // Hide main dashboard
+      document.getElementById("mainOptions").style.display = "none";
+      
+      // Initialize quiz with due questions
+      initializeQuiz(dueQuestions);
+    } else {
+      alert("No questions are currently due for review.");
+    }
+
+  } catch (error) {
+    console.error("Error loading due questions:", error);
+    alert("There was an error loading review questions. Please try again.");
+  }
+}
+
+// Add event listener to the review due questions button
+document.addEventListener('DOMContentLoaded', function() {
+  const reviewDueQuestionsBtn = document.getElementById('reviewDueQuestionsBtn');
+  if (reviewDueQuestionsBtn) {
+    reviewDueQuestionsBtn.addEventListener('click', loadDueQuestions);
+  }
+});
