@@ -589,11 +589,14 @@ function updateProgress() {
   window.loadQuestions = loadQuestions;
   console.log("loadQuestions globally assigned:", window.loadQuestions);
 })();
-// Ensure loadQuestions is defined globally
-if (typeof window !== 'undefined') {
-  window.loadQuestions = function(options) {
-    console.log("Global loadQuestions called with:", options);
-    return loadQuestions(options);
-  };
-  console.error("loadQuestions global assignment attempted");
-}
+      
+// Explicitly attach loadQuestions to window
+window.loadQuestions = async function(options = {}) {
+  console.error("Global loadQuestions wrapper called");
+  console.error("Options:", options);
+  
+  return await loadQuestions(options);
+};
+
+// Debugging log
+console.error("quiz.js loaded - loadQuestions global assignment attempted");
