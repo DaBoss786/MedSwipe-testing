@@ -100,6 +100,9 @@ async function initializeQuiz(questions) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
       const userDocSnap = await window.getDoc(userDocRef);
+      const quizSlides = document.getElementById("quizSlides");
+  quizSlides.innerHTML = "";
+  questions.forEach(question => {
       
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
