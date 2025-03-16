@@ -94,12 +94,17 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const currentFormatted = currentDate.toLocaleString();
       
       data.answeredQuestions[questionId] = { 
-        isCorrect, 
-        category, 
-        timestamp: currentTimestamp, 
-        timestampFormatted: currentFormatted, 
-        timeSpent 
-      };
+  isCorrect, 
+  category, 
+  timestamp: currentTimestamp, 
+  timestampFormatted: currentFormatted, 
+  timeSpent,
+  spacedRepetition: {
+    difficulty: 'medium', // Default difficulty
+    nextReviewDate: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000).toISOString(), // 1 day from now
+    reviewCount: 1
+  }
+};
       
       // Update basic stats
       data.stats.totalAnswered++;
