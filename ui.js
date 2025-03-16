@@ -117,9 +117,31 @@ function showFAQ() {
         <strong>How Do I Provide Feedback?</strong><br>
         Use the in‑app feedback button to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
       </li>
+       <li>
+        <strong>What is the Review Due Questions feature?</strong><br>
+        Our spaced repetition system helps you learn more effectively by showing you questions at optimal intervals. As you answer questions:
+        <ul>
+          <li>Easy questions will be reviewed less frequently</li>
+          <li>Hard questions will be reviewed more often</li>
+          <li>Your performance determines when a question is shown again</li>
+        </ul>
+        When questions are due for review, you'll see a notification on the "Review Due Questions" button.
+      </li>
+      
+      <li>
+        <strong>How does the Review System Work?</strong><br>
+        After answering a question, you'll rate its difficulty:
+        <ul>
+          <li><strong>Easy:</strong> Longer time before the next review</li>
+          <li><strong>Medium:</strong> Standard review interval</li>
+          <li><strong>Hard:</strong> Shorter time before the next review</li>
+        </ul>
+        This helps you focus more on challenging topics while maintaining knowledge of easier ones.
+      </li>
     </ul>
     <button id="faqBack" class="start-quiz-btn">Back</button>
   `;
+    
   document.getElementById("faqView").style.display = "block";
   document.getElementById("faqBack").addEventListener("click", function() {
       document.getElementById("faqView").style.display = "none";
