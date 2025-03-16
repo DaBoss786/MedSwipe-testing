@@ -2082,3 +2082,32 @@ html, body {
 #reviewDueQuestionsBtn.has-due-questions::after {
   display: block;
 }
+/* Review Question Styles */
+.review-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ffc107;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.review-question {
+  border: 2px solid #ffc107;
+  box-shadow: 0 4px 6px rgba(255,193,7,0.1);
+}
+
+/* Optional: Add a subtle animation to draw attention */
+@keyframes reviewQuestionPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.review-question {
+  animation: reviewQuestionPulse 1.5s ease-in-out infinite;
+}
