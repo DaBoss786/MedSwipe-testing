@@ -802,11 +802,33 @@ if (modalStartQuiz) {
       
       document.getElementById("quizSetupModal").style.display = "none";
       
-      console.error("Attempting to call loadQuestions");
-      console.error("window.loadQuestions exists:", !!window.loadQuestions);
+      console.log("Attempting to call loadQuestions");
+      console.log("window.loadQuestions exists:", !!window.loadQuestions);
       
+      // If loadQuestions isn't available yet, try to find it from the global scope
+      if (typeof window.loadQuestions !== 'function' && typeof loadQuestions === 'function') {
+        window.loadQuestions = loadQuestions;
+        console.log("Attached loadQuestions from global scope to window");
+      }
+      
+      // If it's still not available, look for it in the quiz.js module
       if (typeof window.loadQuestions !== 'function') {
-        throw new Error("loadQuestions is not a function");
+        // Add a fallback implementation
+        window.loadQuestions = function(options) {
+          alert("Quiz functionality is being initialized. Please try again in a moment.");
+          console.log("Using fallback loadQuestions with options:", options);
+          
+          // Try to reload the page scripts
+          const scriptElement = document.createElement('script');
+          scriptElement.src = 'quiz.js';
+          document.head.appendChild(scriptElement);
+          
+          setTimeout(function() {
+            if (typeof window.loadQuestions === 'function') {
+              window.loadQuestions(options);
+            }
+          }, 1000);
+        };
       }
       
       window.loadQuestions({
