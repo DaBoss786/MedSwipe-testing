@@ -783,7 +783,80 @@ function createConfetti() {
     modal.appendChild(confetti);
   }
 }
+// Function to update question review status for spaced repetition
+async function updateQuestionReviewStatus(questionId, isCorrect, difficulty) {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated");
+    return;
+  }
 
+  const uid = window.auth.currentUser.uid;
+  const userDocRef = window.doc(window.db, 'users', uid);
+
+  try {
+    await window.runTransaction(window.db, async (transaction) => {
+      const userDoc = await transaction.get(userDocRef);
+      let data = userDoc.exists() ? userDoc.data() : {};
+
+      // Initialize spaced repetition tracking if not exists
+      if (!data.spacedRepetition) {
+        data.spacedRepetition = {};
+      }
+
+      // Get current question's review data or create new entry
+      const currentReviewData = data.spacedRepetition[questionId] || {
+        lastReviewed: null,
+        reviewCount: 0,
+        currentInterval: 0,
+        difficulty: 'medium' // Default difficulty
+      };
+
+      // Update review count
+      currentReviewData.reviewCount++;
+
+      // Update difficulty
+      currentReviewData.difficulty = difficulty;
+
+      // Simple interval calculation based on difficulty and correctness
+      const intervals = {
+        'easy': [1, 3, 7, 14, 30],
+        'medium': [1, 2, 5, 10, 21],
+        'hard': [1, 1, 3, 5, 10]
+      };
+
+      // Determine next interval
+      const currentIntervals = intervals[difficulty];
+      const nextIntervalIndex = Math.min(
+        currentReviewData.currentInterval + (isCorrect ? 1 : -1), 
+        currentIntervals.length - 1
+      );
+      
+      // Ensure index doesn't go negative
+      currentReviewData.currentInterval = Math.max(0, nextIntervalIndex);
+      
+      // Set next review date
+      const nextReviewDate = new Date();
+      nextReviewDate.setDate(
+        nextReviewDate.getDate() + currentIntervals[currentReviewData.currentInterval]
+      );
+      
+      // Update review tracking
+      currentReviewData.lastReviewed = new Date().toISOString();
+      currentReviewData.nextReviewDate = nextReviewDate.toISOString();
+
+      // Save updated data
+      data.spacedRepetition[questionId] = currentReviewData;
+      transaction.set(userDocRef, data, { merge: true });
+    });
+
+    console.log("Updated review status for question:", questionId);
+  } catch (error) {
+    console.error("Error updating question review status:", error);
+  }
+}
+
+// Make the function globally available
+window.updateQuestionReviewStatus = updateQuestionReviewStatus;
 // Clean up any existing LEVEL UP text on page load
 document.addEventListener('DOMContentLoaded', function() {
   // Clean up any existing LEVEL UP text
