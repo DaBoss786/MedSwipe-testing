@@ -793,25 +793,26 @@ function setupDashboardEvents() {
   
   // Modal Start Quiz button
   const modalStartQuiz = document.getElementById("modalStartQuiz");
-  if (modalStartQuiz) {
-    modalStartQuiz.addEventListener("click", function() {
-      const category = document.getElementById("modalCategorySelect").value;
-      const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
-      const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
-      
-      document.getElementById("quizSetupModal").style.display = "none";
+if (modalStartQuiz) {
+  modalStartQuiz.addEventListener("click", function() {
+    const category = document.getElementById("modalCategorySelect").value;
+    const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
+    const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+    
+    document.getElementById("quizSetupModal").style.display = "none";
 
-      // Update this part to include the spaced repetition option
-  const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
-  
-  loadQuestions({
-    type: category ? 'custom' : 'random',
-    category: category,
-    num: numQuestions,
-    includeAnswered: includeAnswered,
-    spacedRepetition: useSpacedRepetition
+    // Update this part to include the spaced repetition option
+    const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+    
+    loadQuestions({
+      type: category ? 'custom' : 'random',
+      category: category,
+      num: numQuestions,
+      includeAnswered: includeAnswered,
+      spacedRepetition: useSpacedRepetition
+    });
   });
-});
+} // <-- Add this closing curly brace
   
   // Modal Cancel button
   const modalCancelQuiz = document.getElementById("modalCancelQuiz");
