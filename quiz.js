@@ -583,11 +583,9 @@ function updateProgress() {
   }
 }
 
-// At the very end of quiz.js, replace everything after the last function with:
-(function() {
-  window.loadQuestions = function(options) {
-    console.log("Global loadQuestions wrapper called with options:", options);
-    return loadQuestions(options);
-  };
-  console.log("quiz.js loaded - loadQuestions globally assigned");
-})();
+// Explicitly attach loadQuestions to the window object
+window.loadQuestions = function(options) {
+  console.log("Global loadQuestions wrapper called with options:", options);
+  return loadQuestions(options);
+};
+console.log("quiz.js loaded - loadQuestions globally assigned");
