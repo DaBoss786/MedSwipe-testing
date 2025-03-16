@@ -800,15 +800,18 @@ function setupDashboardEvents() {
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
       
       document.getElementById("quizSetupModal").style.display = "none";
-      
-      loadQuestions({
-        type: category ? 'custom' : 'random',
-        category: category,
-        num: numQuestions,
-        includeAnswered: includeAnswered
-      });
-    });
-  }
+
+      // Update this part to include the spaced repetition option
+  const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+  
+  loadQuestions({
+    type: category ? 'custom' : 'random',
+    category: category,
+    num: numQuestions,
+    includeAnswered: includeAnswered,
+    spacedRepetition: useSpacedRepetition
+  });
+});
   
   // Modal Cancel button
   const modalCancelQuiz = document.getElementById("modalCancelQuiz");
