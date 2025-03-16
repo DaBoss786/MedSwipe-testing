@@ -801,7 +801,7 @@ function setupDashboardEvents() {
       
       document.getElementById("quizSetupModal").style.display = "none";
       
-      loadQuestions({
+      window.loadQuestions({
         type: category ? 'custom' : 'random',
         category: category,
         num: numQuestions,
