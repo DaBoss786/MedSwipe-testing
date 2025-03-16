@@ -109,7 +109,7 @@ async function initializeQuiz(questions) {
         sessionStartXP = data.stats?.xp || 0;
         console.log("Quiz starting XP:", sessionStartXP);
       }
-    }
+    
   } catch (error) {
     console.error("Error getting starting XP:", error);
     sessionStartXP = 0;
