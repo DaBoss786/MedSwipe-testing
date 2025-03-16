@@ -1070,3 +1070,45 @@ async function checkForDueQuestions() {
 // Call the function when the page loads and periodically
 document.addEventListener('DOMContentLoaded', checkForDueQuestions);
 window.setInterval(checkForDueQuestions, 60000); // Check every minute
+
+// Check if there are questions due for review
+async function checkForDueQuestions() {
+  if (!window.auth || !window.auth.currentUser) {
+    return;
+  }
+
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDoc = await window.getDoc(userDocRef);
+
+    if (!userDoc.exists() || !userDoc.data().spacedRepetition) {
+      return;
+    }
+
+    const now = new Date();
+    const dueQuestionIds = Object.entries(userDoc.data().spacedRepetition)
+      .filter(([questionId, reviewData]) => {
+        return reviewData.nextReviewDate && 
+               new Date(reviewData.nextReviewDate) <= now;
+      })
+      .map(([questionId]) => questionId);
+
+    const reviewDueQuestionsBtn = document.getElementById('reviewDueQuestionsBtn');
+    if (reviewDueQuestionsBtn) {
+      if (dueQuestionIds.length > 0) {
+        reviewDueQuestionsBtn.classList.add('has-due-questions');
+        reviewDueQuestionsBtn.setAttribute('title', `${dueQuestionIds.length} questions due for review`);
+      } else {
+        reviewDueQuestionsBtn.classList.remove('has-due-questions');
+        reviewDueQuestionsBtn.removeAttribute('title');
+      }
+    }
+  } catch (error) {
+    console.error("Error checking due questions:", error);
+  }
+}
+
+// Call the function when the page loads and periodically
+document.addEventListener('DOMContentLoaded', checkForDueQuestions);
+window.setInterval(checkForDueQuestions, 60000); // Check every minute
