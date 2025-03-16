@@ -119,11 +119,14 @@ async function initializeQuiz(questions, options = {}) {
   updateProgress();
   
   // Get bookmarks to show the filled star for bookmarked questions
-  const bookmarks = await getBookmarks();
-  
-  const quizSlides = document.getElementById("quizSlides");
-  quizSlides.innerHTML = "";
-  questions.forEach(question => {
+const bookmarks = await getBookmarks();
+
+// Set default options if not provided
+options = options || { isReviewQuestion: false };
+
+const quizSlides = document.getElementById("quizSlides");
+quizSlides.innerHTML = "";
+questions.forEach(question => {
     const questionSlide = document.createElement("div");
     questionSlide.className = "swiper-slide";
     const qId = question["Question"].trim();
