@@ -137,10 +137,12 @@ async function initializeQuiz(questions) {
     questionSlide.dataset.explanation = question["Explanation"];
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
     questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
+    questionSlide.dataset.reviewQuestion = options.isReviewQuestion ? "true" : "false";
     
     questionSlide.innerHTML = `
-      <div class="card">
-        <div class="question">${question["Question"]}</div>
+      <div class="card ${options.isReviewQuestion ? 'review-question' : ''}">
+  ${options.isReviewQuestion ? '<div class="review-badge">Review</div>' : ''}
+  <div class="question">${question["Question"]}</div>
         ${question["Image URL"] && question["Image URL"].trim() !== ""
           ? `<img src="${question["Image URL"].trim()}" class="question-image">`
           : "" }
