@@ -842,3 +842,29 @@ async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nex
 
 // Make the function available globally
 window.updateSpacedRepetitionData = updateSpacedRepetitionData;
+
+// Function to fetch user's spaced repetition data
+async function fetchSpacedRepetitionData() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated yet");
+    return null;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      return data.spacedRepetition || {};
+    }
+  } catch (error) {
+    console.error("Error fetching spaced repetition data:", error);
+  }
+  
+  return {};
+}
+
+// Make the function available globally
+window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
