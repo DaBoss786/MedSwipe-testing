@@ -798,17 +798,19 @@ function setupDashboardEvents() {
       const category = document.getElementById("modalCategorySelect").value;
       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+      const reviewMode = document.getElementById("reviewModeCheckbox").checked;
       
       document.getElementById("quizSetupModal").style.display = "none";
       
       loadQuestions({
-        type: category ? 'custom' : 'random',
-        category: category,
-        num: numQuestions,
-        includeAnswered: includeAnswered
-      });
+      type: category ? 'custom' : 'random',
+      category: category,
+      num: numQuestions,
+      includeAnswered: includeAnswered,
+      reviewMode: reviewMode // Added this line
     });
-  }
+  });
+}
   
   // Modal Cancel button
   const modalCancelQuiz = document.getElementById("modalCancelQuiz");
@@ -960,6 +962,41 @@ window.addEventListener('load', function() {
         num: 50 // Set a large number to include all due reviews
       });
     });
+  }
+});
+  // ADD YOUR REVIEW DUE BUTTON EVENT LISTENER HERE
+  const reviewDueBtn = document.getElementById("reviewDueBtn");
+  if (reviewDueBtn) {
+    reviewDueBtn.addEventListener("click", async function() {
+      // Load questions that are due for review
+      loadQuestions({
+        reviewMode: true,
+        num: 50 // Set a large number to include all due reviews
+      });
+    });
+  }
+  
+  // Add this function to update the due count
+  async function updateDueCount() {
+    try {
+      const count = await getDueReviewCount();
+      const dueCountElement = document.getElementById("dueCount");
+      if (dueCountElement) {
+        dueCountElement.textContent = count;
+        
+        // Highlight the button if there are reviews due
+        const reviewDueBtn = document.getElementById("reviewDueBtn");
+        if (reviewDueBtn) {
+          if (count > 0) {
+            reviewDueBtn.classList.add("reviews-due");
+          } else {
+            reviewDueBtn.classList.remove("reviews-due");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error updating due count:", error);
+    }
   }
 });
 });
