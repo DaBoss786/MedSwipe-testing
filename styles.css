@@ -2062,3 +2062,23 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+/* Styles for the Review Due Questions button */
+#reviewDueQuestionsBtn {
+  position: relative;
+}
+
+#reviewDueQuestionsBtn::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  background-color: #dc3545;
+  border-radius: 50%;
+  display: none; /* We'll show this dynamically with JavaScript */
+}
+
+#reviewDueQuestionsBtn.has-due-questions::after {
+  display: block;
+}
