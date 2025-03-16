@@ -585,18 +585,11 @@ function updateProgress() {
     updateUserXP();
   }
 }
-(function() {
-  window.loadQuestions = loadQuestions;
-  console.log("loadQuestions globally assigned:", window.loadQuestions);
-})();
-      
-// Explicitly attach loadQuestions to window
+
+// Ensure loadQuestions is globally available
 window.loadQuestions = async function(options = {}) {
-  console.error("Global loadQuestions wrapper called");
-  console.error("Options:", options);
-  
+  console.log("Global loadQuestions wrapper called with options:", options);
   return await loadQuestions(options);
 };
 
-// Debugging log
-console.error("quiz.js loaded - loadQuestions global assignment attempted");
+console.log("quiz.js loaded - loadQuestions globally assigned");
