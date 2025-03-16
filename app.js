@@ -805,38 +805,19 @@ if (modalStartQuiz) {
       console.log("Attempting to call loadQuestions");
       console.log("window.loadQuestions exists:", !!window.loadQuestions);
       
-      // If loadQuestions isn't available yet, try to find it from the global scope
-      if (typeof window.loadQuestions !== 'function' && typeof loadQuestions === 'function') {
-        window.loadQuestions = loadQuestions;
-        console.log("Attached loadQuestions from global scope to window");
+      // Directly call the function that we know exists
+      if (typeof window.loadQuestions === 'function') {
+        window.loadQuestions({
+          type: category ? 'custom' : 'random',
+          category: category,
+          num: numQuestions,
+          includeAnswered: includeAnswered
+        });
+      } else {
+        console.error("loadQuestions is still not available, attempting to reload the page");
+        alert("Quiz functionality couldn't be loaded. The page will now reload.");
+        location.reload();
       }
-      
-      // If it's still not available, look for it in the quiz.js module
-      if (typeof window.loadQuestions !== 'function') {
-        // Add a fallback implementation
-        window.loadQuestions = function(options) {
-          alert("Quiz functionality is being initialized. Please try again in a moment.");
-          console.log("Using fallback loadQuestions with options:", options);
-          
-          // Try to reload the page scripts
-          const scriptElement = document.createElement('script');
-          scriptElement.src = 'quiz.js';
-          document.head.appendChild(scriptElement);
-          
-          setTimeout(function() {
-            if (typeof window.loadQuestions === 'function') {
-              window.loadQuestions(options);
-            }
-          }, 1000);
-        };
-      }
-      
-      window.loadQuestions({
-        type: category ? 'custom' : 'random',
-        category: category,
-        num: numQuestions,
-        includeAnswered: includeAnswered
-      });
     } catch (error) {
       console.error("Error in quiz start:", error);
       alert("There was an error starting the quiz. Please try again.");
