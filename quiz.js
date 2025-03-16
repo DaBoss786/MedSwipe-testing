@@ -280,7 +280,47 @@ function addOptionListeners() {
               Loading Summary...
             </button>
           `;
-          
+          // Add click handlers for difficulty buttons
+const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
+difficultyButtons.forEach(btn => {
+  btn.addEventListener('click', async function() {
+    // Remove selected class from all buttons
+    difficultyButtons.forEach(b => b.classList.remove('selected'));
+    // Add selected class to clicked button
+    this.classList.add('selected');
+    
+    const difficulty = this.getAttribute('data-difficulty');
+    const questionId = questionSlide.dataset.id;
+    
+    // Calculate next review date based on difficulty and correctness
+    let nextReviewInterval = 1; // Default 1 day
+    
+    if (isCorrect) {
+      if (difficulty === 'easy') {
+        nextReviewInterval = 7; // 7 days
+      } else if (difficulty === 'medium') {
+        nextReviewInterval = 3; // 3 days
+      } else if (difficulty === 'hard') {
+        nextReviewInterval = 1; // 1 day
+      }
+    } else {
+      // If answered incorrectly, review it soon regardless of rating
+      nextReviewInterval = 1; // 1 day
+    }
+    
+    // Store the spaced repetition data
+    await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+    
+    // Show feedback to the user
+    const feedbackEl = document.createElement('p');
+    feedbackEl.className = 'review-scheduled';
+    feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+    this.closest('.difficulty-buttons').appendChild(feedbackEl);
+    
+    // Disable all buttons after selection
+    difficultyButtons.forEach(b => b.disabled = true);
+  });
+});
           // Process the answer
           currentQuestion++;
           if (isCorrect) { score++; }
@@ -310,7 +350,47 @@ function addOptionListeners() {
   </div>
             <p class="swipe-next-hint">Swipe up for next question</p>
           `;
-          
+          // Add click handlers for difficulty buttons
+const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
+difficultyButtons.forEach(btn => {
+  btn.addEventListener('click', async function() {
+    // Remove selected class from all buttons
+    difficultyButtons.forEach(b => b.classList.remove('selected'));
+    // Add selected class to clicked button
+    this.classList.add('selected');
+    
+    const difficulty = this.getAttribute('data-difficulty');
+    const questionId = questionSlide.dataset.id;
+    
+    // Calculate next review date based on difficulty and correctness
+    let nextReviewInterval = 1; // Default 1 day
+    
+    if (isCorrect) {
+      if (difficulty === 'easy') {
+        nextReviewInterval = 7; // 7 days
+      } else if (difficulty === 'medium') {
+        nextReviewInterval = 3; // 3 days
+      } else if (difficulty === 'hard') {
+        nextReviewInterval = 1; // 1 day
+      }
+    } else {
+      // If answered incorrectly, review it soon regardless of rating
+      nextReviewInterval = 1; // 1 day
+    }
+    
+    // Store the spaced repetition data
+    await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+    
+    // Show feedback to the user
+    const feedbackEl = document.createElement('p');
+    feedbackEl.className = 'review-scheduled';
+    feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+    this.closest('.difficulty-buttons').appendChild(feedbackEl);
+    
+    // Disable all buttons after selection
+    difficultyButtons.forEach(b => b.disabled = true);
+  });
+});
           currentQuestion++;
           if (isCorrect) { score++; }
           updateProgress();
