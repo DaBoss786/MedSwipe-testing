@@ -2121,3 +2121,10 @@ html, body {
   transform: scale(1.1);
   box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.3);
 }
+
+.review-scheduled {
+  margin-top: 15px;
+  font-size: 0.85rem;
+  color: #0056b3;
+  font-weight: 500;
+}
