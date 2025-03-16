@@ -798,19 +798,17 @@ function setupDashboardEvents() {
       const category = document.getElementById("modalCategorySelect").value;
       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
-      const reviewMode = document.getElementById("reviewModeCheckbox").checked;
       
       document.getElementById("quizSetupModal").style.display = "none";
       
       loadQuestions({
-      type: category ? 'custom' : 'random',
-      category: category,
-      num: numQuestions,
-      includeAnswered: includeAnswered,
-      reviewMode: reviewMode // Added this line
+        type: category ? 'custom' : 'random',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
     });
-  });
-}
+  }
   
   // Modal Cancel button
   const modalCancelQuiz = document.getElementById("modalCancelQuiz");
@@ -926,77 +924,4 @@ window.addEventListener('load', function() {
     setupDashboardEvents();
     initializeDashboard();
   }, 2000);
-  // Initialize the app
-window.addEventListener('load', function() {
-  // Check streak after Firebase auth is initialized
-  const checkAuthAndInitAll = function() {
-    if (window.auth && window.auth.currentUser) {
-      checkAndUpdateStreak();
-      setupDashboardEvents();
-      initializeDashboard();
-      
-      // Call updateDueCount to update the number of reviews due
-      updateDueCount();
-    } else {
-      // If auth isn't ready yet, check again in 1 second
-      setTimeout(checkAuthAndInitAll, 1000);
-    }
-  };
-  
-  // Start checking for auth
-  checkAuthAndInitAll();
-  
-  // Also try after a delay to ensure all DOM elements are ready
-  setTimeout(function() {
-    setupDashboardEvents();
-    initializeDashboard();
-  }, 2000);
-  
-  // ADD YOUR NEW EVENT LISTENER HERE:
-  const reviewDueBtn = document.getElementById("reviewDueBtn");
-  if (reviewDueBtn) {
-    reviewDueBtn.addEventListener("click", async function() {
-      // Load questions that are due for review
-      loadQuestions({
-        reviewMode: true,
-        num: 50 // Set a large number to include all due reviews
-      });
-    });
-  }
-});
-  // ADD YOUR REVIEW DUE BUTTON EVENT LISTENER HERE
-  const reviewDueBtn = document.getElementById("reviewDueBtn");
-  if (reviewDueBtn) {
-    reviewDueBtn.addEventListener("click", async function() {
-      // Load questions that are due for review
-      loadQuestions({
-        reviewMode: true,
-        num: 50 // Set a large number to include all due reviews
-      });
-    });
-  }
-  
-  // Add this function to update the due count
-  async function updateDueCount() {
-    try {
-      const count = await getDueReviewCount();
-      const dueCountElement = document.getElementById("dueCount");
-      if (dueCountElement) {
-        dueCountElement.textContent = count;
-        
-        // Highlight the button if there are reviews due
-        const reviewDueBtn = document.getElementById("reviewDueBtn");
-        if (reviewDueBtn) {
-          if (count > 0) {
-            reviewDueBtn.classList.add("reviews-due");
-          } else {
-            reviewDueBtn.classList.remove("reviews-due");
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error updating due count:", error);
-    }
-  }
-});
 });
