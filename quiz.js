@@ -88,14 +88,9 @@ async function loadQuestions(options = {}) {
       }
       
       console.log("Selected questions count:", selectedQuestions.length);
-      initializeQuiz(selectedQuestions);
-    },
-    error: function(error) {
-      console.error("Error parsing CSV:", error);
-      alert("Error loading questions. Please try again later.");
-    }
-  });
-}
+initializeQuiz(selectedQuestions, {
+  isReviewQuestion: options.isReviewQuestion || false
+});
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions) {
