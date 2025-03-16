@@ -9,13 +9,6 @@ let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
 
-// Difficulty levels for spaced repetition
-const DIFFICULTY_LEVELS = {
-  EASY: 'easy',
-  MEDIUM: 'medium', 
-  HARD: 'hard'
-};
-
 // Fetch questions from CSV
 async function fetchQuestionBank() {
   return new Promise((resolve, reject) => {
@@ -88,9 +81,16 @@ async function loadQuestions(options = {}) {
       }
       
       console.log("Selected questions count:", selectedQuestions.length);
-initializeQuiz(selectedQuestions, {
-  isReviewQuestion: options.isReviewQuestion || false
-});
+      initializeQuiz(selectedQuestions, {
+        isReviewQuestion: options.isReviewQuestion || false
+      });
+    },
+    error: function(error) {
+      console.error("Error parsing CSV:", error);
+      alert("Error loading questions. Please try again later.");
+    }
+  });
+}
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions, options = {}) {
@@ -119,14 +119,11 @@ async function initializeQuiz(questions, options = {}) {
   updateProgress();
   
   // Get bookmarks to show the filled star for bookmarked questions
-const bookmarks = await getBookmarks();
-
-// Set default options if not provided
-options = options || { isReviewQuestion: false };
-
-const quizSlides = document.getElementById("quizSlides");
-quizSlides.innerHTML = "";
-questions.forEach(question => {
+  const bookmarks = await getBookmarks();
+  
+  const quizSlides = document.getElementById("quizSlides");
+  quizSlides.innerHTML = "";
+  questions.forEach(question => {
     const questionSlide = document.createElement("div");
     questionSlide.className = "swiper-slide";
     const qId = question["Question"].trim();
@@ -135,12 +132,10 @@ questions.forEach(question => {
     questionSlide.dataset.explanation = question["Explanation"];
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
     questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
-    questionSlide.dataset.reviewQuestion = options.isReviewQuestion ? "true" : "false";
     
     questionSlide.innerHTML = `
-      <div class="card ${options.isReviewQuestion ? 'review-question' : ''}">
-  ${options.isReviewQuestion ? '<div class="review-badge">Review</div>' : ''}
-  <div class="question">${question["Question"]}</div>
+      <div class="card">
+        <div class="question">${question["Question"]}</div>
         ${question["Image URL"] && question["Image URL"].trim() !== ""
           ? `<img src="${question["Image URL"].trim()}" class="question-image">`
           : "" }
@@ -253,8 +248,9 @@ function addOptionListeners() {
       const selected = this.getAttribute('data-option');
       const isCorrect = (selected === correct);
       const timeSpent = Date.now() - questionStartTime;
-      
-      // Existing answer processing logic...
+      if (window.analytics && window.logEvent) {
+        window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
+      }
       options.forEach(option => {
         option.disabled = true;
         if (option.getAttribute('data-option') === correct) {
@@ -264,50 +260,15 @@ function addOptionListeners() {
       if (!isCorrect) { this.classList.add('incorrect'); }
       const hint = card.querySelector('.swipe-hint');
       if (hint) { hint.style.display = 'block'; }
-      
       const answerSlide = questionSlide.nextElementSibling;
       if (answerSlide) {
-        // Difficulty selection HTML (to be used in both branches)
-        const difficultySelectionHTML = `
-          <div class="difficulty-selection" style="margin-top: 15px; text-align: center;">
-            <p style="margin-bottom: 10px; font-weight: bold;">How difficult was this question?</p>
-            <div class="difficulty-buttons" style="display: flex; justify-content: center; gap: 10px;">
-              <button class="difficulty-btn" data-difficulty="easy" style="
-                padding: 8px 15px;
-                border: 1px solid #28a745;
-                background-color: ${isCorrect ? '#28a745' : '#fff'};
-                color: ${isCorrect ? '#fff' : '#28a745'};
-                border-radius: 4px;
-                cursor: pointer;
-              ">Easy</button>
-              <button class="difficulty-btn" data-difficulty="medium" style="
-                padding: 8px 15px;
-                border: 1px solid #ffc107;
-                background-color: ${isCorrect ? '#ffc107' : '#fff'};
-                color: ${isCorrect ? '#fff' : '#ffc107'};
-                border-radius: 4px;
-                cursor: pointer;
-              ">Medium</button>
-              <button class="difficulty-btn" data-difficulty="hard" style="
-                padding: 8px 15px;
-                border: 1px solid #dc3545;
-                background-color: ${isCorrect ? '#dc3545' : '#fff'};
-                color: ${isCorrect ? '#fff' : '#dc3545'};
-                border-radius: 4px;
-                cursor: pointer;
-              ">Hard</button>
-            </div>
-          </div>
-        `;
-
-        // If this is the last question, modify the summary button section
+        // If this is the last question, add a "View Summary" button directly to the explanation
         if (currentQuestion + 1 === totalQuestions) {
           answerSlide.querySelector('.card').innerHTML = `
             <div class="answer">
               <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
               Correct Answer: ${correct}<br>
               ${explanation}
-              ${difficultySelectionHTML}
             </div>
             <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
               Loading Summary...
@@ -325,9 +286,6 @@ function addOptionListeners() {
           
           // Prepare and show the summary button once data is loaded
           prepareSummary();
-
-          // Add event listeners for difficulty buttons
-          addDifficultyButtonListeners(qId, isCorrect);
         } else {
           // Regular question (not the last one)
           answerSlide.querySelector('.card').innerHTML = `
@@ -335,7 +293,6 @@ function addOptionListeners() {
               <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
               Correct Answer: ${correct}<br>
               ${explanation}
-              ${difficultySelectionHTML}
             </div>
             <p class="swipe-next-hint">Swipe up for next question</p>
           `;
@@ -345,33 +302,8 @@ function addOptionListeners() {
           updateProgress();
           await recordAnswer(qId, category, isCorrect, timeSpent);
           await updateQuestionStats(qId, isCorrect);
-
-          // Add event listeners for difficulty buttons
-          addDifficultyButtonListeners(qId, isCorrect);
         }
       }
-    });
-  });
-}
-
-// New function to add event listeners to difficulty buttons
-function addDifficultyButtonListeners(qId, isCorrect) {
-  const difficultyButtons = document.querySelectorAll('.difficulty-btn');
-  difficultyButtons.forEach(button => {
-    button.addEventListener('click', async function() {
-      const difficulty = this.dataset.difficulty;
-      
-      // Disable buttons after selection
-      difficultyButtons.forEach(btn => btn.disabled = true);
-
-      // Call function to update spaced repetition tracking
-      if (window.updateQuestionReviewStatus) {
-        await window.updateQuestionReviewStatus(qId, isCorrect, difficulty);
-      }
-
-      // Optional: Provide visual feedback
-      this.style.backgroundColor = this.style.borderColor;
-      this.style.color = '#fff';
     });
   });
 }
@@ -587,16 +519,5 @@ function updateProgress() {
 }
 
 // Make loadQuestions available globally right away
-function loadQuestionsGlobal(options) {
-  console.log("Global loadQuestions wrapper called with options:", options);
-  return loadQuestions(options);
-}
-
-// Attach to window immediately
-window.loadQuestions = loadQuestionsGlobal;
-
-// Log that the function is now available
-console.log("quiz.js loaded - loadQuestions globally assigned to:", window.loadQuestions);
-
-// Verify loadQuestions is now available
-console.log("loadQuestions is function:", typeof window.loadQuestions === 'function');
+window.loadQuestions = loadQuestions;
+console.log("quiz.js loaded - loadQuestions globally assigned to window");
