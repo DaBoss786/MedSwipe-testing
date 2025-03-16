@@ -794,3 +794,51 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+// Function to update spaced repetition data for a question
+async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval) {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated, can't update spaced repetition data");
+    return;
+  }
+  
+  const uid = window.auth.currentUser.uid;
+  const userDocRef = window.doc(window.db, 'users', uid);
+  
+  try {
+    await window.runTransaction(window.db, async (transaction) => {
+      const userDoc = await transaction.get(userDocRef);
+      let data = userDoc.exists() ? userDoc.data() : {};
+      
+      // Initialize spacedRepetition object if it doesn't exist
+      if (!data.spacedRepetition) {
+        data.spacedRepetition = {};
+      }
+      
+      // Calculate the next review date
+      const now = new Date();
+      const nextReviewDate = new Date();
+      nextReviewDate.setDate(now.getDate() + nextReviewInterval);
+      
+      // Update or create the question's spaced repetition data
+      data.spacedRepetition[questionId] = {
+        lastReviewedAt: now.toISOString(),
+        nextReviewDate: nextReviewDate.toISOString(),
+        reviewInterval: nextReviewInterval,
+        difficulty: difficulty,
+        lastResult: isCorrect ? 'correct' : 'incorrect',
+        reviewCount: (data.spacedRepetition[questionId]?.reviewCount || 0) + 1
+      };
+      
+      // Update the user document
+      transaction.set(userDocRef, data, { merge: true });
+    });
+    
+    console.log(`Spaced repetition data updated for question ${questionId}`);
+  } catch (error) {
+    console.error("Error updating spaced repetition data:", error);
+  }
+}
+
+// Make the function available globally
+window.updateSpacedRepetitionData = updateSpacedRepetitionData;
