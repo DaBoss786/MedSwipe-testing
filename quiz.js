@@ -585,3 +585,5 @@ function updateProgress() {
     updateUserXP();
   }
 }
+// Make loadQuestions globally available
+window.loadQuestions = loadQuestions;
