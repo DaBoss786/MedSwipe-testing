@@ -2111,3 +2111,17 @@ html, body {
 .review-question {
   animation: reviewQuestionPulse 1.5s ease-in-out infinite;
 }
+#reviewDueQuestionsBtn {
+  position: relative;
+}
+
+#reviewDueQuestionsBtn.has-due-questions::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  background-color: #dc3545;
+  border-radius: 50%;
+}
