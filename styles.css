@@ -2062,3 +2062,9 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+.formHelper {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 2px;
+  margin-bottom: 5px;
+}
