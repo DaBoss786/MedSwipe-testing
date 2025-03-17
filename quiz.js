@@ -113,10 +113,14 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
     
     // Get questions due for review
     const dueQuestionIds = Object.keys(spacedRepetitionData).filter(qId => {
-      const data = spacedRepetitionData[qId];
-      const nextReviewDate = new Date(data.nextReviewDate);
-      return nextReviewDate <= now;
-    });
+  const data = spacedRepetitionData[qId];
+  const nextReviewDate = new Date(data.nextReviewDate);
+  console.log("Question ID:", qId);
+  console.log("Next review date:", nextReviewDate);
+  console.log("Current date:", now);
+  console.log("Is due?", nextReviewDate <= now);
+  return nextReviewDate <= now;
+});
     
     console.log(`Found ${dueQuestionIds.length} questions due for review`);
     
