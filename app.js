@@ -775,6 +775,9 @@ async function initializeDashboard() {
       
       // Also load leaderboard preview
       loadLeaderboardPreview();
+
+      // Also load review queue data
+updateReviewQueue();
     }
   } catch (error) {
     console.error("Error loading dashboard data:", error);
