@@ -803,9 +803,13 @@ async function countDueReviews() {
     const data = userDocSnap.data();
     const spacedRepetitionData = data.spacedRepetition || {};
     
-    // Get current date without time component
+    // Get current date (just the date portion, no time)
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Create tomorrow's date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
     
     let dueCount = 0;
     let nextReviewDate = null;
@@ -817,13 +821,15 @@ async function countDueReviews() {
       
       const reviewDate = new Date(reviewData.nextReviewDate);
       
-      // If review date is today or earlier, it's due
-      if (reviewDate <= now) {
+      // Check if review date is today or earlier by comparing just the date portions
+      const reviewDateOnly = new Date(reviewDate.getFullYear(), reviewDate.getMonth(), reviewDate.getDate());
+      
+      if (reviewDateOnly <= today) {
         dueCount++;
       } 
-      // Track closest upcoming review
-      else if (!nextReviewDate || reviewDate < nextReviewDate) {
-        nextReviewDate = reviewDate;
+      // Only consider dates AFTER today for "next review date"
+      else if (reviewDateOnly >= tomorrow && (!nextReviewDate || reviewDateOnly < nextReviewDate)) {
+        nextReviewDate = reviewDateOnly;
       }
     }
     
