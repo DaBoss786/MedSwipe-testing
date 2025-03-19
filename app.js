@@ -953,6 +953,28 @@ if (modalStartQuiz) {
       showLeaderboard();
     });
   }
+  // Review Queue card click - start review
+const reviewQueueCard = document.getElementById("reviewQueueCard");
+if (reviewQueueCard) {
+  reviewQueueCard.addEventListener("click", async function() {
+    // Get count of due reviews
+    const { dueCount } = await countDueReviews();
+    
+    if (dueCount === 0) {
+      alert("You have no questions due for review today. Good job!");
+      return;
+    }
+    
+    // Start quiz with only questions due for review
+    loadQuestions({
+      spacedRepetition: true,
+      type: 'custom',
+      category: "", // All categories
+      num: dueCount,
+      includeAnswered: true // Reviews are always answered questions
+    });
+  });
+}
 }
 
 // Function to fix streak calendar alignment
