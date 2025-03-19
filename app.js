@@ -781,6 +781,111 @@ async function initializeDashboard() {
   }
 }
 
+// Function to count questions due for review today
+async function countDueReviews() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for counting reviews");
+    return { dueCount: 0, nextReviewDate: null };
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (!userDocSnap.exists()) {
+      return { dueCount: 0, nextReviewDate: null };
+    }
+    
+    const data = userDocSnap.data();
+    const spacedRepetitionData = data.spacedRepetition || {};
+    
+    // Get current date without time component
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    let dueCount = 0;
+    let nextReviewDate = null;
+    
+    // Loop through all questions in spaced repetition data
+    for (const questionId in spacedRepetitionData) {
+      const reviewData = spacedRepetitionData[questionId];
+      if (!reviewData || !reviewData.nextReviewDate) continue;
+      
+      const reviewDate = new Date(reviewData.nextReviewDate);
+      
+      // If review date is today or earlier, it's due
+      if (reviewDate <= now) {
+        dueCount++;
+      } 
+      // Track closest upcoming review
+      else if (!nextReviewDate || reviewDate < nextReviewDate) {
+        nextReviewDate = reviewDate;
+      }
+    }
+    
+    return { dueCount, nextReviewDate };
+  } catch (error) {
+    console.error("Error counting due reviews:", error);
+    return { dueCount: 0, nextReviewDate: null };
+  }
+}
+
+// Function to update the Review Queue card in the dashboard
+async function updateReviewQueue() {
+  const reviewCount = document.getElementById("reviewCount");
+  const reviewQueueContent = document.getElementById("reviewQueueContent");
+  const reviewProgressBar = document.getElementById("reviewProgressBar");
+  
+  if (!reviewCount || !reviewQueueContent || !reviewProgressBar) return;
+  
+  // Get count of due reviews
+  const { dueCount, nextReviewDate } = await countDueReviews();
+  
+  if (dueCount > 0) {
+    // Update the count and progress bar
+    reviewCount.textContent = dueCount;
+    
+    // Simple progress calculation - assuming most people won't have more than 20 reviews
+    const progressPercent = Math.min(100, (dueCount / 20) * 100);
+    reviewProgressBar.style.width = `${progressPercent}%`;
+    
+    // Clear any previous empty state message
+    const existingEmptyState = reviewQueueContent.querySelector(".review-empty-state");
+    if (existingEmptyState) {
+      existingEmptyState.remove();
+    }
+  } else {
+    // No reviews due - show empty state
+    reviewCount.textContent = "0";
+    reviewProgressBar.style.width = "0%";
+    
+    // Check if empty state message already exists
+    let emptyState = reviewQueueContent.querySelector(".review-empty-state");
+    
+    if (!emptyState) {
+      // Create empty state message
+      emptyState = document.createElement("div");
+      emptyState.className = "review-empty-state";
+      
+      if (nextReviewDate) {
+        const formattedDate = nextReviewDate.toLocaleDateString();
+        emptyState.innerHTML = `No reviews due today.<br>Next review: <span class="next-review-date">${formattedDate}</span>`;
+      } else {
+        emptyState.textContent = "No reviews scheduled. Complete more quizzes to add reviews.";
+      }
+      
+      // Insert after review stats
+      const reviewStats = reviewQueueContent.querySelector(".review-stats");
+      if (reviewStats) {
+        reviewStats.insertAdjacentElement('afterend', emptyState);
+      } else {
+        reviewQueueContent.appendChild(emptyState);
+      }
+    }
+  }
+}
+
 // Set up event listeners for dashboard
 function setupDashboardEvents() {
   // Start Quiz button
