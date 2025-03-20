@@ -1067,3 +1067,90 @@ window.addEventListener('load', function() {
     initializeDashboard();
   }, 2000);
 });
+
+// Function to get IDs of questions due for review
+async function getDueQuestionIds() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    return [];
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (!userDocSnap.exists()) {
+      return [];
+    }
+    
+    const data = userDocSnap.data();
+    const spacedRepetitionData = data.spacedRepetition || {};
+    
+    // Get current date (just the date portion, no time)
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    let dueQuestionIds = [];
+    
+    // Loop through all questions in spaced repetition data
+    for (const questionId in spacedRepetitionData) {
+      const reviewData = spacedRepetitionData[questionId];
+      if (!reviewData || !reviewData.nextReviewDate) continue;
+      
+      const reviewDate = new Date(reviewData.nextReviewDate);
+      
+      // Check if review date is today or earlier by comparing just the date portions
+      const reviewDateOnly = new Date(reviewDate.getFullYear(), reviewDate.getMonth(), reviewDate.getDate());
+      
+      if (reviewDateOnly <= today) {
+        dueQuestionIds.push(questionId);
+      }
+    }
+    
+    return dueQuestionIds;
+  } catch (error) {
+    console.error("Error getting due question IDs:", error);
+    return [];
+  }
+}
+
+// Function to load only specific questions by ID
+async function loadSpecificQuestions(questionIds) {
+  if (!questionIds || questionIds.length === 0) {
+    alert("No questions to review.");
+    return;
+  }
+  
+  console.log("Loading specific review questions:", questionIds.length);
+  
+  // Fetch all questions from CSV
+  Papa.parse(csvUrl, {
+    download: true,
+    header: true,
+    complete: function(results) {
+      console.log("All questions loaded:", results.data.length);
+      
+      // Filter only the questions that are due for review
+      const reviewQuestions = results.data.filter(q => 
+        questionIds.includes(q["Question"].trim())
+      );
+      
+      console.log("Filtered review questions:", reviewQuestions.length);
+      
+      if (reviewQuestions.length === 0) {
+        alert("No review questions found. This might be because questions have been removed from the question bank.");
+        return;
+      }
+      
+      // Shuffle the review questions for a better learning experience
+      const shuffledReviewQuestions = shuffleArray([...reviewQuestions]);
+      
+      // Initialize the quiz with only these specific review questions
+      initializeQuiz(shuffledReviewQuestions);
+    },
+    error: function(error) {
+      console.error("Error parsing CSV:", error);
+      alert("Error loading questions. Please try again later.");
+    }
+  });
+}
