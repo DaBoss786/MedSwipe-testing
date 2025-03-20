@@ -971,14 +971,16 @@ if (reviewQueueCard) {
       return;
     }
     
-    // Start quiz with only questions due for review
-    loadQuestions({
-      spacedRepetition: true,
-      type: 'custom',
-      category: "", // All categories
-      num: dueCount,
-      includeAnswered: true // Reviews are always answered questions
-    });
+    // We need to get the actual due question IDs
+    const dueQuestionIds = await getDueQuestionIds();
+    
+    if (dueQuestionIds.length === 0) {
+      alert("No questions found for review. Please try again later.");
+      return;
+    }
+    
+    // Load ONLY the specific due questions, not mixed with new questions
+    loadSpecificQuestions(dueQuestionIds);
   });
 }
 }
