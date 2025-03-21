@@ -2181,3 +2181,11 @@ html, body {
   font-weight: 500;
   color: #0C72D3;
 }
+
+.review-xp-info {
+  margin-top: 10px;
+  text-align: center;
+  color: #0C72D3;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
