@@ -184,12 +184,6 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions) {
-  // Add this safety check at the very beginning
-  if (window.mySwiper) {
-    window.mySwiper.destroy(true, true);
-    window.mySwiper = null;
-  }
-  
   // Get starting XP before the quiz begins
   try {
     if (window.auth && window.auth.currentUser) {
@@ -268,14 +262,12 @@ async function initializeQuiz(questions) {
   });
 
   window.mySwiper = new Swiper('.swiper', {
-  direction: 'vertical',
-  loop: false,
-  mousewheel: true,
-  touchReleaseOnEdges: true
-});
+    direction: 'vertical',
+    loop: false,
+    mousewheel: true,
+    touchReleaseOnEdges: true
+  });
 
-// Replace the direct event listener with this safer version
-if (window.mySwiper && typeof window.mySwiper.on === 'function') {
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
     const previousIndex = window.mySwiper.previousIndex;
@@ -292,9 +284,6 @@ if (window.mySwiper && typeof window.mySwiper.on === 'function') {
       }
     }
   });
-} else {
-  console.error("Error: mySwiper.on is not a function");
-}
 
   addOptionListeners();
   
