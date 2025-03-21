@@ -421,8 +421,9 @@ difficultyButtons.forEach(btn => {
           updateProgress();
           
           // Record the answer in the database
-          await recordAnswer(qId, category, isCorrect, timeSpent);
-          await updateQuestionStats(qId, isCorrect);
+const isReviewQuestion = isReviewSession && reviewQuestionIds.includes(qId);
+await recordAnswer(qId, category, isCorrect, timeSpent, isReviewQuestion);
+await updateQuestionStats(qId, isCorrect);
           
           // Prepare and show the summary button once data is loaded
           prepareSummary();
@@ -488,8 +489,9 @@ difficultyButtons.forEach(btn => {
           currentQuestion++;
           if (isCorrect) { score++; }
           updateProgress();
-          await recordAnswer(qId, category, isCorrect, timeSpent);
-          await updateQuestionStats(qId, isCorrect);
+          const isReviewQuestion = isReviewSession && reviewQuestionIds.includes(qId);
+await recordAnswer(qId, category, isCorrect, timeSpent, isReviewQuestion);
+await updateQuestionStats(qId, isCorrect);
         }
       }
     });
