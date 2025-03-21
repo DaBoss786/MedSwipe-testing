@@ -2169,6 +2169,17 @@ html, body {
   border-radius: 4px;
   transition: width 0.5s ease;
 }
+.review-empty-state {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  padding: 10px 0;
+}
+
+.next-review-date {
+  font-weight: 500;
+  color: #0C72D3;
+}
 
 /* Splash Screen Styles */
 .splash-screen {
@@ -2177,7 +2188,7 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #E6F0FA, #F3FAFF);
+  background: #FFFFFF; /* Pure white background */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2192,11 +2203,18 @@ html, body {
 
 .splash-content {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
 }
 
 .splash-logo {
-  width: 200px;
-  max-width: 80%;
+  width: 300px; /* Larger logo size */
+  max-width: 90%; /* Larger percentage of screen width */
   margin-bottom: 30px;
   animation: pulse 2s infinite alternate;
 }
@@ -2237,15 +2255,4 @@ html, body {
   100% {
     width: 100%;
   }
-}
-.review-empty-state {
-  text-align: center;
-  color: #666;
-  font-size: 0.9rem;
-  padding: 10px 0;
-}
-
-.next-review-date {
-  font-weight: 500;
-  color: #0C72D3;
 }
