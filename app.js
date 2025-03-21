@@ -1,5 +1,22 @@
 // Main app initialization
 window.addEventListener('load', function() {
+  // SPLASH SCREEN CODE GOES HERE - Add these lines at the very top
+  // Show splash screen for 2 seconds
+  const splashScreen = document.getElementById('splashScreen');
+  
+  if (splashScreen) {
+    setTimeout(function() {
+      // Start fading out the splash screen
+      splashScreen.style.opacity = '0';
+      
+      // After fade-out animation completes, hide the splash screen completely
+      setTimeout(function() {
+        splashScreen.style.display = 'none';
+      }, 500);
+    }, 2000);
+  }
+  // END OF SPLASH SCREEN CODE
+  
   // Ensure functions are globally available
   window.updateUserXP = updateUserXP || function() {
     console.log("updateUserXP not loaded yet");
