@@ -512,6 +512,7 @@ async function prepareSummary() {
     let currentLevel = 1;
     let currentXP = 0;
     let levelProgress = 0; // Added for level progress calculation
+    let reviewCompletionBonus = 0; // Track review completion bonus
     
     if (window.auth && window.auth.currentUser) {
       const uid = window.auth.currentUser.uid;
@@ -527,6 +528,11 @@ async function prepareSummary() {
            // Calculate actual XP earned by comparing end XP with start XP
           sessionXP = currentXP - sessionStartXP;
           console.log("Quiz XP calculation:", currentXP, "-", sessionStartXP, "=", sessionXP);
+
+          // Check if review completion bonus was awarded
+          if (isReviewSession && data.reviewTracking && data.reviewTracking.sessionCompleted) {
+            reviewCompletionBonus = 15;
+          }
 
           // Calculate level progress percentage
           // First, determine XP thresholds for current and next levels
@@ -586,7 +592,9 @@ async function prepareSummary() {
       currentXP,
       levelProgress, // Store the calculated level progress
       accuracy,
-      performanceMessage
+      performanceMessage,
+      isReviewSession,
+      reviewCompletionBonus
     };
     
     // Update the button to be clickable
