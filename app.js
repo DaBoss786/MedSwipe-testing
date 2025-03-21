@@ -1114,7 +1114,7 @@ async function getDueQuestionIds() {
   }
 }
 
-// Function to load only specific questions by ID
+// Function to load only specific questions by ID (for reviews)
 async function loadSpecificQuestions(questionIds) {
   if (!questionIds || questionIds.length === 0) {
     alert("No questions to review.");
@@ -1122,6 +1122,11 @@ async function loadSpecificQuestions(questionIds) {
   }
   
   console.log("Loading specific review questions:", questionIds.length);
+  isReviewSession = true; // Mark this as a review session
+  reviewQuestionIds = questionIds; // Store the review question IDs
+  
+  // Update the review tracking in user data to mark the total due
+  await updateReviewTracking(questionIds.length);
   
   // Fetch all questions from CSV
   Papa.parse(csvUrl, {
@@ -1153,4 +1158,38 @@ async function loadSpecificQuestions(questionIds) {
       alert("Error loading questions. Please try again later.");
     }
   });
+}
+
+// New function to update review tracking in database
+async function updateReviewTracking(totalDueCount) {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated, can't update review tracking");
+    return;
+  }
+  
+  const uid = window.auth.currentUser.uid;
+  const userDocRef = window.doc(window.db, 'users', uid);
+  
+  try {
+    await window.runTransaction(window.db, async (transaction) => {
+      const userDoc = await transaction.get(userDocRef);
+      let data = userDoc.exists() ? userDoc.data() : {};
+      
+      // Initialize review tracking if needed
+      if (!data.reviewTracking) {
+        data.reviewTracking = {};
+      }
+      
+      // Reset for new session
+      data.reviewTracking.currentSessionReviews = 0;
+      data.reviewTracking.totalReviewsDue = totalDueCount;
+      data.reviewTracking.sessionCompleted = false;
+      
+      transaction.set(userDocRef, data, { merge: true });
+    });
+    
+    console.log("Updated review tracking with total due:", totalDueCount);
+  } catch (error) {
+    console.error("Error updating review tracking:", error);
+  }
 }
