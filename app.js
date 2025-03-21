@@ -1193,3 +1193,52 @@ async function updateReviewTracking(totalDueCount) {
     console.error("Error updating review tracking:", error);
   }
 }
+
+// Function to reset review tracking daily
+function resetReviewTrackingAtMidnight() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  
+  const timeUntilMidnight = tomorrow - now;
+  
+  setTimeout(async function() {
+    if (window.auth && window.auth.currentUser) {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      
+      try {
+        await window.runTransaction(window.db, async (transaction) => {
+          const userDoc = await transaction.get(userDocRef);
+          if (userDoc.exists()) {
+            let data = userDoc.data();
+            if (data.reviewTracking) {
+              data.reviewTracking.sessionCompleted = false;
+              data.reviewTracking.currentSessionReviews = 0;
+              transaction.set(userDocRef, data, { merge: true });
+            }
+          }
+        });
+        
+        console.log("Reset review tracking at midnight");
+        
+        // Set up the next day's reset
+        resetReviewTrackingAtMidnight();
+      } catch (error) {
+        console.error("Error resetting review tracking:", error);
+        // Try again in an hour if there was an error
+        setTimeout(resetReviewTrackingAtMidnight, 3600000);
+      }
+    } else {
+      // If user isn't authenticated, try again in 10 minutes
+      setTimeout(resetReviewTrackingAtMidnight, 600000);
+    }
+  }, timeUntilMidnight);
+}
+
+// Initialize the midnight reset when app loads
+window.addEventListener('load', function() {
+  // Add this with other initialization code
+  setTimeout(resetReviewTrackingAtMidnight, 2000);
+});
