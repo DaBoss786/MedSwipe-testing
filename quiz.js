@@ -30,6 +30,10 @@ async function fetchQuestionBank() {
 // Load questions according to quiz options
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
+  
+  // Reset review session tracking for regular quizzes
+  isReviewSession = false;
+  reviewQuestionIds = [];
   Papa.parse(csvUrl, {
     download: true,
     header: true,
