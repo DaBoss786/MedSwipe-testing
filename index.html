@@ -29,6 +29,78 @@
     </div>
   </div>
 </div>
+  
+  <!-- Onboarding Swiper Container - Similar to your quiz slides -->
+<div id="onboardingSwiper" class="swiper" style="display: none;">
+  <div class="swiper-wrapper">
+    <!-- Slide 1: Welcome -->
+    <div class="swiper-slide onboarding-slide">
+      <div class="card">
+        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
+        <div class="onboarding-text">
+          <p>Swipe. Learn. Master medicine - for free!</p>
+        </div>
+        <button id="alreadyHaveAccount" class="account-btn">Already have an account</button>
+        <div class="or-divider">OR</div>
+        <div class="swipe-up-hint">Swipe up to get started!</div>
+      </div>
+    </div>
+    
+    <!-- Slide 2: How it works -->
+    <div class="swiper-slide onboarding-slide">
+      <div class="card">
+        <h2>How It Works</h2>
+        <div class="onboarding-image">
+          <img src="quiz-example.png" alt="Quiz Example" class="feature-image">
+        </div>
+        <div class="onboarding-text">
+          <p>Answer medical questions with a swipe. See explanations when you're done.</p>
+        </div>
+        <div class="swipe-up-hint">Swipe up to continue</div>
+      </div>
+    </div>
+    
+    <!-- Slide 3: Track Progress -->
+    <div class="swiper-slide onboarding-slide">
+      <div class="card">
+        <h2>Track Your Progress</h2>
+        <div class="onboarding-image">
+          <img src="progress-example.png" alt="Progress Tracking" class="feature-image">
+        </div>
+        <div class="onboarding-text">
+          <p>Earn XP and level up as you answer questions. Compete on the leaderboard.</p>
+        </div>
+        <div class="swipe-up-hint">Swipe up to continue</div>
+      </div>
+    </div>
+    
+    <!-- Slide 4: Create Account -->
+    <div class="swiper-slide onboarding-slide">
+      <div class="card">
+        <h2>Create Your Account</h2>
+        <div class="onboarding-form">
+          <input type="text" id="registerUsername" placeholder="Username" class="register-input">
+          <input type="email" id="registerEmail" placeholder="Email" class="register-input">
+          <input type="password" id="registerPassword" placeholder="Password" class="register-input">
+          <button id="createAccountBtn" class="account-btn create-btn">Create Account</button>
+        </div>
+        <div class="onboarding-text">
+          <p>Create an account to save your progress and compete with others.</p>
+        </div>
+        <button id="skipRegistration" class="skip-btn">Skip for now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding Bottom Toolbar -->
+<div id="onboardingToolbar" class="bottom-toolbar" style="display: none;">
+  <div id="onboardingProgressBarContainer" class="progress-bar-container">
+    <div id="onboardingProgressBar" class="progress-bar"></div>
+  </div>
+  <div id="onboardingProgress">1 / 4</div>
+</div>
+  
   <!-- Top Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
