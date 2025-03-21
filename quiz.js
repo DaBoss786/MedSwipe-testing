@@ -8,6 +8,8 @@ let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
+let isReviewSession = false;
+let reviewQuestionIds = []; // To track which questions are reviews
 
 // Fetch questions from CSV
 async function fetchQuestionBank() {
