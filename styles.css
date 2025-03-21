@@ -2189,3 +2189,31 @@ html, body {
   font-size: 0.85rem;
   font-weight: 500;
 }
+
+.review-bonus-display {
+  margin: 10px 0;
+  text-align: center;
+}
+
+.bonus-tag {
+  background-color: #28a745;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  display: inline-block;
+  animation: pulse 1.5s infinite;
+}
+
+.review-info {
+  color: #666;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
