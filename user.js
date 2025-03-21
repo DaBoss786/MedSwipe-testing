@@ -24,7 +24,7 @@ async function fetchPersistentAnsweredIds() {
 }
 
 // Record answer in Firestore with XP calculation
-async function recordAnswer(questionId, category, isCorrect, timeSpent) {
+async function recordAnswer(questionId, category, isCorrect, timeSpent, isReviewQuestion = false) {
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated, can't record answer");
     return;
@@ -56,6 +56,36 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
           currentCorrectStreak: 0 // Track consecutive correct answers
         };
       }
+
+      // Initialize review tracking if needed
+if (!data.reviewTracking) {
+  data.reviewTracking = {
+    currentSessionReviews: 0,
+    totalReviewsDue: 0,
+    sessionCompleted: false,
+    lastSessionDate: null
+  };
+}
+
+// Update review tracking for review questions
+if (isReviewQuestion) {
+  // Increment the count of completed reviews in this session
+  data.reviewTracking.currentSessionReviews++;
+  
+  // Check if user has completed all their reviews
+  const totalReviewsDue = data.reviewTracking.totalReviewsDue || 0;
+  const currentSessionReviews = data.reviewTracking.currentSessionReviews;
+  
+  console.log(`Review progress: ${currentSessionReviews}/${totalReviewsDue}`);
+  
+  // If all reviews completed and not already marked as completed
+  if (totalReviewsDue > 0 && currentSessionReviews >= totalReviewsDue && !data.reviewTracking.sessionCompleted) {
+    bonusXP += 15; // Bonus for completing all reviews
+    bonusMessages.push("Completed all reviews: +15 XP");
+    data.reviewTracking.sessionCompleted = true;
+    data.reviewTracking.lastSessionDate = currentDate.toISOString();
+  }
+}
       
       // Initialize XP if it doesn't exist
       if (data.stats.xp === undefined) {
@@ -122,13 +152,24 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       }
       
       // Calculate base XP for this answer
-      let earnedXP = 1; // Base XP for answering
-      let bonusXP = 0; // Track bonus XP
-      let bonusMessages = []; // Track bonus messages
-      
-      if (isCorrect) {
-        earnedXP += 2; // Additional XP for correct answer
-      }
+let earnedXP = 0; // Default to 0 for review questions
+let bonusXP = 0; // Track bonus XP
+let bonusMessages = []; // Track bonus messages
+
+// Different XP rules for review questions
+if (isReviewQuestion) {
+  if (isCorrect) {
+    earnedXP = 2; // 2 XP for correct review answers
+    bonusMessages.push("Correct review answer: +2 XP");
+  }
+  // No XP for incorrect review answers (stays at 0)
+} else {
+  // Original XP calculation for regular questions
+  earnedXP = 1; // Base XP for answering
+  if (isCorrect) {
+    earnedXP += 2; // Additional XP for correct answer
+  }
+}
       
       // Update streaks
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
