@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // First wait for splash screen to complete
   setTimeout(function() {
     checkOnboardingNeeded();
-  }, 2000); // Same timing as splash screen
+  }, 2500); // Slightly longer than splash screen (2000ms) to avoid timing issues
 });
 
 // Check if onboarding is needed
@@ -34,16 +34,19 @@ function startOnboarding() {
   // Hide dashboard
   document.getElementById('mainOptions').style.display = 'none';
   
-  // Initialize the onboarding swiper
-  window.onboardingSwiper = new Swiper('#onboardingSwiper', {
+  // Initialize the onboarding swiper (with a different variable name to avoid conflicts)
+  const onboardingSwiperInstance = new Swiper('#onboardingSwiper', {
     direction: 'vertical',
-    allowTouchMove: true,
-    threshold: 50,
-    loop: false
+    loop: false,
+    mousewheel: true,
+    touchReleaseOnEdges: true
   });
   
+  // Store it in a non-conflicting variable name
+  window.onboardingSwiperInstance = onboardingSwiperInstance;
+  
   // Update progress bar when slides change
-  window.onboardingSwiper.on('slideChange', function() {
+  onboardingSwiperInstance.on('slideChange', function() {
     updateOnboardingProgress();
   });
   
@@ -74,7 +77,7 @@ function addOnboardingListeners() {
   if (accountBtn) {
     accountBtn.addEventListener('click', function() {
       // Go to login (slide 4)
-      window.onboardingSwiper.slideTo(3);
+      window.onboardingSwiperInstance.slideTo(3);
     });
   }
   
