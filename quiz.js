@@ -8,8 +8,6 @@ let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
-let isReviewSession = false;
-let reviewQuestionIds = []; // To track which questions are reviews
 
 // Fetch questions from CSV
 async function fetchQuestionBank() {
@@ -30,10 +28,6 @@ async function fetchQuestionBank() {
 // Load questions according to quiz options
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
-  
-  // Reset review session tracking for regular quizzes
-  isReviewSession = false;
-  reviewQuestionIds = [];
   Papa.parse(csvUrl, {
     download: true,
     header: true,
@@ -425,9 +419,8 @@ difficultyButtons.forEach(btn => {
           updateProgress();
           
           // Record the answer in the database
-const isReviewQuestion = isReviewSession && reviewQuestionIds.includes(qId);
-await recordAnswer(qId, category, isCorrect, timeSpent, isReviewQuestion);
-await updateQuestionStats(qId, isCorrect);
+          await recordAnswer(qId, category, isCorrect, timeSpent);
+          await updateQuestionStats(qId, isCorrect);
           
           // Prepare and show the summary button once data is loaded
           prepareSummary();
@@ -493,9 +486,8 @@ difficultyButtons.forEach(btn => {
           currentQuestion++;
           if (isCorrect) { score++; }
           updateProgress();
-          const isReviewQuestion = isReviewSession && reviewQuestionIds.includes(qId);
-await recordAnswer(qId, category, isCorrect, timeSpent, isReviewQuestion);
-await updateQuestionStats(qId, isCorrect);
+          await recordAnswer(qId, category, isCorrect, timeSpent);
+          await updateQuestionStats(qId, isCorrect);
         }
       }
     });
@@ -512,7 +504,6 @@ async function prepareSummary() {
     let currentLevel = 1;
     let currentXP = 0;
     let levelProgress = 0; // Added for level progress calculation
-    let reviewCompletionBonus = 0; // Track review completion bonus
     
     if (window.auth && window.auth.currentUser) {
       const uid = window.auth.currentUser.uid;
@@ -528,11 +519,6 @@ async function prepareSummary() {
            // Calculate actual XP earned by comparing end XP with start XP
           sessionXP = currentXP - sessionStartXP;
           console.log("Quiz XP calculation:", currentXP, "-", sessionStartXP, "=", sessionXP);
-
-          // Check if review completion bonus was awarded
-          if (isReviewSession && data.reviewTracking && data.reviewTracking.sessionCompleted) {
-            reviewCompletionBonus = 15;
-          }
 
           // Calculate level progress percentage
           // First, determine XP thresholds for current and next levels
@@ -592,9 +578,7 @@ async function prepareSummary() {
       currentXP,
       levelProgress, // Store the calculated level progress
       accuracy,
-      performanceMessage,
-      isReviewSession,
-      reviewCompletionBonus
+      performanceMessage
     };
     
     // Update the button to be clickable
@@ -626,18 +610,7 @@ function showSummary() {
     levelProgress: 0, // Default to 0 if not calculated
     accuracy: totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0,
     performanceMessage: "Quiz complete!"
-    isReviewSession: false,  // Add this fallback
-    reviewCompletionBonus: 0 // Add this fallback
   };
-
-// ADD THIS LINE HERE
-  const reviewBonusHtml = data.isReviewSession 
-    ? `<div class="review-bonus-display">
-         ${data.reviewCompletionBonus > 0 
-           ? `<span class="bonus-tag">+${data.reviewCompletionBonus} XP REVIEW BONUS!</span>` 
-           : `<span class="review-info">Complete all reviews for a +15 XP bonus</span>`}
-       </div>`
-    : '';
   
   // Create and add the summary slide
   const summarySlide = document.createElement("div");
@@ -659,14 +632,14 @@ function showSummary() {
       </div>
       
       <div class="summary-xp">
-      <div class="xp-header">XP Earned This Session</div>
-      <div class="xp-value">+${data.sessionXP} XP</div>
-      ${reviewBonusHtml}
-      <div class="xp-bar-container">
-        <div class="xp-bar" style="width: ${data.levelProgress}%;"></div>
+        <div class="xp-header">XP Earned This Session</div>
+        <div class="xp-value">+${data.sessionXP} XP</div>
+        <div class="xp-bar-container">
+          <!-- Use the levelProgress value for the XP bar width instead of sessionXP -->
+          <div class="xp-bar" style="width: ${data.levelProgress}%;"></div>
+        </div>
+        <div class="xp-total">Total: ${data.currentXP} XP (Level ${data.currentLevel})</div>
       </div>
-      <div class="xp-total">Total: ${data.currentXP} XP (Level ${data.currentLevel})</div>
-    </div>
       
       <div class="summary-buttons">
         <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>

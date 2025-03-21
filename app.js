@@ -1114,7 +1114,7 @@ async function getDueQuestionIds() {
   }
 }
 
-// Function to load only specific questions by ID (for reviews)
+// Function to load only specific questions by ID
 async function loadSpecificQuestions(questionIds) {
   if (!questionIds || questionIds.length === 0) {
     alert("No questions to review.");
@@ -1122,11 +1122,6 @@ async function loadSpecificQuestions(questionIds) {
   }
   
   console.log("Loading specific review questions:", questionIds.length);
-  isReviewSession = true; // Mark this as a review session
-  reviewQuestionIds = questionIds; // Store the review question IDs
-  
-  // Update the review tracking in user data to mark the total due
-  await updateReviewTracking(questionIds.length);
   
   // Fetch all questions from CSV
   Papa.parse(csvUrl, {
@@ -1159,86 +1154,3 @@ async function loadSpecificQuestions(questionIds) {
     }
   });
 }
-
-// New function to update review tracking in database
-async function updateReviewTracking(totalDueCount) {
-  if (!window.auth || !window.auth.currentUser) {
-    console.log("User not authenticated, can't update review tracking");
-    return;
-  }
-  
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  
-  try {
-    await window.runTransaction(window.db, async (transaction) => {
-      const userDoc = await transaction.get(userDocRef);
-      let data = userDoc.exists() ? userDoc.data() : {};
-      
-      // Initialize review tracking if needed
-      if (!data.reviewTracking) {
-        data.reviewTracking = {};
-      }
-      
-      // Reset for new session
-      data.reviewTracking.currentSessionReviews = 0;
-      data.reviewTracking.totalReviewsDue = totalDueCount;
-      data.reviewTracking.sessionCompleted = false;
-      
-      transaction.set(userDocRef, data, { merge: true });
-    });
-    
-    console.log("Updated review tracking with total due:", totalDueCount);
-  } catch (error) {
-    console.error("Error updating review tracking:", error);
-  }
-}
-
-// Function to reset review tracking daily
-function resetReviewTrackingAtMidnight() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  
-  const timeUntilMidnight = tomorrow - now;
-  
-  setTimeout(async function() {
-    if (window.auth && window.auth.currentUser) {
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      
-      try {
-        await window.runTransaction(window.db, async (transaction) => {
-          const userDoc = await transaction.get(userDocRef);
-          if (userDoc.exists()) {
-            let data = userDoc.data();
-            if (data.reviewTracking) {
-              data.reviewTracking.sessionCompleted = false;
-              data.reviewTracking.currentSessionReviews = 0;
-              transaction.set(userDocRef, data, { merge: true });
-            }
-          }
-        });
-        
-        console.log("Reset review tracking at midnight");
-        
-        // Set up the next day's reset
-        resetReviewTrackingAtMidnight();
-      } catch (error) {
-        console.error("Error resetting review tracking:", error);
-        // Try again in an hour if there was an error
-        setTimeout(resetReviewTrackingAtMidnight, 3600000);
-      }
-    } else {
-      // If user isn't authenticated, try again in 10 minutes
-      setTimeout(resetReviewTrackingAtMidnight, 600000);
-    }
-  }, timeUntilMidnight);
-}
-
-// Initialize the midnight reset when app loads
-window.addEventListener('load', function() {
-  // Add this with other initialization code
-  setTimeout(resetReviewTrackingAtMidnight, 2000);
-});
