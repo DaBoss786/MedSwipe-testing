@@ -626,7 +626,18 @@ function showSummary() {
     levelProgress: 0, // Default to 0 if not calculated
     accuracy: totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0,
     performanceMessage: "Quiz complete!"
+    isReviewSession: false,  // Add this fallback
+    reviewCompletionBonus: 0 // Add this fallback
   };
+
+// ADD THIS LINE HERE
+  const reviewBonusHtml = data.isReviewSession 
+    ? `<div class="review-bonus-display">
+         ${data.reviewCompletionBonus > 0 
+           ? `<span class="bonus-tag">+${data.reviewCompletionBonus} XP REVIEW BONUS!</span>` 
+           : `<span class="review-info">Complete all reviews for a +15 XP bonus</span>`}
+       </div>`
+    : '';
   
   // Create and add the summary slide
   const summarySlide = document.createElement("div");
@@ -648,14 +659,14 @@ function showSummary() {
       </div>
       
       <div class="summary-xp">
-        <div class="xp-header">XP Earned This Session</div>
-        <div class="xp-value">+${data.sessionXP} XP</div>
-        <div class="xp-bar-container">
-          <!-- Use the levelProgress value for the XP bar width instead of sessionXP -->
-          <div class="xp-bar" style="width: ${data.levelProgress}%;"></div>
-        </div>
-        <div class="xp-total">Total: ${data.currentXP} XP (Level ${data.currentLevel})</div>
+      <div class="xp-header">XP Earned This Session</div>
+      <div class="xp-value">+${data.sessionXP} XP</div>
+      ${reviewBonusHtml}
+      <div class="xp-bar-container">
+        <div class="xp-bar" style="width: ${data.levelProgress}%;"></div>
       </div>
+      <div class="xp-total">Total: ${data.currentXP} XP (Level ${data.currentLevel})</div>
+    </div>
       
       <div class="summary-buttons">
         <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
