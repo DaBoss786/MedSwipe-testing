@@ -2256,3 +2256,136 @@ html, body {
     width: 100%;
   }
 }
+
+/* Onboarding Styles - Add to your styles.css file */
+
+/* Logo in onboarding */
+.onboarding-logo {
+  width: 200px;
+  max-width: 80%;
+  margin: 20px auto 30px auto;
+  display: block;
+}
+
+/* Feature images */
+.feature-image {
+  max-width: 90%;
+  height: auto;
+  margin: 15px auto;
+  display: block;
+  border-radius: 8px;
+}
+
+/* Text styling */
+.onboarding-text {
+  text-align: center;
+  margin: 20px 10px;
+}
+
+.onboarding-text p {
+  font-size: 1.1rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* Swipe up hint - more prominent than regular */
+.swipe-up-hint {
+  font-size: 1.2rem;
+  color: #0056b3;
+  text-align: center;
+  margin: 25px 0 10px 0;
+  font-weight: 500;
+  animation: pulseHint 1.5s infinite alternate;
+}
+
+@keyframes pulseHint {
+  from { transform: translateY(0); }
+  to { transform: translateY(5px); }
+}
+
+/* Account buttons */
+.account-btn {
+  display: block;
+  width: 80%;
+  margin: 15px auto;
+  padding: 12px;
+  background-color: #0C72D3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.account-btn:hover {
+  background-color: #0056b3;
+}
+
+/* OR divider */
+.or-divider {
+  text-align: center;
+  margin: 15px 0;
+  color: #666;
+  position: relative;
+}
+
+.or-divider::before, .or-divider::after {
+  content: "";
+  display: inline-block;
+  width: 40%;
+  height: 1px;
+  background-color: #ddd;
+  vertical-align: middle;
+  margin: 0 10px;
+}
+
+/* Registration form */
+.onboarding-form {
+  width: 90%;
+  margin: 20px auto;
+}
+
+.register-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.create-btn {
+  background-color: #28a745;
+}
+
+.create-btn:hover {
+  background-color: #218838;
+}
+
+.skip-btn {
+  background: none;
+  border: none;
+  color: #666;
+  text-decoration: underline;
+  cursor: pointer;
+  margin: 10px auto;
+  display: block;
+  font-size: 0.9rem;
+}
+
+/* Slide headings */
+.onboarding-slide h2 {
+  text-align: center;
+  color: #0056b3;
+  margin: 15px 0;
+  font-size: 1.4rem;
+}
+
+/* Ensure the onboarding slides use full height */
+.onboarding-slide .card {
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
