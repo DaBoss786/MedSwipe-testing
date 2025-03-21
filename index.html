@@ -20,11 +20,6 @@
   <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-  <div id="splashScreen">
-  <div class="splash-content">
-    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo">
-  </div>
-</div>
   <!-- Top Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
@@ -401,17 +396,6 @@
     });
   }
 </script>
-<script>
-// Simple splash screen logic - completely separate from your other code
-document.addEventListener('DOMContentLoaded', function() {
-  // Hide the splash screen after 2 seconds
-  setTimeout(function() {
-    var splash = document.getElementById('splashScreen');
-    if (splash) {
-      splash.style.display = 'none';
-    }
-  }, 2000);
-});
-</script>
+
 </body>
 </html>
