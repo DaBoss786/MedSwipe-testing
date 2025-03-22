@@ -160,10 +160,16 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   auth.onAuthStateChanged((user) => {
-  // Always show login screen if no authenticated user
-  if (!user || (user && user.isAnonymous)) {
+  console.log("Auth State Changed:", user);
+  
+  if (!user) {
+    console.log("No user - showing login screen");
+    loginScreen.style.display = 'flex';
+  } else if (user.isAnonymous) {
+    console.log("Anonymous user - showing login screen");
     loginScreen.style.display = 'flex';
   } else {
+    console.log("Authenticated user - hiding login screen");
     loginScreen.style.display = 'none';
   }
 });
