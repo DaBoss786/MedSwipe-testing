@@ -4,6 +4,13 @@ import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, signInAnonymously, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
+// Add this after initializing the auth
+const googleProvider = new GoogleAuthProvider();
+
+// Optional: Add specific scopes if needed
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
+
 // Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
