@@ -159,12 +159,12 @@ document.addEventListener('DOMContentLoaded', function() {
     emailSignInModal.style.display = 'flex';
   });
 
-  // Check authentication state on page load
   auth.onAuthStateChanged((user) => {
-    if (user) {
-      loginScreen.style.display = 'none';
-    } else {
-      loginScreen.style.display = 'flex';
-    }
-  });
+  // Always show login screen if no authenticated user
+  if (!user || (user && user.isAnonymous)) {
+    loginScreen.style.display = 'flex';
+  } else {
+    loginScreen.style.display = 'none';
+  }
+});
 });
