@@ -44,24 +44,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Google Sign-In
   googleSignInBtn.addEventListener('click', async () => {
-    try {
-      let result;
-      if (auth.currentUser && auth.currentUser.isAnonymous) {
-        // Link anonymous account with Google
-        result = await linkWithPopup(auth.currentUser, googleProvider);
-        await transferAnonymousUserData(result.user);
-      } else {
-        // Regular Google Sign-In
-        result = await signInWithPopup(auth, googleProvider);
-      }
-      
-      // Redirect to dashboard
-      loginScreen.style.display = 'none';
-    } catch (error) {
-      console.error("Google Sign-In error:", error);
-      alert("Sign-in failed. Please try again.");
+  try {
+    let result;
+    if (auth.currentUser && auth.currentUser.isAnonymous) {
+      // Link anonymous account with Google
+      result = await linkWithPopup(auth.currentUser, googleProvider);
+      await transferAnonymousUserData(result.user);
+    } else {
+      // Regular Google Sign-In
+      result = await signInWithPopup(auth, googleProvider);
     }
-  });
+    
+    // Redirect to dashboard
+    loginScreen.style.display = 'none';
+  } catch (error) {
+    console.error("Google Sign-In error:", error);
+    alert(`Sign-in failed: ${error.message}`);
+  }
+});
 
   // Email Sign-In
   emailSignInBtn.addEventListener('click', () => {
