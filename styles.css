@@ -2351,8 +2351,10 @@ html, body {
 .divider {
   display: flex;
   align-items: center;
+  justify-content: center;
   text-align: center;
   margin: 20px 0;
+  width: 100%;
 }
 
 .divider span {
@@ -2376,9 +2378,8 @@ html, body {
 }
 
 .divider span::after {
-  left: 100%;;
+  left: 100%;
 }
-
 /* Modal Styles */
 .modal {
   position: fixed;
