@@ -4,6 +4,7 @@ window.isPreviewMode = false;
 // Add splash screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
+  const welcomeScreen = document.getElementById('welcomeScreen');
   
   // Hide splash screen after 2 seconds
   setTimeout(function() {
@@ -18,24 +19,27 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 2000);
 });
 
-// Add this to the bottom of app.js file or just after your splash screen code
-document.addEventListener('DOMContentLoaded', function() {
-  // Get the Get Started button and add click event listener
+// Initialize the Get Started button
   const getStartedBtn = document.getElementById('getStartedBtn');
-  
   if (getStartedBtn) {
     getStartedBtn.addEventListener('click', function() {
+      console.log("Get Started clicked");
+      
       // Hide the welcome screen
-      const welcomeScreen = document.getElementById('welcomeScreen');
       if (welcomeScreen) {
         welcomeScreen.style.display = 'none';
       }
       
-      // Start a 3-question preview quiz
-      loadPreviewQuiz();
+      try {
+        // Start a 3-question preview quiz
+        loadPreviewQuiz();
+      } catch (error) {
+        console.error("Error in preview quiz:", error);
+        // If error, show dashboard
+        document.getElementById('mainOptions').style.display = 'flex';
+      }
     });
   }
-});
 
 // Function to load a preview quiz with 3 questions
 function loadPreviewQuiz() {
