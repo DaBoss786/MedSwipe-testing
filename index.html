@@ -40,6 +40,48 @@
     </div>
   </div>
 </div>
+  
+  <!-- Signup Screen -->
+<div id="signupScreen" style="display: none;">
+  <div class="signup-content">
+    <h2>Create Your Profile</h2>
+    
+    <div class="signup-form">
+      <!-- Username Field -->
+      <div class="form-group">
+        <input type="text" id="usernameInput" placeholder="Username" maxlength="20">
+        <p id="usernameMessage" class="input-message"></p>
+      </div>
+      
+      <!-- Email Field -->
+      <div class="form-group">
+        <input type="email" id="emailInput" placeholder="Email address">
+        <p id="emailMessage" class="input-message"></p>
+      </div>
+      
+      <!-- Password Field -->
+      <div class="form-group">
+        <input type="password" id="passwordInput" placeholder="Password">
+        <p id="passwordMessage" class="input-message"></p>
+      </div>
+      
+      <!-- Create Account Button -->
+      <button id="createAccountBtn" class="signup-btn">Create Account</button>
+      
+      <!-- OR Divider -->
+      <div class="or-divider">OR</div>
+      
+      <!-- Social Login Options -->
+      <div class="social-auth-options">
+        <button id="googleAuthBtn" class="social-auth-btn google-btn">Sign in with Google</button>
+        <button id="appleAuthBtn" class="social-auth-btn apple-btn">Sign in with Apple</button>
+      </div>
+      
+      <!-- Terms Agreement Text -->
+      <p class="terms-text">By creating an account, you agree to our <a href="#" id="tosLink">Terms of Service</a> and <a href="#" id="privacyLink">Privacy Policy</a>.</p>
+    </div>
+  </div>
+</div>
   <!-- Top Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
