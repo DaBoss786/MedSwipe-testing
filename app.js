@@ -2,6 +2,12 @@
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
   const welcomeScreen = document.getElementById('welcomeScreen');
+  const mainOptions = document.getElementById("mainOptions");
+  
+  // Hide main options until explicitly shown
+  if (mainOptions) {
+    mainOptions.style.display = "none";
+  }
   
   // Hide splash screen after 2 seconds and show welcome screen
   setTimeout(function() {
