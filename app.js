@@ -1416,87 +1416,100 @@ async function registerWithEmailPassword(username, email, password) {
     if (currentUser && currentUser.isAnonymous) {
       anonymousUid = currentUser.uid;
       console.log("Current user is anonymous:", anonymousUid);
-    }
-    
-    // Create new account with email and password
-    const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
-    const user = userCredential.user;
-    
-    console.log("Account created for:", user.uid);
-    
-    // Update user profile with username
-    await window.updateProfile(user, {
-      displayName: username
-    });
-    
-    console.log("Profile updated with username:", username);
-    
-    // If there was anonymous data, migrate it
-    if (anonymousUid) {
-      await migrateAnonymousData(anonymousUid, user.uid, username);
-    } else {
-      // Create a new user document with the username
-      const userDocRef = window.doc(window.db, 'users', user.uid);
-      await window.setDoc(userDocRef, {
-        username: username, // Important: use the chosen username
-        email: email,
-        createdAt: window.serverTimestamp(),
-        isRegistered: true,
-        stats: { 
-          totalAnswered: 0, 
-          totalCorrect: 0, 
-          totalIncorrect: 0, 
-          categories: {}, 
-          totalTimeSpent: 0,
-          xp: 0,
-          level: 1
-        },
-        streaks: { 
-          lastAnsweredDate: null, 
-          currentStreak: 0, 
-          longestStreak: 0 
-        }
+      
+      // Get the anonymous user data before signing out
+      const anonymousDocRef = window.doc(window.db, 'users', anonymousUid);
+      const anonymousDocSnap = await window.getDoc(anonymousDocRef);
+      let anonymousData = null;
+      
+      if (anonymousDocSnap.exists()) {
+        anonymousData = anonymousDocSnap.data();
+        console.log("Retrieved anonymous data");
+      }
+      
+      // Sign out the anonymous user
+      await window.auth.signOut();
+      
+      // Create new account with email and password
+      const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+      const user = userCredential.user;
+      
+      console.log("Account created for:", user.uid);
+      
+      // Update user profile with username
+      await window.updateProfile(user, {
+        displayName: username
       });
+      
+      console.log("Profile updated with username:", username);
+      
+      // If we had anonymous data, migrate it
+      if (anonymousData) {
+        // Modify the data for the new user
+        anonymousData.username = username;
+        anonymousData.email = email;
+        anonymousData.isRegistered = true;
+        anonymousData.isRegistrationMigration = true; // Special flag for security rules
+        anonymousData.createdAt = window.serverTimestamp();
+        anonymousData.previousAnonymousUid = anonymousUid;
+        
+        // Set the data to the new user document
+        const registeredDocRef = window.doc(window.db, 'users', user.uid);
+        await window.setDoc(registeredDocRef, anonymousData);
+        
+        console.log("Data migration complete");
+      } else {
+        // Create a new user document
+        createNewUserDocument(user.uid, username, email);
+      }
+    } else {
+      // Normal registration flow (not previously anonymous)
+      const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+      const user = userCredential.user;
+      
+      console.log("Account created for:", user.uid);
+      
+      // Update user profile with username
+      await window.updateProfile(user, {
+        displayName: username
+      });
+      
+      // Create a new user document
+      createNewUserDocument(user.uid, username, email);
     }
     
-    return user;
+    return true;
   } catch (error) {
     console.error("Error during registration:", error);
     throw error;
   }
 }
 
-// Function to migrate anonymous user data to registered user
-async function migrateAnonymousData(anonymousUid, registeredUid, newUsername) {
-  try {
-    console.log(`Migrating data from ${anonymousUid} to ${registeredUid}`);
-    
-    // Get the anonymous user data
-    const anonymousDocRef = window.doc(window.db, 'users', anonymousUid);
-    const anonymousDocSnap = await window.getDoc(anonymousDocRef);
-    
-    if (anonymousDocSnap.exists()) {
-      const anonymousData = anonymousDocSnap.data();
-      
-      // Update the data to mark as registered and update username
-      anonymousData.isRegistered = true;
-      anonymousData.anonymousUid = anonymousUid; // Keep reference to previous ID
-      anonymousData.username = newUsername; // Use the chosen username instead of anonymous one
-      
-      // Set the data to the new user ID
-      const registeredDocRef = window.doc(window.db, 'users', registeredUid);
-      await window.setDoc(registeredDocRef, anonymousData);
-      
-      console.log("Data migration complete with new username:", newUsername);
-      
-      // Optional: Delete the anonymous user data
-      // await window.deleteDoc(anonymousDocRef);
-      // console.log("Anonymous data deleted");
+// Helper function to create a new user document
+async function createNewUserDocument(userId, username, email) {
+  const userDocRef = window.doc(window.db, 'users', userId);
+  await window.setDoc(userDocRef, {
+    username: username,
+    email: email,
+    createdAt: window.serverTimestamp(),
+    isRegistered: true,
+    stats: { 
+      totalAnswered: 0, 
+      totalCorrect: 0, 
+      totalIncorrect: 0, 
+      categories: {}, 
+      totalTimeSpent: 0,
+      xp: 0,
+      level: 1
+    },
+    streaks: { 
+      lastAnsweredDate: null, 
+      currentStreak: 0, 
+      longestStreak: 0 
     }
-  } catch (error) {
-    console.error("Error migrating user data:", error);
-    throw error;
-  }
+  });
+  
+  console.log("Created new user document");
 }
 
 // Connect Create Profile button in the registration CTA to the signup screen
