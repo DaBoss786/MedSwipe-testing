@@ -555,7 +555,6 @@ async function updateUserMenu() {
   }
 }
 
-// Get or generate a username
 async function getOrGenerateUsername() {
   if (!window.auth || !window.auth.currentUser) {
     throw new Error("User not authenticated");
@@ -565,14 +564,23 @@ async function getOrGenerateUsername() {
   const userDocRef = window.doc(window.db, 'users', uid);
   const userDocSnap = await window.getDoc(userDocRef);
   let username;
+  
   if (userDocSnap.exists() && userDocSnap.data().username) {
     username = userDocSnap.data().username;
   } else {
-    username = generateRandomName();
+    // For registered users, use displayName if available
+    if (!window.auth.currentUser.isAnonymous && window.auth.currentUser.displayName) {
+      username = window.auth.currentUser.displayName;
+    } else {
+      // Otherwise generate random name
+      username = generateRandomName();
+    }
+    
     await window.runTransaction(window.db, async (transaction) => {
       const docSnap = await transaction.get(userDocRef);
       let data = docSnap.exists() ? docSnap.data() : {};
       data.username = username;
+      data.isRegistered = !window.auth.currentUser.isAnonymous;
       transaction.set(userDocRef, data, { merge: true });
     });
   }
