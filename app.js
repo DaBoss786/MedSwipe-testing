@@ -761,19 +761,20 @@ async function loadLeaderboardPreview() {
     let leaderboardEntries = [];
     
     querySnapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      if (data.stats) {
-        // Use total XP instead of weekly XP calculation
-        let xp = data.stats.xp || 0;
-        
-        // Add user to leaderboard entries with their total XP
-        leaderboardEntries.push({
-          uid: docSnap.id,
-          username: data.username || "Anonymous",
-          xp: xp
-        });
-      }
+  const data = docSnap.data();
+  // Only include registered users in leaderboard preview
+  if (data.stats && data.isRegistered === true) {
+    // Use total XP instead of weekly XP calculation
+    let xp = data.stats.xp || 0;
+    
+    // Add user to leaderboard entries with their total XP
+    leaderboardEntries.push({
+      uid: docSnap.id,
+      username: data.username || "Anonymous",
+      xp: xp
     });
+  }
+});
     
     // Sort by XP (descending)
     leaderboardEntries.sort((a, b) => b.xp - a.xp);
