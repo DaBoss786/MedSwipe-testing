@@ -762,9 +762,9 @@ async function loadLeaderboardPreview() {
     
     querySnapshot.forEach(docSnap => {
       const data = docSnap.data();
-      // Only include registered users in leaderboard preview
+      // ONLY include registered users in leaderboard preview
       if (data.stats && data.isRegistered === true) {
-        // Use total XP instead of weekly XP calculation
+        // Use total XP for ranking
         let xp = data.stats.xp || 0;
         
         // Add user to leaderboard entries with their total XP
@@ -785,14 +785,18 @@ async function loadLeaderboardPreview() {
     // Find current user's position if not in top 3
     let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
     let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
-    let showCurrentUser = currentUserRank > 3 && currentUserEntry;
+    let showCurrentUser = currentUserRank > 3 && currentUserEntry && !window.auth.currentUser.isAnonymous;
     
     // Create HTML for the preview with well-structured entries
     let html = '';
     
     // Add top 3 entries
     if (top3.length === 0) {
-      html = '<div class="leaderboard-loading">No leaderboard data yet</div>';
+      if (window.auth.currentUser.isAnonymous) {
+        html = '<div class="leaderboard-loading">Create an account to join the leaderboard!</div>';
+      } else {
+        html = '<div class="leaderboard-loading">No leaderboard data yet</div>';
+      }
     } else {
       top3.forEach((entry, index) => {
         const isCurrentUser = entry.uid === currentUid;
