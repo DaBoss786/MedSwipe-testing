@@ -2514,3 +2514,31 @@ html, body {
 .terms-text a:hover {
   text-decoration: underline;
 }
+
+.signup-header {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.signup-header h2 {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+}
+
+.back-button {
+  position: absolute;
+  left: 0;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #0C72D3;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.back-button:hover {
+  transform: translateX(-2px);
+}
