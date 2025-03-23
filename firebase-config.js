@@ -2,14 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth, signInAnonymously, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-
-// Add this after initializing the auth
-const googleProvider = new GoogleAuthProvider();
-
-// Optional: Add specific scopes if needed
-googleProvider.addScope('profile');
-googleProvider.addScope('email');
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -28,16 +21,14 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Sign in anonymously only if no user is signed in
-if (!auth.currentUser) {
-  signInAnonymously(auth)
-    .then(() => { 
-      console.log("Signed in anonymously as", auth.currentUser.uid); 
-    })
-    .catch((error) => { 
-      console.error("Anonymous sign-in error:", error); 
-    });
-}
+// Sign in anonymously
+signInAnonymously(auth)
+  .then(() => { 
+    console.log("Signed in anonymously as", auth.currentUser.uid); 
+  })
+  .catch((error) => { 
+    console.error("Anonymous sign-in error:", error); 
+  });
 
 // Make Firestore functions globally available
 window.analytics = analytics;

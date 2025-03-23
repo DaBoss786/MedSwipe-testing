@@ -20,87 +20,6 @@
   <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-  <div id="loginScreen" class="login-container">
-  <div class="login-logo">
-    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo">
-  </div>
-  
-  <div class="login-options">
-    <h2>Welcome to MedSwipe</h2>
-    <p>Swipe. Learn. Master medicine</p>
-    
-    <div class="auth-buttons">
-      <button id="googleSignInBtn" class="login-btn google-btn">
-        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij4KICA8cGF0aCBmaWxsPSIjNDI4NUY0IiBkPSJNMjMuNzQ1IDEyLjI3YzAtLjc5LS4wNy0xLjU0LS4xOS0yLjI3aC0xMS4zdjQuNTFoNi40N2MtLjI5IDEuNDgtMS4xNCAyLjczLTIuNCAzLjU4djNoMy44NmMyLjI2LTIuMDkgMy41Ni01LjE3IDMuNTYtOC44MnoiLz4KICA8cGF0aCBmaWxsPSIjMzRBODUzIiBkPSJNMTIuMjU1IDI0YzMuMjQgMCA1Ljk1LTEuMDggNy45My0yLjkxbC0zLjg2LTNjLTEuMDguNzItMi40NSAxLjE2LTQuMDcgMS4xNi0zLjEzIDAtNS43OC0yLjExLTYuNzMtNC45NmgtMy45OHYzLjA5QzIuNDg1IDIxLjExIDcuMDU1IDI0IDEyLjI1NSAyNHoiLz4KICA8cGF0aCBmaWxsPSIjRkJCQzA1IiBkPSJNNS41MjUgMTQuMjljLS4yNS0uNzItLjM4LTEuNDktLjM4LTIuMjlzLjE0LTEuNTcuMzgtMi4yOVY2LjYyaC0zLjk4YTExLjg5IDExLjg5IDAgMCAwIDAgMTAuNzZsIDMuOTgtMy4wOXoiLz4KICA8cGF0aCBmaWxsPSIjRUE0MzM1IiBkPSJNMTIuMjU1IDQuNzVjMS43NyAwIDMuMzUuNjEgNC42IDEuOGwzLjQyLTMuNDJDMTguMjA1IDEuMTkgMTUuNDk1IDAgMTIuMjU1IDBjLTUuMiAwLTkuNzcgMi44OS0xMS45OCA3LjExbDMuOTggMy4wOWMuOTUtMi44NSAzLjYtNC45NiA2LjczLTQuOTZ6Ii8+Cjwvc3ZnPg==" alt="Google Logo">
-        Continue with Google
-      </button>
-      
-      <button id="emailSignInBtn" class="login-btn email-btn">
-        Sign in with Email
-      </button>
-      
-      <div class="divider">
-        <span>or</span>
-      </div>
-      
-      <button id="guestContinueBtn" class="login-btn guest-btn">
-        Continue as Guest
-      </button>
-    </div>
-  </div>
-</div>
-
-<div id="guestWarningModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <h2>You're in!</h2>
-    <p>You'll have full access to all questions, but your progress won't be saved, and you won't appear on the leaderboard.</p>
-    <p><strong>Want to keep track of your XP and streaks? Register for Free!</strong></p>
-    <div class="modal-buttons">
-      <button id="continueAsGuestConfirmBtn">Continue as Guest</button>
-      <button id="registerInsteadBtn">Register</button>
-    </div>
-  </div>
-</div>
-
-<div id="emailSignInModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <h2>Sign In</h2>
-    <form id="emailSignInForm">
-      <input type="email" id="loginEmail" placeholder="Email" required>
-      <input type="password" id="loginPassword" placeholder="Password" required>
-      <button type="submit">Sign In</button>
-      <p id="loginError" style="color:red;"></p>
-    </form>
-    <p>Don't have an account? <a href="#" id="switchToRegister">Register</a></p>
-  </div>
-</div>
-
-<div id="emailRegisterModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <h2>Create Account</h2>
-    <form id="emailRegisterForm">
-      <input type="text" id="registerUsername" placeholder="Username (min 4 characters)" required minlength="4">
-      <select id="trainingLevel">
-        <option value="">Select Training Level (Optional)</option>
-        <option value="Medical Student">Medical Student</option>
-        <option value="PGY 1-2">PGY 1-2</option>
-        <option value="PGY 3-4">PGY 3-4</option>
-        <option value="PGY 5+">PGY 5+</option>
-        <option value="Attending">Attending</option>
-        <option value="Other">Other</option>
-      </select>
-      <input type="email" id="registerEmail" placeholder="Email" required>
-      <input type="password" id="registerPassword" placeholder="Password" required minlength="6">
-      <div class="tos-consent">
-        <input type="checkbox" id="tosConsent" required>
-        <label for="tosConsent">I agree to the <a href="#" id="viewTOS">Terms of Service</a> and <a href="#" id="viewPrivacy">Privacy Policy</a></label>
-      </div>
-      <button type="submit">Create Account</button>
-      <p id="registerError" style="color:red;"></p>
-    </form>
-    <p>Already have an account? <a href="#" id="switchToLogin">Sign In</a></p>
-  </div>
-</div>
   <!-- Splash Screen Container -->
 <div id="splashScreen" class="splash-screen">
   <div class="splash-content">
@@ -458,11 +377,6 @@
   
   <!-- Firebase SDK -->
   <script type="module" src="firebase-config.js"></script>
-
-  <!-- New Authentication Script -->
-<script type="module" src="auth.js"></script>
-
-  <script type="module" src="tos-privacy.js"></script>
   
   <!-- Include Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
@@ -492,78 +406,5 @@
   }
 </script>
 
-  <!-- Privacy Policy Modal -->
-<div id="privacyPolicyModal" class="modal" style="display:none;">
-  <div class="modal-content scrollable-modal">
-    <h2>Privacy Policy</h2>
-    <div class="modal-scroll">
-      <h3>Effective Date: March 21, 2024</h3>
-      
-      <p>MedSwipe ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our app.</p>
-      
-      <h4>Information We Collect</h4>
-      <ul>
-        <li>Personal Information: When you register or sign in using Google or email, we collect your name (if provided), email address, and authentication token.</li>
-        <li>Usage Data: We collect anonymous data on how you interact with the app (e.g., questions answered, categories used) to improve the user experience.</li>
-      </ul>
-      
-      <h4>How We Use Your Information</h4>
-      <ul>
-        <li>To create and manage your account</li>
-        <li>To track your learning progress and analytics</li>
-        <li>To improve app functionality and content</li>
-        <li>To communicate with you about app updates, features, or educational resources (you may unsubscribe at any time)</li>
-      </ul>
-      
-      <h4>Sharing</h4>
-      <p>We do not sell or share your personal information with third parties, except trusted service providers like Firebase and analytics tools, solely for the purpose of delivering our services.</p>
-      
-      <h4>Data Security</h4>
-      <p>We use secure technologies and best practices to protect your data.</p>
-      
-      <h4>Your Rights</h4>
-      <p>You may request to access, modify, or delete your data by contacting us at medswipeapp@gmail.com.</p>
-      
-      <h4>Changes to This Policy</h4>
-      <p>We may update this policy periodically. Continued use of the app constitutes acceptance of any changes.</p>
-      
-      <p><strong>Contact us:</strong> medswipeapp@gmail.com</p>
-    </div>
-    <button class="close-modal">Close</button>
-  </div>
-</div>
-
-<!-- Terms of Service Modal -->
-<div id="termsOfServiceModal" class="modal" style="display:none;">
-  <div class="modal-content scrollable-modal">
-    <h2>Terms of Use</h2>
-    <div class="modal-scroll">
-      <h3>Effective Date: March 21, 2024</h3>
-      
-      <p>By using MedSwipe, you agree to the following terms:</p>
-      
-      <h4>Use of the App</h4>
-      <ul>
-        <li>MedSwipe is an educational tool for healthcare professionals. It does not provide medical advice.</li>
-        <li>You are responsible for keeping your login credentials secure.</li>
-      </ul>
-      
-      <h4>Intellectual Property</h4>
-      <p>All app content (questions, explanations, analytics) is owned by MedSwipe and may not be copied, redistributed, or used for commercial purposes without permission.</p>
-      
-      <h4>CME Disclaimer</h4>
-      <p>CME credits are only available to registered users through eligible, accredited modules.</p>
-      
-      <h4>Termination</h4>
-      <p>We may suspend access to users who violate these terms or misuse the platform.</p>
-      
-      <h4>Limitation of Liability</h4>
-      <p>MedSwipe is not liable for decisions made based on app content. Always refer to professional guidelines and clinical judgment.</p>
-      
-      <p><strong>Contact us:</strong> medswipeapp@gmail.com</p>
-    </div>
-    <button class="close-modal">Close</button>
-  </div>
-</div>
 </body>
 </html>
