@@ -1,8 +1,8 @@
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { getFirestore, doc, runTransaction, getDoc, setDoc, addDoc, collection, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { getAuth, signInAnonymously, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -35,10 +35,14 @@ window.analytics = analytics;
 window.logEvent = logEvent;
 window.db = db;
 window.auth = auth;
+window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+window.updateProfile = updateProfile;
 window.doc = doc;
 window.runTransaction = runTransaction;
 window.getDoc = getDoc;
+window.setDoc = setDoc;
 window.addDoc = addDoc;
 window.collection = collection;
 window.serverTimestamp = serverTimestamp;
 window.getDocs = getDocs;
+window.deleteDoc = deleteDoc;
