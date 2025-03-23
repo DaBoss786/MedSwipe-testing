@@ -1302,25 +1302,6 @@ if (backFromSignup) {
       alert('Apple authentication to be implemented');
     });
   }
-  
-  // Terms links
-  const tosLink = document.getElementById('tosLink');
-  if (tosLink) {
-    tosLink.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('TOS clicked');
-      alert('Terms of Service to be displayed');
-    });
-  }
-  
-  const privacyLink = document.getElementById('privacyLink');
-  if (privacyLink) {
-    privacyLink.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('Privacy clicked');
-      alert('Privacy Policy to be displayed');
-    });
-  }
 }
 
 // Validation helper functions
