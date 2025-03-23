@@ -435,7 +435,8 @@ if (currentQuestion + 1 === totalQuestions) {
           <div class="card">
             <div class="registration-cta">
               <h2>Nice work!</h2>
-              <p>Let's create your profile so that you can save your progress, track XPs, and join the leaderboard. You can also continue as a guest, but your progress won't be saved.</p>
+              <p>Let's create your profile so that you can save your progress, track XPs, and join the leaderboard. It's free!</p>
+<p> You can also continue as a guest, but your progress won't be saved.</p>
               <button id="createProfileBtn" class="welcome-btn">Create Your Profile</button>
               <div class="or-divider">OR</div>
               <div id="continueAsGuest" class="guest-option">Continue as Guest</div>
