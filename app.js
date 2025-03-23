@@ -51,33 +51,40 @@ function loadPreviewQuiz() {
   // Set the preview mode flag
   window.isPreviewMode = true;
   
-  Papa.parse(csvUrl, {
-    download: true,
-    header: true,
-    complete: async function(results) {
-      console.log("Questions loaded for preview:", results.data.length);
-      
-      // Shuffle all questions
-      let allQuestions = shuffleArray(results.data);
-      
-      // Take just 3 random questions for the preview
-      let previewQuestions = allQuestions.slice(0, 3);
-      
-      console.log("Selected 3 preview questions");
-      
-      // Initialize the quiz with only these 3 questions
-      initializeQuiz(previewQuestions);
-      
-      // Show appropriate UI elements
-      document.querySelector(".swiper").style.display = "block";
-      document.getElementById("bottomToolbar").style.display = "flex";
-      document.getElementById("iconBar").style.display = "flex";
-    },
-    error: function(error) {
-      console.error("Error parsing CSV for preview:", error);
-      alert("Error loading questions. Please try again later.");
-    }
-  });
+  console.log("Preview mode set to:", window.isPreviewMode);
+  
+  try {
+    Papa.parse(csvUrl, {
+      download: true,
+      header: true,
+      complete: async function(results) {
+        console.log("Questions loaded for preview:", results.data.length);
+        
+        // Shuffle all questions
+        let allQuestions = shuffleArray(results.data);
+        
+        // Take just 3 random questions for the preview
+        let previewQuestions = allQuestions.slice(0, 3);
+        
+        console.log("Selected 3 preview questions");
+        
+        // Initialize the quiz with only these 3 questions
+        initializeQuiz(previewQuestions);
+        
+        // Show appropriate UI elements
+        document.querySelector(".swiper").style.display = "block";
+        document.getElementById("bottomToolbar").style.display = "flex";
+        document.getElementById("iconBar").style.display = "flex";
+      },
+      error: function(error) {
+        console.error("Error parsing CSV:", error);
+        alert("Error loading questions. Please try again later.");
+      }
+    });
+  } catch (error) {
+    console.error("Error in loadPreviewQuiz:", error);
+    alert("Error loading quiz: " + error.message);
+  }
 }
 
 // Add this to app.js after the loadPreviewQuiz function
