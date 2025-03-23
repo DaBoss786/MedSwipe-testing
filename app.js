@@ -1447,17 +1447,39 @@ async function registerWithEmailPassword(username, email, password) {
       
       // If we had anonymous data, migrate it
       if (anonymousData) {
-        // Modify the data for the new user
-        anonymousData.username = username; // IMPORTANT: Update with chosen username
-        anonymousData.email = email;
-        anonymousData.isRegistered = true;
-        anonymousData.isRegistrationMigration = true; // Special flag for security rules
-        anonymousData.createdAt = window.serverTimestamp();
-        anonymousData.previousAnonymousUid = anonymousUid;
+        // Start with a clean slate for the registered user
+        const registeredUserData = {
+          // Transfer XP and stats
+          stats: anonymousData.stats || {
+            totalAnswered: 0,
+            totalCorrect: 0,
+            totalIncorrect: 0,
+            categories: {},
+            totalTimeSpent: 0,
+            xp: 0,
+            level: 1
+          },
+          // Transfer streaks
+          streaks: anonymousData.streaks || {
+            lastAnsweredDate: null,
+            currentStreak: 0,
+            longestStreak: 0
+          },
+          // Transfer answered questions
+          answeredQuestions: anonymousData.answeredQuestions || {},
+          // Transfer bookmarks
+          bookmarks: anonymousData.bookmarks || [],
+          // Add new registered user info
+          username: username,
+          email: email,
+          isRegistered: true,
+          createdAt: window.serverTimestamp(),
+          previousAnonymousUid: anonymousUid
+        };
         
         // Set the data to the new user document
         const registeredDocRef = window.doc(window.db, 'users', user.uid);
-        await window.setDoc(registeredDocRef, anonymousData);
+        await window.setDoc(registeredDocRef, registeredUserData);
         
         console.log("Data migration complete");
       } else {
@@ -1486,7 +1508,6 @@ async function registerWithEmailPassword(username, email, password) {
     throw error;
   }
 }
-
 // Helper function to create a new user document
 async function createNewUserDocument(userId, username, email) {
   const userDocRef = window.doc(window.db, 'users', userId);
