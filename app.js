@@ -1446,7 +1446,7 @@ async function registerWithEmailPassword(username, email, password) {
       // If we had anonymous data, migrate it
       if (anonymousData) {
         // Modify the data for the new user
-        anonymousData.username = username;
+        anonymousData.username = username; // IMPORTANT: Update with chosen username
         anonymousData.email = email;
         anonymousData.isRegistered = true;
         anonymousData.isRegistrationMigration = true; // Special flag for security rules
@@ -1489,7 +1489,7 @@ async function registerWithEmailPassword(username, email, password) {
 async function createNewUserDocument(userId, username, email) {
   const userDocRef = window.doc(window.db, 'users', userId);
   await window.setDoc(userDocRef, {
-    username: username,
+    username: username, // Ensure this is the chosen username
     email: email,
     createdAt: window.serverTimestamp(),
     isRegistered: true,
