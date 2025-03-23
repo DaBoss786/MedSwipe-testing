@@ -2315,3 +2315,13 @@ html, body {
   box-shadow: 0 6px 15px rgba(12, 114, 211, 0.4);
   background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
 }
+
+.welcome-tagline {
+  font-size: 1.4rem;
+  color: #0C72D3;
+  font-weight: 500;
+  margin-bottom: 40px;
+  margin-top: -10px;
+  letter-spacing: 0.5px;
+  font-family: 'Roboto', sans-serif;
+}
