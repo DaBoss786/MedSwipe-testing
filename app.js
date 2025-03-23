@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // Function to load a preview quiz with 3 questions
 function loadPreviewQuiz() {
   console.log("Loading preview quiz with 3 questions");
+
+  // Set the preview mode flag
+  window.isPreviewMode = true;
   
   Papa.parse(csvUrl, {
     download: true,
