@@ -2380,9 +2380,9 @@ html, body {
 
 .signup-content {
   text-align: center;
-  width: 90%;
-  max-width: 350px;
-  padding: 30px 20px;
+  width: 85%;
+  max-width: 320px; /* Reduced from 350px */
+  padding: 25px 15px; /* Reduced padding */
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -2396,16 +2396,15 @@ html, body {
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px; /* Reduced margin */
 }
+
 
 .form-group input {
   width: 100%;
-  padding: 12px 15px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  transition: border-color 0.3s;
+  box-sizing: border-box; /* This is crucial - ensures padding is included in width */
+  padding: 10px 12px; /* Reduced padding */
+  font-size: 0.95rem; /* Slightly smaller font */
 }
 
 .form-group input:focus {
@@ -2430,7 +2429,7 @@ html, body {
 
 .signup-btn {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
   color: white;
   border: none;
@@ -2454,7 +2453,7 @@ html, body {
 .or-divider {
   position: relative;
   text-align: center;
-  margin: 20px 0;
+  margin: 15px 0;
   color: #888;
 }
 
@@ -2483,7 +2482,7 @@ html, body {
 }
 
 .social-auth-btn {
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 1rem;
@@ -2501,9 +2500,10 @@ html, body {
 }
 
 .terms-text {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #666;
-  margin-top: 20px;
+  margin-top: 15px;
+  padding: 0 5px; /* Add a little padding */
 }
 
 .terms-text a {
