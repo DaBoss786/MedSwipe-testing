@@ -1281,24 +1281,49 @@ if (backFromSignup) {
   }
   
   // Create account button
-  const createAccountBtn = document.getElementById('createAccountBtn');
-  if (createAccountBtn) {
-    createAccountBtn.addEventListener('click', function() {
-      const username = document.getElementById('usernameInput').value.trim();
-      const email = document.getElementById('emailInput').value.trim();
-      const password = document.getElementById('passwordInput').value;
-      
-      if (validateUsername(username) && validateEmail(email) && validatePassword(password)) {
-        console.log('Account creation with email/password');
-        // Implement account creation here
-        alert('Account will be created with: ' + username + ', ' + email);
+const createAccountBtn = document.getElementById('createAccountBtn');
+if (createAccountBtn) {
+  createAccountBtn.addEventListener('click', async function() {
+    const username = document.getElementById('usernameInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (validateUsername(username) && validateEmail(email) && validatePassword(password)) {
+      try {
+        // Show loading state
+        createAccountBtn.textContent = "Creating Account...";
+        createAccountBtn.disabled = true;
         
-        // For now, go to dashboard
+        // Register the user
+        await registerWithEmailPassword(username, email, password);
+        
+        // Show success message
+        alert('Account created successfully!');
+        
+        // Hide signup screen and show dashboard
         document.getElementById('signupScreen').style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
+        
+        // Update user menu
+        if (typeof updateUserMenu === 'function') {
+          updateUserMenu();
+        }
+      } catch (error) {
+        // Handle specific error types
+        if (error.code === 'auth/email-already-in-use') {
+          alert('This email is already in use. Please try another email or sign in.');
+        } else {
+          alert('Error creating account: ' + error.message);
+        }
+        console.error("Registration error:", error);
+      } finally {
+        // Reset button state
+        createAccountBtn.textContent = "Create Account";
+        createAccountBtn.disabled = false;
       }
-    });
-  }
+    }
+  });
+}
   
   // Social auth buttons
   const googleAuthBtn = document.getElementById('googleAuthBtn');
@@ -1488,4 +1513,96 @@ async function loadSpecificQuestions(questionIds) {
       alert("Error loading questions. Please try again later.");
     }
   });
+}
+
+// Function to register user with email/password
+async function registerWithEmailPassword(username, email, password) {
+  try {
+    // Check if user is already signed in anonymously
+    const currentUser = window.auth.currentUser;
+    let anonymousUid = null;
+    
+    if (currentUser && currentUser.isAnonymous) {
+      anonymousUid = currentUser.uid;
+      console.log("Current user is anonymous:", anonymousUid);
+    }
+    
+    // Create new account with email and password
+    const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+    const user = userCredential.user;
+    
+    console.log("Account created for:", user.uid);
+    
+    // Update user profile with username
+    await window.updateProfile(user, {
+      displayName: username
+    });
+    
+    console.log("Profile updated with username:", username);
+    
+    // If there was anonymous data, migrate it
+    if (anonymousUid) {
+      await migrateAnonymousData(anonymousUid, user.uid);
+    } else {
+      // Create a new user document with the username
+      const userDocRef = window.doc(window.db, 'users', user.uid);
+      await window.setDoc(userDocRef, {
+        username: username,
+        email: email,
+        createdAt: window.serverTimestamp(),
+        isRegistered: true,
+        stats: { 
+          totalAnswered: 0, 
+          totalCorrect: 0, 
+          totalIncorrect: 0, 
+          categories: {}, 
+          totalTimeSpent: 0,
+          xp: 0,
+          level: 1
+        },
+        streaks: { 
+          lastAnsweredDate: null, 
+          currentStreak: 0, 
+          longestStreak: 0 
+        }
+      });
+    }
+    
+    return user;
+  } catch (error) {
+    console.error("Error during registration:", error);
+    throw error;
+  }
+}
+
+// Function to migrate anonymous user data to registered user
+async function migrateAnonymousData(anonymousUid, registeredUid) {
+  try {
+    console.log(`Migrating data from ${anonymousUid} to ${registeredUid}`);
+    
+    // Get the anonymous user data
+    const anonymousDocRef = window.doc(window.db, 'users', anonymousUid);
+    const anonymousDocSnap = await window.getDoc(anonymousDocRef);
+    
+    if (anonymousDocSnap.exists()) {
+      const anonymousData = anonymousDocSnap.data();
+      
+      // Update the data to mark as registered
+      anonymousData.isRegistered = true;
+      anonymousData.anonymousUid = anonymousUid; // Keep reference to previous ID
+      
+      // Set the data to the new user ID
+      const registeredDocRef = window.doc(window.db, 'users', registeredUid);
+      await window.setDoc(registeredDocRef, anonymousData);
+      
+      console.log("Data migration complete");
+      
+      // Optional: Delete the anonymous user data
+      // await window.deleteDoc(anonymousDocRef);
+      // console.log("Anonymous data deleted");
+    }
+  } catch (error) {
+    console.error("Error migrating user data:", error);
+    throw error;
+  }
 }
