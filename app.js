@@ -67,6 +67,53 @@ function loadPreviewQuiz() {
   });
 }
 
+// Add this to app.js after the loadPreviewQuiz function
+function loadPreviewFinishScreen() {
+  // Create a new slide for the registration CTA
+  const registrationSlide = document.createElement("div");
+  registrationSlide.className = "swiper-slide";
+  registrationSlide.innerHTML = `
+    <div class="card">
+      <div class="registration-cta">
+        <h2>Nice work!</h2>
+        <p>Let's create your profile so that you can save your progress, track XPs, and join the leaderboard. You can also continue as a guest, but your progress won't be saved.</p>
+        <button id="createProfileBtn" class="welcome-btn">Create Your Profile</button>
+        <div class="or-divider">OR</div>
+        <div id="continueAsGuest" class="guest-option">Continue as Guest</div>
+      </div>
+    </div>
+  `;
+  
+  // Add the slide to the DOM
+  document.getElementById("quizSlides").appendChild(registrationSlide);
+  
+  // Update Swiper to recognize the new slide
+  window.mySwiper.update();
+  
+  // Add event listeners to the buttons
+  registrationSlide.querySelector("#createProfileBtn").addEventListener("click", function() {
+    // Handle profile creation (implement this later)
+    console.log("Create profile clicked");
+    
+    // For now, just go to the main dashboard
+    document.querySelector(".swiper").style.display = "none";
+    document.getElementById("bottomToolbar").style.display = "none";
+    document.getElementById("iconBar").style.display = "none";
+    document.getElementById("mainOptions").style.display = "flex";
+  });
+  
+  registrationSlide.querySelector("#continueAsGuest").addEventListener("click", function() {
+    // Handle guest continuation (implement this later)
+    console.log("Continue as guest clicked");
+    
+    // For now, just go to the main dashboard
+    document.querySelector(".swiper").style.display = "none";
+    document.getElementById("bottomToolbar").style.display = "none";
+    document.getElementById("iconBar").style.display = "none";
+    document.getElementById("mainOptions").style.display = "flex";
+  });
+}
+
 // Main app initialization
 window.addEventListener('load', function() {
   // Ensure functions are globally available
