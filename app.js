@@ -1,3 +1,6 @@
+// Add preview mode flag
+window.isPreviewMode = false;
+
 // Add splash screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
