@@ -15,6 +15,58 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 2000);
 });
 
+// Add this to the bottom of app.js file or just after your splash screen code
+document.addEventListener('DOMContentLoaded', function() {
+  // Get the Get Started button and add click event listener
+  const getStartedBtn = document.getElementById('getStartedBtn');
+  
+  if (getStartedBtn) {
+    getStartedBtn.addEventListener('click', function() {
+      // Hide the welcome screen
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      if (welcomeScreen) {
+        welcomeScreen.style.display = 'none';
+      }
+      
+      // Start a 3-question preview quiz
+      loadPreviewQuiz();
+    });
+  }
+});
+
+// Function to load a preview quiz with 3 questions
+function loadPreviewQuiz() {
+  console.log("Loading preview quiz with 3 questions");
+  
+  Papa.parse(csvUrl, {
+    download: true,
+    header: true,
+    complete: async function(results) {
+      console.log("Questions loaded for preview:", results.data.length);
+      
+      // Shuffle all questions
+      let allQuestions = shuffleArray(results.data);
+      
+      // Take just 3 random questions for the preview
+      let previewQuestions = allQuestions.slice(0, 3);
+      
+      console.log("Selected 3 preview questions");
+      
+      // Initialize the quiz with only these 3 questions
+      initializeQuiz(previewQuestions);
+      
+      // Show appropriate UI elements
+      document.querySelector(".swiper").style.display = "block";
+      document.getElementById("bottomToolbar").style.display = "flex";
+      document.getElementById("iconBar").style.display = "flex";
+    },
+    error: function(error) {
+      console.error("Error parsing CSV for preview:", error);
+      alert("Error loading questions. Please try again later.");
+    }
+  });
+}
+
 // Main app initialization
 window.addEventListener('load', function() {
   // Ensure functions are globally available
