@@ -1,7 +1,7 @@
 // Add preview mode flag
 window.isPreviewMode = false;
 
-// Add splash screen functionality
+// Add splash screen and welcome screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
   const welcomeScreen = document.getElementById('welcomeScreen');
@@ -17,9 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 500); // Matches the transition duration in CSS
     }
   }, 2000);
-});
-
-// Initialize the Get Started button
+  
+  // Initialize the Get Started button
   const getStartedBtn = document.getElementById('getStartedBtn');
   if (getStartedBtn) {
     getStartedBtn.addEventListener('click', function() {
@@ -40,6 +39,10 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+  
+  // Initialize signup functionality
+  initializeSignup();
+});
 
 // Function to load a preview quiz with 3 questions
 function loadPreviewQuiz() {
