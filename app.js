@@ -1238,6 +1238,25 @@ function initializeSignup() {
       validateEmail(this.value);
     });
   }
+
+  // Add back button functionality to signup screen
+const backFromSignup = document.getElementById('backFromSignup');
+if (backFromSignup) {
+  backFromSignup.addEventListener('click', function() {
+    // Hide signup screen
+    document.getElementById('signupScreen').style.display = 'none';
+    
+    // If coming from quiz, show swiper again
+    if (window.isPreviewMode) {
+      document.querySelector(".swiper").style.display = "block";
+      document.getElementById("bottomToolbar").style.display = "flex";
+      document.getElementById("iconBar").style.display = "flex";
+    } else {
+      // Otherwise show welcome screen
+      document.getElementById('welcomeScreen').style.display = 'flex';
+    }
+  });
+}
   
   // Password validation
   const passwordInput = document.getElementById('passwordInput');
