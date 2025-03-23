@@ -168,7 +168,6 @@ async function displayPerformance() {
   });
 }
 
-// Load XP Rankings leaderboard with weekly/all-time toggle
 async function loadOverallData() {
   console.log(`Loading XP rankings leaderboard data`);
   const currentUid = window.auth.currentUser.uid;
@@ -177,20 +176,20 @@ async function loadOverallData() {
   let leaderboardEntries = [];
   
   querySnapshot.forEach(docSnap => {
-  const data = docSnap.data();
-  // Only include registered users in leaderboard
-  if (data.stats && data.isRegistered === true) {
-    let xp = data.stats.xp || 0;
-    const level = data.stats.level || 1;
-    
-    leaderboardEntries.push({
-      uid: docSnap.id,
-      username: data.username || "Anonymous",
-      xp: xp,
-      level: level
-    });
-  }
-});
+    const data = docSnap.data();
+    // Only include registered users in leaderboard
+    if (data.stats && data.isRegistered === true) {
+      let xp = data.stats.xp || 0;
+      const level = data.stats.level || 1;
+      
+      leaderboardEntries.push({
+        uid: docSnap.id,
+        username: data.username || "Anonymous",
+        xp: xp,
+        level: level
+      });
+    }
+  });
   
   // Sort by XP (descending)
   leaderboardEntries.sort((a, b) => b.xp - a.xp);
@@ -288,17 +287,17 @@ async function loadStreaksData() {
   let streakEntries = [];
   
   querySnapshot.forEach(docSnap => {
-  const data = docSnap.data();
-  // Only include registered users in leaderboard
-  if (data.isRegistered === true) {
-    let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
-    streakEntries.push({
-      uid: docSnap.id,
-      username: data.username || "Anonymous",
-      streak: streak
-    });
-  }
-});
+    const data = docSnap.data();
+    // Only include registered users in leaderboard
+    if (data.isRegistered === true) {
+      let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
+      streakEntries.push({
+        uid: docSnap.id,
+        username: data.username || "Anonymous",
+        streak: streak
+      });
+    }
+  });
   
   // Sort by streak length (descending)
   streakEntries.sort((a, b) => b.streak - a.streak);
@@ -371,7 +370,7 @@ async function loadStreaksData() {
   document.getElementById("leaderboardView").innerHTML = html;
   
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
@@ -391,26 +390,26 @@ async function loadTotalAnsweredData() {
   let answeredEntries = [];
   
   querySnapshot.forEach(docSnap => {
-  const data = docSnap.data();
-  // Only include registered users in leaderboard
-  if (data.isRegistered === true) {
-    let weeklyCount = 0;
-    if (data.answeredQuestions) {
-      for (const key in data.answeredQuestions) {
-        const answer = data.answeredQuestions[key];
-        if (answer.timestamp && answer.timestamp >= weekStart) {
-          weeklyCount++;
+    const data = docSnap.data();
+    // Only include registered users in leaderboard
+    if (data.isRegistered === true) {
+      let weeklyCount = 0;
+      if (data.answeredQuestions) {
+        for (const key in data.answeredQuestions) {
+          const answer = data.answeredQuestions[key];
+          if (answer.timestamp && answer.timestamp >= weekStart) {
+            weeklyCount++;
+          }
         }
       }
+      
+      answeredEntries.push({
+        uid: docSnap.id,
+        username: data.username || "Anonymous",
+        weeklyCount: weeklyCount
+      });
     }
-    
-    answeredEntries.push({
-      uid: docSnap.id,
-      username: data.username || "Anonymous",
-      weeklyCount: weeklyCount
-    });
-  }
-});
+  });
   
   // Sort by weekly count (descending)
   answeredEntries.sort((a, b) => b.weeklyCount - a.weeklyCount);
@@ -483,7 +482,7 @@ async function loadTotalAnsweredData() {
   document.getElementById("leaderboardView").innerHTML = html;
   
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
