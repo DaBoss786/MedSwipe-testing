@@ -177,19 +177,20 @@ async function loadOverallData() {
   let leaderboardEntries = [];
   
   querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    if (data.stats) {
-      let xp = data.stats.xp || 0;
-      const level = data.stats.level || 1;
-      
-      leaderboardEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        xp: xp,
-        level: level
-      });
-    }
-  });
+  const data = docSnap.data();
+  // Only include registered users in leaderboard
+  if (data.stats && data.isRegistered === true) {
+    let xp = data.stats.xp || 0;
+    const level = data.stats.level || 1;
+    
+    leaderboardEntries.push({
+      uid: docSnap.id,
+      username: data.username || "Anonymous",
+      xp: xp,
+      level: level
+    });
+  }
+});
   
   // Sort by XP (descending)
   leaderboardEntries.sort((a, b) => b.xp - a.xp);
@@ -287,16 +288,17 @@ async function loadStreaksData() {
   let streakEntries = [];
   
   querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
+  const data = docSnap.data();
+  // Only include registered users in leaderboard
+  if (data.isRegistered === true) {
     let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
-    if (streak > 0 || true) { // Include all users for comprehensive leaderboard
-      streakEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        streak: streak
-      });
-    }
-  });
+    streakEntries.push({
+      uid: docSnap.id,
+      username: data.username || "Anonymous",
+      streak: streak
+    });
+  }
+});
   
   // Sort by streak length (descending)
   streakEntries.sort((a, b) => b.streak - a.streak);
@@ -389,7 +391,9 @@ async function loadTotalAnsweredData() {
   let answeredEntries = [];
   
   querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
+  const data = docSnap.data();
+  // Only include registered users in leaderboard
+  if (data.isRegistered === true) {
     let weeklyCount = 0;
     if (data.answeredQuestions) {
       for (const key in data.answeredQuestions) {
@@ -400,13 +404,13 @@ async function loadTotalAnsweredData() {
       }
     }
     
-    // Include all users for comprehensive leaderboard
     answeredEntries.push({
       uid: docSnap.id,
       username: data.username || "Anonymous",
       weeklyCount: weeklyCount
     });
-  });
+  }
+});
   
   // Sort by weekly count (descending)
   answeredEntries.sort((a, b) => b.weeklyCount - a.weeklyCount);
