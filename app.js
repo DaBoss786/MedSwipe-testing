@@ -1190,6 +1190,205 @@ window.addEventListener('load', function() {
   }, 2000);
 });
 
+// Function to show the signup screen
+function showSignupScreen() {
+  // Hide other screens
+  const welcomeScreen = document.getElementById('welcomeScreen');
+  const swiper = document.querySelector('.swiper');
+  const bottomToolbar = document.getElementById('bottomToolbar');
+  const iconBar = document.getElementById('iconBar');
+  
+  if (welcomeScreen) welcomeScreen.style.display = 'none';
+  if (swiper) swiper.style.display = 'none';
+  if (bottomToolbar) bottomToolbar.style.display = 'none';
+  if (iconBar) iconBar.style.display = 'none';
+  
+  // Show signup screen
+  const signupScreen = document.getElementById('signupScreen');
+  if (signupScreen) signupScreen.style.display = 'flex';
+  
+  // Reset form
+  document.getElementById('usernameInput').value = '';
+  document.getElementById('usernameMessage').textContent = '';
+  document.getElementById('usernameMessage').className = 'input-message';
+  
+  document.getElementById('emailInput').value = '';
+  document.getElementById('emailMessage').textContent = '';
+  document.getElementById('emailMessage').className = 'input-message';
+  
+  document.getElementById('passwordInput').value = '';
+  document.getElementById('passwordMessage').textContent = '';
+  document.getElementById('passwordMessage').className = 'input-message';
+}
+
+// Initialize signup functionality
+function initializeSignup() {
+  // Username validation
+  const usernameInput = document.getElementById('usernameInput');
+  if (usernameInput) {
+    usernameInput.addEventListener('input', function() {
+      validateUsername(this.value);
+    });
+  }
+  
+  // Email validation
+  const emailInput = document.getElementById('emailInput');
+  if (emailInput) {
+    emailInput.addEventListener('input', function() {
+      validateEmail(this.value);
+    });
+  }
+  
+  // Password validation
+  const passwordInput = document.getElementById('passwordInput');
+  if (passwordInput) {
+    passwordInput.addEventListener('input', function() {
+      validatePassword(this.value);
+    });
+  }
+  
+  // Create account button
+  const createAccountBtn = document.getElementById('createAccountBtn');
+  if (createAccountBtn) {
+    createAccountBtn.addEventListener('click', function() {
+      const username = document.getElementById('usernameInput').value.trim();
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      
+      if (validateUsername(username) && validateEmail(email) && validatePassword(password)) {
+        console.log('Account creation with email/password');
+        // Implement account creation here
+        alert('Account will be created with: ' + username + ', ' + email);
+        
+        // For now, go to dashboard
+        document.getElementById('signupScreen').style.display = 'none';
+        document.getElementById('mainOptions').style.display = 'flex';
+      }
+    });
+  }
+  
+  // Social auth buttons
+  const googleAuthBtn = document.getElementById('googleAuthBtn');
+  if (googleAuthBtn) {
+    googleAuthBtn.addEventListener('click', function() {
+      console.log('Google auth clicked');
+      alert('Google authentication to be implemented');
+    });
+  }
+  
+  const appleAuthBtn = document.getElementById('appleAuthBtn');
+  if (appleAuthBtn) {
+    appleAuthBtn.addEventListener('click', function() {
+      console.log('Apple auth clicked');
+      alert('Apple authentication to be implemented');
+    });
+  }
+  
+  // Terms links
+  const tosLink = document.getElementById('tosLink');
+  if (tosLink) {
+    tosLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('TOS clicked');
+      alert('Terms of Service to be displayed');
+    });
+  }
+  
+  const privacyLink = document.getElementById('privacyLink');
+  if (privacyLink) {
+    privacyLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('Privacy clicked');
+      alert('Privacy Policy to be displayed');
+    });
+  }
+}
+
+// Validation helper functions
+function validateUsername(username) {
+  const usernameMessage = document.getElementById('usernameMessage');
+  
+  if (username.length < 3) {
+    usernameMessage.textContent = 'Username must be at least 3 characters';
+    usernameMessage.className = 'input-message error';
+    return false;
+  } else if (username.length > 20) {
+    usernameMessage.textContent = 'Username must be less than 20 characters';
+    usernameMessage.className = 'input-message error';
+    return false;
+  } else {
+    // Here you would normally check if username is available
+    // For now, we'll simulate it with a simple check
+    if (username === 'admin' || username === 'test') {
+      usernameMessage.textContent = 'This username is already taken';
+      usernameMessage.className = 'input-message error';
+      return false;
+    } else {
+      usernameMessage.textContent = 'Username is available';
+      usernameMessage.className = 'input-message success';
+      return true;
+    }
+  }
+}
+
+function validateEmail(email) {
+  const emailMessage = document.getElementById('emailMessage');
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  if (!email) {
+    emailMessage.textContent = 'Email is required';
+    emailMessage.className = 'input-message error';
+    return false;
+  } else if (!emailRegex.test(email)) {
+    emailMessage.textContent = 'Please enter a valid email address';
+    emailMessage.className = 'input-message error';
+    return false;
+  } else {
+    emailMessage.textContent = '';
+    return true;
+  }
+}
+
+function validatePassword(password) {
+  const passwordMessage = document.getElementById('passwordMessage');
+  
+  if (!password) {
+    passwordMessage.textContent = 'Password is required';
+    passwordMessage.className = 'input-message error';
+    return false;
+  } else if (password.length < 6) {
+    passwordMessage.textContent = 'Password must be at least 6 characters';
+    passwordMessage.className = 'input-message error';
+    return false;
+  } else {
+    passwordMessage.textContent = '';
+    return true;
+  }
+}
+
+// Connect Create Profile button in the registration CTA to the signup screen
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize signup functionality
+  initializeSignup();
+  
+  // Update the "Create Your Profile" button click handler to show signup
+  const createProfileBtnCheck = setInterval(function() {
+    const createProfileBtn = document.getElementById('createProfileBtn');
+    if (createProfileBtn) {
+      clearInterval(createProfileBtnCheck);
+      
+      // Replace existing event listener
+      createProfileBtn.replaceWith(createProfileBtn.cloneNode(true));
+      
+      // Add new event listener
+      document.getElementById('createProfileBtn').addEventListener('click', function() {
+        console.log('Create profile clicked');
+        showSignupScreen();
+      });
+    }
+  }, 1000); // Check every second until button is available
+});
+
 // Function to get IDs of questions due for review
 async function getDueQuestionIds() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
