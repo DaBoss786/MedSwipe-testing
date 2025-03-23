@@ -560,6 +560,11 @@ async function getOrGenerateUsername() {
     throw new Error("User not authenticated");
   }
   
+  // If user is anonymous, return empty/placeholder
+  if (window.auth.currentUser.isAnonymous) {
+    return "Guest User"; // Generic placeholder - won't be shown on leaderboard
+  }
+  
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
   const userDocSnap = await window.getDoc(userDocRef);
@@ -569,11 +574,11 @@ async function getOrGenerateUsername() {
     username = userDocSnap.data().username;
   } else {
     // For registered users, use displayName if available
-    if (!window.auth.currentUser.isAnonymous && window.auth.currentUser.displayName) {
+    if (window.auth.currentUser.displayName) {
       username = window.auth.currentUser.displayName;
     } else {
-      // Otherwise generate random name
-      username = generateRandomName();
+      // Fallback - should rarely happen for registered users
+      username = "User" + uid.substring(0, 5);
     }
     
     await window.runTransaction(window.db, async (transaction) => {
