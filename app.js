@@ -1,15 +1,19 @@
 // Add splash screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
+  const welcomeScreen = document.getElementById('welcomeScreen');
   
-  // Hide splash screen after 2 seconds
+  // Hide splash screen after 2 seconds and show welcome screen
   setTimeout(function() {
     if (splashScreen) {
       splashScreen.classList.add('fade-out');
       
-      // Remove from DOM after fade-out animation completes
+      // Remove splash screen and show welcome screen after fade-out animation completes
       setTimeout(function() {
         splashScreen.style.display = 'none';
+        if (welcomeScreen) {
+          welcomeScreen.style.display = 'flex';
+        }
       }, 500); // Matches the transition duration in CSS
     }
   }, 2000);
