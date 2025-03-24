@@ -1793,7 +1793,7 @@ function initChangeUsernameModal() {
     document.getElementById("changeUsernameModal").style.display = "none";
   });
   
-  // Submit button handler
+  // Submit button handler goes here
   document.getElementById("submitUsernameChange").addEventListener("click", async function() {
     const newUsername = document.getElementById("newUsernameInput").value.trim();
     const messageElement = document.getElementById("usernameChangeMessage");
@@ -1839,6 +1839,11 @@ function initChangeUsernameModal() {
         }
       }
       
+      // Update user menu if visible
+      if (typeof updateUserMenu === 'function') {
+        updateUserMenu();
+      }
+      
     } catch (error) {
       messageElement.textContent = "Error: " + error.message;
     } finally {
@@ -1847,4 +1852,37 @@ function initChangeUsernameModal() {
       submitButton.disabled = false;
     }
   });
+}
+
+// Function to update username
+async function changeUsername(newUsername) {
+  if (!window.auth || !window.auth.currentUser) {
+    throw new Error("User not authenticated");
+  }
+  
+  // Validate username
+  if (!newUsername || newUsername.length < 3 || newUsername.length > 20) {
+    throw new Error("Username must be between 3 and 20 characters");
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    
+    // Update Auth profile (display name)
+    await window.updateProfile(window.auth.currentUser, {
+      displayName: newUsername
+    });
+    
+    // Update Firestore user document using setDoc with merge option
+    const userDocRef = window.doc(window.db, 'users', uid);
+    await window.setDoc(userDocRef, {
+      username: newUsername
+    }, { merge: true });
+    
+    console.log("Username updated successfully to:", newUsername);
+    return true;
+  } catch (error) {
+    console.error("Error updating username:", error);
+    throw error;
+  }
 }
