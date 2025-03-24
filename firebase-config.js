@@ -3,6 +3,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebas
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, setDoc, addDoc, collection, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, signInAnonymously, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+// Additional auth providers
+import { GoogleAuthProvider, signInWithPopup, OAuthProvider } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+
 
 // Firebase configuration
 const firebaseConfig = {
@@ -46,3 +49,7 @@ window.collection = collection;
 window.serverTimestamp = serverTimestamp;
 window.getDocs = getDocs;
 window.deleteDoc = deleteDoc;
+// Add to window object
+window.GoogleAuthProvider = GoogleAuthProvider;
+window.signInWithPopup = signInWithPopup;
+window.OAuthProvider = OAuthProvider;
