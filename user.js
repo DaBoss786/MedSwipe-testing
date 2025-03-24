@@ -901,11 +901,11 @@ async function changeUsername(newUsername) {
       displayName: newUsername
     });
     
-    // Update Firestore user document
+    // Update Firestore user document using setDoc with merge option
     const userDocRef = window.doc(window.db, 'users', uid);
-    await window.updateDoc(userDocRef, {
+    await window.setDoc(userDocRef, {
       username: newUsername
-    });
+    }, { merge: true });
     
     console.log("Username updated successfully to:", newUsername);
     return true;
