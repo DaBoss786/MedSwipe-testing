@@ -1886,3 +1886,216 @@ async function changeUsername(newUsername) {
     throw error;
   }
 }
+
+// Handle Google Sign-In
+document.getElementById('googleAuthBtn').addEventListener('click', async function() {
+  try {
+    // Create Google provider instance
+    const provider = new window.GoogleAuthProvider();
+    
+    // Sign in with popup
+    const result = await window.signInWithPopup(window.auth, provider);
+    
+    // Get user details
+    const user = result.user;
+    const isNewUser = result._tokenResponse.isNewUser;
+    
+    // Check if this is a new user
+    if (isNewUser) {
+      // Go to profile completion
+      showProfileCompletion(user);
+    } else {
+      // Existing user - check if they have training level
+      const userDocRef = window.doc(window.db, 'users', user.uid);
+      const userDoc = await window.getDoc(userDocRef);
+      
+      if (userDoc.exists() && userDoc.data().trainingLevel) {
+        // User has completed profile, go to main screen
+        document.getElementById('signupScreen').style.display = 'none';
+        document.getElementById('mainOptions').style.display = 'flex';
+        updateUserMenu();
+      } else {
+        // User needs to complete profile
+        showProfileCompletion(user);
+      }
+    }
+  } catch (error) {
+    console.error("Google sign-in error:", error);
+    alert("Error signing in with Google: " + error.message);
+  }
+});
+
+// Handle Apple Sign-In
+document.getElementById('appleAuthBtn').addEventListener('click', async function() {
+  try {
+    // Create Apple provider instance
+    const provider = new window.OAuthProvider('apple.com');
+    
+    // Sign in with popup
+    const result = await window.signInWithPopup(window.auth, provider);
+    
+    // Get user details
+    const user = result.user;
+    const isNewUser = result._tokenResponse.isNewUser;
+    
+    // Check if this is a new user
+    if (isNewUser) {
+      // Go to profile completion
+      showProfileCompletion(user);
+    } else {
+      // Existing user - check if they have training level
+      const userDocRef = window.doc(window.db, 'users', user.uid);
+      const userDoc = await window.getDoc(userDocRef);
+      
+      if (userDoc.exists() && userDoc.data().trainingLevel) {
+        // User has completed profile, go to main screen
+        document.getElementById('signupScreen').style.display = 'none';
+        document.getElementById('mainOptions').style.display = 'flex';
+        updateUserMenu();
+      } else {
+        // User needs to complete profile
+        showProfileCompletion(user);
+      }
+    }
+  } catch (error) {
+    console.error("Apple sign-in error:", error);
+    alert("Error signing in with Apple: " + error.message);
+  }
+});
+
+// Profile Completion Screen
+function showProfileCompletion(user) {
+  // Hide the welcome and signup screens
+  document.getElementById('welcomeScreen').style.display = 'none';
+  
+  // Create a modal for profile completion
+  let profileModal = document.getElementById('profileCompletionModal');
+  
+  // If the modal doesn't exist, create it
+  if (!profileModal) {
+    profileModal = document.createElement('div');
+    profileModal.id = 'profileCompletionModal';
+    profileModal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;';
+    
+    profileModal.innerHTML = `
+      <div style="background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
+        <h2 style="text-align: center; color: #0056b3;">Complete Your Profile</h2>
+        <p>Just a few more details to get started:</p>
+        
+        <div style="margin-bottom: 15px;">
+          <label for="profileUsername" style="display: block; margin-bottom: 5px;">Username</label>
+          <input type="text" id="profileUsername" placeholder="Choose a username" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+          <p id="profileUsernameMessage" style="color: red; font-size: 0.8rem; min-height: 1rem;"></p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label for="profileTrainingLevel" style="display: block; margin-bottom: 5px;">Training Level</label>
+          <select id="profileTrainingLevel" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            <option value="" disabled selected>Select Your Training Level</option>
+            <option value="Medical Student">Medical Student</option>
+            <option value="PGY 1-2">PGY 1-2</option>
+            <option value="PGY 3-4">PGY 3-4</option>
+            <option value="PGY 5+">PGY 5+</option>
+            <option value="Attending">Attending</option>
+            <option value="Other">Other</option>
+          </select>
+          <p id="profileTrainingMessage" style="color: red; font-size: 0.8rem; min-height: 1rem;"></p>
+        </div>
+        
+        <button id="saveProfileBtn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">Save Profile</button>
+      </div>
+    `;
+    
+    document.body.appendChild(profileModal);
+    
+    // Add event listener for the save button
+    document.getElementById('saveProfileBtn').addEventListener('click', async function() {
+      const username = document.getElementById('profileUsername').value.trim();
+      const trainingLevel = document.getElementById('profileTrainingLevel').value;
+      
+      // Reset error messages
+      document.getElementById('profileUsernameMessage').textContent = '';
+      document.getElementById('profileTrainingMessage').textContent = '';
+      
+      // Validate inputs
+      let isValid = true;
+      
+      if (!username || username.length < 3) {
+        document.getElementById('profileUsernameMessage').textContent = 'Username must be at least 3 characters';
+        isValid = false;
+      }
+      
+      if (!trainingLevel) {
+        document.getElementById('profileTrainingMessage').textContent = 'Please select your training level';
+        isValid = false;
+      }
+      
+      if (!isValid) return;
+      
+      try {
+        // Show loading state
+        const saveBtn = document.getElementById('saveProfileBtn');
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+        
+        // Update Auth profile
+        await window.updateProfile(user, {
+          displayName: username
+        });
+        
+        // Update or create user document
+        const userDocRef = window.doc(window.db, 'users', user.uid);
+        await window.setDoc(userDocRef, {
+          username: username,
+          trainingLevel: trainingLevel,
+          email: user.email,
+          isRegistered: true,
+          createdAt: window.serverTimestamp(),
+          stats: { 
+            totalAnswered: 0, 
+            totalCorrect: 0, 
+            totalIncorrect: 0, 
+            categories: {}, 
+            totalTimeSpent: 0,
+            xp: 0,
+            level: 1
+          },
+          streaks: { 
+            lastAnsweredDate: null, 
+            currentStreak: 0, 
+            longestStreak: 0 
+          }
+        }, { merge: true });
+        
+        // Hide modal and show main screen
+        profileModal.style.display = 'none';
+        document.getElementById('mainOptions').style.display = 'flex';
+        
+        // Update UI
+        updateUserMenu();
+        
+      } catch (error) {
+        console.error('Error saving profile:', error);
+        alert('Error saving profile: ' + error.message);
+        
+        // Reset button
+        saveBtn.textContent = 'Save Profile';
+        saveBtn.disabled = false;
+      }
+    });
+  } else {
+    // Clear previous values
+    document.getElementById('profileUsername').value = '';
+    document.getElementById('profileTrainingLevel').value = '';
+    document.getElementById('profileUsernameMessage').textContent = '';
+    document.getElementById('profileTrainingMessage').textContent = '';
+    
+    // Set initial username if available
+    if (user.displayName) {
+      document.getElementById('profileUsername').value = user.displayName;
+    }
+    
+    // Show the modal
+    profileModal.style.display = 'flex';
+  }
+}
