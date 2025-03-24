@@ -881,3 +881,36 @@ async function fetchSpacedRepetitionData() {
 
 // Make the function available globally
 window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
+
+// Function to update username
+async function changeUsername(newUsername) {
+  if (!window.auth || !window.auth.currentUser) {
+    throw new Error("User not authenticated");
+  }
+  
+  // Validate username
+  if (!newUsername || newUsername.length < 3 || newUsername.length > 20) {
+    throw new Error("Username must be between 3 and 20 characters");
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    
+    // Update Auth profile (display name)
+    await window.updateProfile(window.auth.currentUser, {
+      displayName: newUsername
+    });
+    
+    // Update Firestore user document
+    const userDocRef = window.doc(window.db, 'users', uid);
+    await window.updateDoc(userDocRef, {
+      username: newUsername
+    });
+    
+    console.log("Username updated successfully to:", newUsername);
+    return true;
+  } catch (error) {
+    console.error("Error updating username:", error);
+    throw error;
+  }
+}
