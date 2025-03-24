@@ -1283,50 +1283,50 @@ if (backFromSignup) {
     });
   }
   
-  // Create account button
-const createAccountBtn = document.getElementById('createAccountBtn');
-if (createAccountBtn) {
-  createAccountBtn.addEventListener('click', async function() {
+ // Update the createAccountBtn event listener to include training level
+document.getElementById('createAccountBtn').addEventListener('click', async function() {
+  if (validateSignup()) {
     const username = document.getElementById('usernameInput').value.trim();
     const email = document.getElementById('emailInput').value.trim();
     const password = document.getElementById('passwordInput').value;
+    const trainingLevel = document.getElementById('trainingLevelSelect').value;
     
-    if (validateUsername(username) && validateEmail(email) && validatePassword(password)) {
-      try {
-        // Show loading state
-        createAccountBtn.textContent = "Creating Account...";
-        createAccountBtn.disabled = true;
-        
-        // Register the user
-        await registerWithEmailPassword(username, email, password);
-        
-        // Show success message
-        alert('Account created successfully!');
-        
-        // Hide signup screen and show dashboard
-        document.getElementById('signupScreen').style.display = 'none';
-        document.getElementById('mainOptions').style.display = 'flex';
-        
-        // Update user menu
-        if (typeof updateUserMenu === 'function') {
-          updateUserMenu();
-        }
-      } catch (error) {
-        // Handle specific error types
-        if (error.code === 'auth/email-already-in-use') {
-          alert('This email is already in use. Please try another email or sign in.');
-        } else {
-          alert('Error creating account: ' + error.message);
-        }
-        console.error("Registration error:", error);
-      } finally {
-        // Reset button state
-        createAccountBtn.textContent = "Create Account";
-        createAccountBtn.disabled = false;
+    try {
+      // Show loading state
+      const createAccountBtn = document.getElementById('createAccountBtn');
+      createAccountBtn.textContent = "Creating Account...";
+      createAccountBtn.disabled = true;
+      
+      // Register with email/password and include training level
+      await registerWithEmailPassword(username, email, password, trainingLevel);
+      
+      // Show success message
+      alert('Account created successfully!');
+      
+      // Hide signup screen and show dashboard
+      document.getElementById('signupScreen').style.display = 'none';
+      document.getElementById('mainOptions').style.display = 'flex';
+      
+      // Update user menu
+      if (typeof updateUserMenu === 'function') {
+        updateUserMenu();
       }
+    } catch (error) {
+      // Handle specific error types
+      if (error.code === 'auth/email-already-in-use') {
+        alert('This email is already in use. Please try another email or sign in.');
+      } else {
+        alert('Error creating account: ' + error.message);
+      }
+      console.error("Registration error:", error);
+    } finally {
+      // Reset button state
+      const createAccountBtn = document.getElementById('createAccountBtn');
+      createAccountBtn.textContent = "Create Account";
+      createAccountBtn.disabled = false;
     }
-  });
-}
+  }
+});
   
   // Social auth buttons
   const googleAuthBtn = document.getElementById('googleAuthBtn');
@@ -1408,8 +1408,8 @@ function validatePassword(password) {
   }
 }
 
-// Function to register user with email/password
-async function registerWithEmailPassword(username, email, password) {
+// Updated function to register user with email/password and training level
+async function registerWithEmailPassword(username, email, password, trainingLevel) {
   try {
     // Check if user is already signed in anonymously
     const currentUser = window.auth.currentUser;
@@ -1447,44 +1447,27 @@ async function registerWithEmailPassword(username, email, password) {
       
       // If we had anonymous data, migrate it
       if (anonymousData) {
-        // Start with a clean slate for the registered user
-        const registeredUserData = {
-          // Transfer XP and stats
-          stats: anonymousData.stats || {
-            totalAnswered: 0,
-            totalCorrect: 0,
-            totalIncorrect: 0,
-            categories: {},
-            totalTimeSpent: 0,
-            xp: 0,
-            level: 1
-          },
-          // Transfer streaks
-          streaks: anonymousData.streaks || {
-            lastAnsweredDate: null,
-            currentStreak: 0,
-            longestStreak: 0
-          },
-          // Transfer answered questions
-          answeredQuestions: anonymousData.answeredQuestions || {},
-          // Transfer bookmarks
-          bookmarks: anonymousData.bookmarks || [],
-          // Add new registered user info
-          username: username,
-          email: email,
-          isRegistered: true,
-          createdAt: window.serverTimestamp(),
-          previousAnonymousUid: anonymousUid
-        };
+        // Make a copy of the anonymous data
+        const newUserData = { ...anonymousData };
+        
+        // IMPORTANT: Overwrite the username with the chosen username
+        newUserData.username = username;
+        newUserData.trainingLevel = trainingLevel;
+        
+        // Set other registration fields
+        newUserData.email = email;
+        newUserData.isRegistered = true;
+        newUserData.previousAnonymousUid = anonymousUid;
+        newUserData.createdAt = window.serverTimestamp();
         
         // Set the data to the new user document
         const registeredDocRef = window.doc(window.db, 'users', user.uid);
-        await window.setDoc(registeredDocRef, registeredUserData);
+        await window.setDoc(registeredDocRef, newUserData);
         
-        console.log("Data migration complete");
+        console.log("Data migration complete with username:", username);
       } else {
         // Create a new user document
-        createNewUserDocument(user.uid, username, email);
+        createNewUserDocument(user.uid, username, email, trainingLevel);
       }
     } else {
       // Normal registration flow (not previously anonymous)
@@ -1499,7 +1482,7 @@ async function registerWithEmailPassword(username, email, password) {
       });
       
       // Create a new user document
-      createNewUserDocument(user.uid, username, email);
+      createNewUserDocument(user.uid, username, email, trainingLevel);
     }
     
     return true;
@@ -1508,12 +1491,14 @@ async function registerWithEmailPassword(username, email, password) {
     throw error;
   }
 }
-// Helper function to create a new user document
-async function createNewUserDocument(userId, username, email) {
+
+// Updated helper function to create a new user document with training level
+async function createNewUserDocument(userId, username, email, trainingLevel) {
   const userDocRef = window.doc(window.db, 'users', userId);
   await window.setDoc(userDocRef, {
-    username: username, // Ensure this is the chosen username
+    username: username,
     email: email,
+    trainingLevel: trainingLevel,
     createdAt: window.serverTimestamp(),
     isRegistered: true,
     stats: { 
@@ -1532,7 +1517,7 @@ async function createNewUserDocument(userId, username, email) {
     }
   });
   
-  console.log("Created new user document");
+  console.log("Created new user document with username and training level");
 }
 
 // Connect Create Profile button in the registration CTA to the signup screen
@@ -2098,4 +2083,45 @@ function showProfileCompletion(user) {
     // Show the modal
     profileModal.style.display = 'flex';
   }
+}
+
+// Update the validateSignup function to include training level validation
+function validateSignup() {
+  const username = document.getElementById('usernameInput').value.trim();
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  const trainingLevel = document.getElementById('trainingLevelSelect').value;
+  
+  let isValid = true;
+  
+  // Validate username
+  if (username.length < 3) {
+    document.getElementById('usernameMessage').textContent = 'Username must be at least 3 characters';
+    document.getElementById('usernameMessage').className = 'input-message error';
+    isValid = false;
+  }
+  
+  // Validate email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    document.getElementById('emailMessage').textContent = 'Please enter a valid email address';
+    document.getElementById('emailMessage').className = 'input-message error';
+    isValid = false;
+  }
+  
+  // Validate password
+  if (password.length < 6) {
+    document.getElementById('passwordMessage').textContent = 'Password must be at least 6 characters';
+    document.getElementById('passwordMessage').className = 'input-message error';
+    isValid = false;
+  }
+  
+  // Validate training level
+  if (!trainingLevel) {
+    document.getElementById('trainingLevelMessage').textContent = 'Please select your training level';
+    document.getElementById('trainingLevelMessage').className = 'input-message error';
+    isValid = false;
+  }
+  
+  return isValid;
 }
