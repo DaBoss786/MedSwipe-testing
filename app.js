@@ -1736,3 +1736,115 @@ async function migrateAnonymousData(anonymousUid, registeredUid) {
     throw error;
   }
 }
+
+// Add a menu item to the user menu
+document.addEventListener('DOMContentLoaded', function() {
+  // Add "Change Username" item to user menu list
+  const userMenuList = document.getElementById("userMenuList");
+  if (userMenuList) {
+    // Create new list item
+    const changeUsernameItem = document.createElement("li");
+    changeUsernameItem.id = "changeUsernameItem";
+    changeUsernameItem.textContent = "Change Username";
+    
+    // Insert after the first item
+    if (userMenuList.firstChild) {
+      userMenuList.insertBefore(changeUsernameItem, userMenuList.firstChild.nextSibling);
+    } else {
+      userMenuList.appendChild(changeUsernameItem);
+    }
+    
+    // Add click event
+    changeUsernameItem.addEventListener("click", function() {
+      showChangeUsernameModal();
+    });
+  }
+  
+  // Initialize modal handlers
+  initChangeUsernameModal();
+});
+
+function showChangeUsernameModal() {
+  if (!window.auth || !window.auth.currentUser) {
+    alert("You must be logged in to change your username");
+    return;
+  }
+  
+  // Get current username
+  const currentUsername = window.auth.currentUser.displayName || 
+                        document.getElementById("usernameDisplay").textContent || 
+                        "Unknown";
+  
+  // Update display and clear fields
+  document.getElementById("currentUsernameDisplay").textContent = currentUsername;
+  document.getElementById("newUsernameInput").value = "";
+  document.getElementById("usernameChangeMessage").textContent = "";
+  
+  // Show modal
+  document.getElementById("changeUsernameModal").style.display = "flex";
+  
+  // Close user menu
+  closeUserMenu();
+}
+
+function initChangeUsernameModal() {
+  // Close button handler
+  document.getElementById("closeUsernameModal").addEventListener("click", function() {
+    document.getElementById("changeUsernameModal").style.display = "none";
+  });
+  
+  // Submit button handler
+  document.getElementById("submitUsernameChange").addEventListener("click", async function() {
+    const newUsername = document.getElementById("newUsernameInput").value.trim();
+    const messageElement = document.getElementById("usernameChangeMessage");
+    
+    // Validate username
+    if (!newUsername) {
+      messageElement.textContent = "Please enter a username";
+      return;
+    }
+    
+    if (newUsername.length < 3) {
+      messageElement.textContent = "Username must be at least 3 characters";
+      return;
+    }
+    
+    if (newUsername.length > 20) {
+      messageElement.textContent = "Username must be less than 20 characters";
+      return;
+    }
+    
+    try {
+      // Update button state to show loading
+      const submitButton = document.getElementById("submitUsernameChange");
+      submitButton.textContent = "Saving...";
+      submitButton.disabled = true;
+      
+      // Change username
+      await changeUsername(newUsername);
+      
+      // Update UI username displays
+      document.getElementById("usernameDisplay").textContent = newUsername;
+      
+      // Hide modal
+      document.getElementById("changeUsernameModal").style.display = "none";
+      
+      // Show success message
+      alert("Username updated successfully!");
+      
+      // Refresh leaderboard if visible
+      if (document.getElementById("leaderboardView").style.display === "block") {
+        if (typeof loadOverallData === 'function') {
+          loadOverallData();
+        }
+      }
+      
+    } catch (error) {
+      messageElement.textContent = "Error: " + error.message;
+    } finally {
+      // Reset button state
+      submitButton.textContent = "Save New Username";
+      submitButton.disabled = false;
+    }
+  });
+}
