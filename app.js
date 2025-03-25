@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 2000);
   
-  // Initialize the Get Started button
+ // Initialize the Get Started button
 const getStartedBtn = document.getElementById('getStartedBtn');
 if (getStartedBtn) {
   getStartedBtn.addEventListener('click', function() {
@@ -32,18 +32,56 @@ if (getStartedBtn) {
     // Show loading screen
     document.getElementById('loadingScreen').style.display = 'flex';
     
-    // Use try/catch with a timeout to ensure we don't get stuck on loading screen
+    // Delay before starting quiz to show loading screen
     setTimeout(() => {
+      // Modify window.isPreviewMode first - this is important
+      window.isPreviewMode = true;
+      console.log("Preview mode set to:", window.isPreviewMode);
+      
+      // Instead of calling loadPreviewQuiz directly, load questions manually
       try {
-        // Start a 3-question preview quiz
-        loadPreviewQuiz();
+        Papa.parse(csvUrl, {
+          download: true,
+          header: true,
+          complete: function(results) {
+            console.log("Questions loaded for preview:", results.data.length);
+            
+            // Shuffle all questions
+            let allQuestions = shuffleArray(results.data);
+            
+            // Take just 3 random questions for the preview
+            let previewQuestions = allQuestions.slice(0, 3);
+            
+            console.log("Selected 3 preview questions");
+            
+            // Hide loading screen
+            document.getElementById('loadingScreen').style.display = 'none';
+            
+            // Initialize the quiz with only these 3 questions
+            initializeQuiz(previewQuestions);
+            
+            // Show appropriate UI elements
+            document.querySelector(".swiper").style.display = "block";
+            document.getElementById("bottomToolbar").style.display = "flex";
+            document.getElementById("iconBar").style.display = "flex";
+          },
+          error: function(error) {
+            console.error("Error parsing CSV:", error);
+            alert("Error loading questions. Please try again later.");
+            
+            // Hide loading screen and show dashboard on error
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('mainOptions').style.display = 'flex';
+          }
+        });
       } catch (error) {
-        console.error("Error in preview quiz:", error);
-        // If error, show dashboard
+        console.error("Error in quiz initialization:", error);
+        
+        // Hide loading screen and show dashboard on error
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
       }
-    }, 1200);
+    }, 1500);
   });
 }
   
