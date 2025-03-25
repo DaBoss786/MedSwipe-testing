@@ -369,7 +369,11 @@ if (currentQuestion + 1 === totalQuestions) {
           <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
         </div>
       </div>
-      <p class="swipe-next-hint">Swipe up to continue</p>
+      ${(currentQuestion + 1 === totalQuestions) ? 
+      `<button id="continueToRegister" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
+        Continue
+      </button>` : 
+      `<p class="swipe-next-hint">Swipe up to continue</p>`}
     `;
     
     // Add difficulty button event handlers
@@ -422,13 +426,14 @@ if (currentQuestion + 1 === totalQuestions) {
     // Record the answer in the database
     await recordAnswer(qId, category, isCorrect, timeSpent);
     await updateQuestionStats(qId, isCorrect);
-    
-    // Add event listener for when user swipes to this explanation slide
-    window.mySwiper.once('slideChangeTransitionEnd', function() {
-      // When user swipes up from this explanation, check if we need to show registration slide
-      const lastExplanationSlideIndex = (totalQuestions * 2) - 1;
-      if (window.mySwiper.activeIndex === lastExplanationSlideIndex) {
-        // Add a registration slide after the last explanation
+
+    // Add event listener for the continue button if this is the last question
+if (currentQuestion + 1 === totalQuestions) {
+  setTimeout(() => {
+    const continueButton = document.getElementById('continueToRegister');
+    if (continueButton) {
+      continueButton.addEventListener('click', function() {
+        // Create and add the registration slide
         const registrationSlide = document.createElement("div");
         registrationSlide.className = "swiper-slide";
         registrationSlide.innerHTML = `
@@ -436,7 +441,7 @@ if (currentQuestion + 1 === totalQuestions) {
             <div class="registration-cta">
               <h2>Nice work!</h2>
               <p>Let's create your profile so that you can save your progress, track XPs, and join the leaderboard. It's free!</p>
-<p> You can also continue as a guest, but your progress won't be saved.</p>
+              <p>You can also continue as a guest, but your progress won't be saved.</p>
               <button id="createProfileBtn" class="welcome-btn">Create Your Profile</button>
               <div class="or-divider">OR</div>
               <div id="continueAsGuest" class="guest-option">Continue as Guest</div>
@@ -449,32 +454,88 @@ if (currentQuestion + 1 === totalQuestions) {
         
         // Update Swiper to recognize the new slide
         window.mySwiper.update();
-        window.mySwiper.slideNext();
+        
+        // Navigate to the registration slide
+        window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
         
         // Add event listeners to the buttons
-        document.getElementById("createProfileBtn").addEventListener("click", function() {
-          // Handle profile creation (implement this later)
-          console.log("Create profile clicked");
+        setTimeout(() => {
+          document.getElementById("createProfileBtn").addEventListener("click", function() {
+            // Show signup screen
+            showSignupScreen();
+            
+            // Hide swiper and its related elements
+            document.querySelector(".swiper").style.display = "none";
+            document.getElementById("bottomToolbar").style.display = "none";
+            document.getElementById("iconBar").style.display = "none";
+          });
           
-          // For now, just go to the main dashboard
+          document.getElementById("continueAsGuest").addEventListener("click", function() {
+            // Go to main dashboard
+            document.querySelector(".swiper").style.display = "none";
+            document.getElementById("bottomToolbar").style.display = "none";
+            document.getElementById("iconBar").style.display = "none";
+            document.getElementById("mainOptions").style.display = "flex";
+          });
+        }, 100);
+      });
+    }
+  }, 100);
+}
+    
+    // Only add swipe handler if this is the last question
+if (currentQuestion + 1 === totalQuestions) {
+  // Add event listener for when user swipes to this explanation slide
+  window.mySwiper.once('slideChangeTransitionEnd', function() {
+    // When user swipes up from this explanation, check if we need to show registration slide
+    const lastExplanationSlideIndex = (totalQuestions * 2) - 1;
+    if (window.mySwiper.activeIndex === lastExplanationSlideIndex) {
+      // Add a registration slide after the last explanation
+      const registrationSlide = document.createElement("div");
+      registrationSlide.className = "swiper-slide";
+      registrationSlide.innerHTML = `
+        <div class="card">
+          <div class="registration-cta">
+            <h2>Nice work!</h2>
+            <p>Let's create your profile so that you can save your progress, track XPs, and join the leaderboard. It's free!</p>
+            <p>You can also continue as a guest, but your progress won't be saved.</p>
+            <button id="createProfileBtn" class="welcome-btn">Create Your Profile</button>
+            <div class="or-divider">OR</div>
+            <div id="continueAsGuest" class="guest-option">Continue as Guest</div>
+          </div>
+        </div>
+      `;
+      
+      // Add the slide to the DOM
+      document.getElementById("quizSlides").appendChild(registrationSlide);
+      
+      // Update Swiper to recognize the new slide
+      window.mySwiper.update();
+      window.mySwiper.slideNext();
+      
+      // Add event listeners to the buttons
+      setTimeout(() => {
+        document.getElementById("createProfileBtn").addEventListener("click", function() {
+          // Show signup screen
+          showSignupScreen();
+          
+          // Hide swiper and its related elements
           document.querySelector(".swiper").style.display = "none";
           document.getElementById("bottomToolbar").style.display = "none";
           document.getElementById("iconBar").style.display = "none";
-          document.getElementById("mainOptions").style.display = "flex";
         });
         
         document.getElementById("continueAsGuest").addEventListener("click", function() {
-          // Handle guest continuation (implement this later)
-          console.log("Continue as guest clicked");
-          
-          // For now, just go to the main dashboard
+          // Go to main dashboard
           document.querySelector(".swiper").style.display = "none";
           document.getElementById("bottomToolbar").style.display = "none";
           document.getElementById("iconBar").style.display = "none";
           document.getElementById("mainOptions").style.display = "flex";
         });
-      }
-    });
+      }, 100);
+    }
+  });
+}
   } else {
     // Original code for regular (non-preview) quiz
     answerSlide.querySelector('.card').innerHTML = `
