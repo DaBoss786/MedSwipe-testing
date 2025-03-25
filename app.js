@@ -19,26 +19,34 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 2000);
   
   // Initialize the Get Started button
-  const getStartedBtn = document.getElementById('getStartedBtn');
-  if (getStartedBtn) {
-    getStartedBtn.addEventListener('click', function() {
-      console.log("Get Started clicked");
-      
-      // Hide the welcome screen
-      if (welcomeScreen) {
-        welcomeScreen.style.display = 'none';
-      }
-      
-      try {
-        // Start a 3-question preview quiz
+const getStartedBtn = document.getElementById('getStartedBtn');
+if (getStartedBtn) {
+  getStartedBtn.addEventListener('click', function() {
+    console.log("Get Started clicked");
+    
+    // Hide the welcome screen
+    if (welcomeScreen) {
+      welcomeScreen.style.display = 'none';
+    }
+    
+    // Show loading screen instead of dashboard
+    document.getElementById('loadingScreen').style.display = 'flex';
+    
+    try {
+      // Start a 3-question preview quiz with slight delay to show loading screen
+      setTimeout(() => {
         loadPreviewQuiz();
-      } catch (error) {
-        console.error("Error in preview quiz:", error);
-        // If error, show dashboard
+      }, 1200); // 1.2 second delay to show loading screen
+    } catch (error) {
+      console.error("Error in preview quiz:", error);
+      // If error, show dashboard after a short delay
+      setTimeout(() => {
+        document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
-      }
-    });
-  }
+      }, 1500);
+    }
+  });
+}
   
   // Initialize signup functionality
   initializeSignup();
