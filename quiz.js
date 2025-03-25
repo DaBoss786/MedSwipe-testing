@@ -372,7 +372,7 @@ if (currentQuestion + 1 === totalQuestions) {
       </div>
       <!-- Add this new button -->
       <button id="goToSignupBtn" class="welcome-btn" style="display:block; margin:20px auto; padding:10px 20px; background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); color:white; border:none; border-radius:5px; cursor:pointer;">
-        Create Your Profile
+        Continue
       </button>
       <p class="swipe-next-hint">Swipe up to continue</p>
     `;
