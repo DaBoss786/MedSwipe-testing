@@ -29,22 +29,21 @@ if (getStartedBtn) {
       welcomeScreen.style.display = 'none';
     }
     
-    // Show loading screen instead of dashboard
+    // Show loading screen
     document.getElementById('loadingScreen').style.display = 'flex';
     
-    try {
-      // Start a 3-question preview quiz with slight delay to show loading screen
-      setTimeout(() => {
+    // Use try/catch with a timeout to ensure we don't get stuck on loading screen
+    setTimeout(() => {
+      try {
+        // Start a 3-question preview quiz
         loadPreviewQuiz();
-      }, 1200); // 1.2 second delay to show loading screen
-    } catch (error) {
-      console.error("Error in preview quiz:", error);
-      // If error, show dashboard after a short delay
-      setTimeout(() => {
+      } catch (error) {
+        console.error("Error in preview quiz:", error);
+        // If error, show dashboard
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
-      }, 1500);
-    }
+      }
+    }, 1200);
   });
 }
   
