@@ -53,10 +53,13 @@
 </div>
     
     <!-- Rest of your signup form... -->
+<!-- Updated signup screen HTML -->
 <div id="signupScreen" style="display: none;">
   <div class="signup-content">
     <div class="signup-header">
       <button id="backFromSignup" class="back-button">←</button>
+      <!-- Add the logo above the header -->
+      <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="signup-logo">
       <h2>Create Your Profile</h2>
     </div>
     
@@ -67,19 +70,19 @@
         <p id="usernameMessage" class="input-message"></p>
       </div>
 
-      <!-- Training Level Selection - Add this to your existing signup form -->
-<div class="form-group">
-  <select id="trainingLevelSelect" name="trainingLevel">
-    <option value="" disabled selected>Select Your Training Level</option>
-    <option value="Medical Student">Medical Student</option>
-    <option value="PGY 1-2">PGY 1-2</option>
-    <option value="PGY 3-4">PGY 3-4</option>
-    <option value="PGY 5+">PGY 5+</option>
-    <option value="Attending">Attending</option>
-    <option value="Other">Other</option>
-  </select>
-  <p id="trainingLevelMessage" class="input-message"></p>
-</div>
+      <!-- Training Level Selection - with improved styling -->
+      <div class="form-group">
+        <select id="trainingLevelSelect" name="trainingLevel">
+          <option value="" disabled selected>Select Your Training Level</option>
+          <option value="Medical Student">Medical Student</option>
+          <option value="PGY 1-2">PGY 1-2</option>
+          <option value="PGY 3-4">PGY 3-4</option>
+          <option value="PGY 5+">PGY 5+</option>
+          <option value="Attending">Attending</option>
+          <option value="Other">Other</option>
+        </select>
+        <p id="trainingLevelMessage" class="input-message"></p>
+      </div>
       
       <!-- Email Field -->
       <div class="form-group">
