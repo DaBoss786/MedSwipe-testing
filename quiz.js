@@ -351,7 +351,7 @@ function addOptionListeners() {
         // If this is the last question, handle differently based on whether we're in preview mode
         if (currentQuestion + 1 === totalQuestions) {
           if (window.isPreviewMode) {
-            // PREVIEW MODE - Last question
+            // PREVIEW MODE - Last question's explanation slide
             answerSlide.querySelector('.card').innerHTML = `
               <div class="answer">
                 <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
@@ -371,30 +371,69 @@ function addOptionListeners() {
               </button>
             `;
             
-            // Add event listener for the Continue button
+            // Add difficulty button event handlers
+            const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
+            difficultyButtons.forEach(btn => {
+              btn.addEventListener('click', async function() {
+                // Remove selected class from all buttons
+                difficultyButtons.forEach(b => b.classList.remove('selected'));
+                // Add selected class to clicked button
+                this.classList.add('selected');
+                
+                const difficulty = this.getAttribute('data-difficulty');
+                const questionId = questionSlide.dataset.id;
+                
+                // Calculate next review date based on difficulty and correctness
+                let nextReviewInterval = 1; // Default 1 day
+                
+                if (isCorrect) {
+                  if (difficulty === 'easy') {
+                    nextReviewInterval = 7; // 7 days
+                  } else if (difficulty === 'medium') {
+                    nextReviewInterval = 3; // 3 days
+                  } else if (difficulty === 'hard') {
+                    nextReviewInterval = 1; // 1 day
+                  }
+                } else {
+                  // If answered incorrectly, review it soon regardless of rating
+                  nextReviewInterval = 1; // 1 day
+                }
+                
+                // Store the spaced repetition data
+                await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+                
+                // Show feedback to the user
+                const feedbackEl = document.createElement('p');
+                feedbackEl.className = 'review-scheduled';
+                feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+                this.closest('.difficulty-buttons').appendChild(feedbackEl);
+                
+                // Disable all buttons after selection
+                difficultyButtons.forEach(b => b.disabled = true);
+              });
+            });
+            
+            // Add event listener for the Continue button (ONLY in preview mode)
             answerSlide.querySelector('#previewContinueBtn').addEventListener('click', function() {
-              // Hide difficulty buttons once Continue is clicked
-              const difficultySection = answerSlide.querySelector('.difficulty-buttons');
-              if (difficultySection) {
-                difficultySection.style.display = 'none';
-              }
-              
               // Show the celebration modal with registration options
               showPreviewCompletionModal();
             });
             
-            // Process the answer as usual
-            currentQuestion++;
-            if (isCorrect) { score++; }
-            updateProgress();
-            await recordAnswer(qId, category, isCorrect, timeSpent);
-            await updateQuestionStats(qId, isCorrect);
-            
-            // Disable further swiping after the last question in preview mode
-            window.mySwiper.allowSlideNext = false;
-            window.mySwiper.allowSlidePrev = false;
+            // When we arrive at the explanation slide, disable further swiping
+            window.mySwiper.on('slideChangeTransitionEnd', function onLastSlide() {
+              const activeIndex = window.mySwiper.activeIndex;
+              const lastExplanationIndex = (totalQuestions * 2) - 1;
+              
+              if (activeIndex === lastExplanationIndex) {
+                // We're now on the last explanation slide, disable further swiping
+                window.mySwiper.allowSlideNext = false;
+                
+                // Remove this listener to prevent multiple executions
+                window.mySwiper.off('slideChangeTransitionEnd', onLastSlide);
+              }
+            });
           } else {
-            // REGULAR MODE - Last question
+            // REGULAR MODE - Last question's explanation slide
             answerSlide.querySelector('.card').innerHTML = `
               <div class="answer">
                 <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
@@ -456,21 +495,22 @@ function addOptionListeners() {
               });
             });
             
-            // Process the answer
-            currentQuestion++;
-            if (isCorrect) { score++; }
-            updateProgress();
+            // When we arrive at the explanation slide, disable further swiping
+            window.mySwiper.on('slideChangeTransitionEnd', function onLastSlide() {
+              const activeIndex = window.mySwiper.activeIndex;
+              const lastExplanationIndex = (totalQuestions * 2) - 1;
+              
+              if (activeIndex === lastExplanationIndex) {
+                // We're now on the last explanation slide, prevent further swiping
+                window.mySwiper.allowSlideNext = false;
+                
+                // Remove this listener to prevent multiple executions
+                window.mySwiper.off('slideChangeTransitionEnd', onLastSlide);
+              }
+            });
             
-            // Record the answer in the database
-            await recordAnswer(qId, category, isCorrect, timeSpent);
-            await updateQuestionStats(qId, isCorrect);
-            
-            // Prepare and show the summary button
+            // Prepare and show the summary button (ONLY for regular quiz)
             prepareSummary();
-            
-            // Disable further swiping after the last question in regular mode
-            window.mySwiper.allowSlideNext = false;
-            window.mySwiper.allowSlidePrev = false;
           }
         } else {
           // NOT LAST QUESTION
@@ -532,14 +572,14 @@ function addOptionListeners() {
               difficultyButtons.forEach(b => b.disabled = true);
             });
           });
-          
-          // Process the answer
-          currentQuestion++;
-          if (isCorrect) { score++; }
-          updateProgress();
-          await recordAnswer(qId, category, isCorrect, timeSpent);
-          await updateQuestionStats(qId, isCorrect);
         }
+        
+        // Process the answer
+        currentQuestion++;
+        if (isCorrect) { score++; }
+        updateProgress();
+        await recordAnswer(qId, category, isCorrect, timeSpent);
+        await updateQuestionStats(qId, isCorrect);
       }
     });
   });
