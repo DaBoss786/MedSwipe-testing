@@ -56,12 +56,14 @@
 <!-- Updated signup screen HTML -->
 <div id="signupScreen" style="display: none;">
   <div class="signup-content">
-    <div class="signup-header">
-      <button id="backFromSignup" class="back-button">←</button>
-      <!-- Add the logo above the header -->
-      <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="signup-logo">
-      <h2>Create Your Profile</h2>
-    </div>
+    <!-- Back button outside the header for proper positioning -->
+    <button id="backFromSignup" class="back-button">←</button>
+    
+    <!-- Logo centered above the text -->
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="signup-logo">
+    
+    <!-- Header text below the logo -->
+    <h2>Create Profile</h2>
     
     <div class="signup-form">
       <!-- Username Field -->
@@ -97,7 +99,7 @@
       </div>
       
       <!-- Create Account Button -->
-      <button id="createAccountBtn" class="signup-btn">Create Account</button>
+      <button id="createAccountBtn" class="signup-btn">Create Profile</button>
           
       <!-- Terms Agreement Text -->
       <p class="terms-text">By creating an account, you agree to our <a href="#" id="viewTOS">Terms of Service</a> and <a href="#" id="viewPrivacy">Privacy Policy</a>.</p>
