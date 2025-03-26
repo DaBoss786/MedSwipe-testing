@@ -356,21 +356,35 @@ function addOptionListeners() {
 if (currentQuestion + 1 === totalQuestions) {
   if (window.isPreviewMode) {
     answerSlide.querySelector('.card').innerHTML = `
-      <div class="answer">
-        <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-        Correct Answer: ${correct}<br>
-        ${explanation}
-      </div>
-      <div class="difficulty-buttons">
-        <p class="difficulty-prompt">How difficult was this question?</p>
-        <div class="difficulty-btn-container">
-          <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-          <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-          <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
-        </div>
-      </div>
-      <p class="swipe-next-hint">Swipe up to continue</p>
-    `;
+  <div class="answer">
+    <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+    Correct Answer: ${correct}<br>
+    ${explanation}
+  </div>
+  <div class="difficulty-buttons">
+    <p class="difficulty-prompt">How difficult was this question?</p>
+    <div class="difficulty-btn-container">
+      <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+      <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+      <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+    </div>
+  </div>
+  <button id="previewContinueBtn" style="display:block; margin:20px auto; padding:12px 25px; background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); color:white; border:none; border-radius:50px; font-size:1.1rem; font-weight:500; cursor:pointer; box-shadow: 0 4px 10px rgba(12, 114, 211, 0.3);">
+    Continue
+  </button>
+`;
+
+// Add event listener for the Continue button
+answerSlide.querySelector('#previewContinueBtn').addEventListener('click', function() {
+  // Hide difficulty buttons once Continue is clicked
+  const difficultySection = answerSlide.querySelector('.difficulty-buttons');
+  if (difficultySection) {
+    difficultySection.style.display = 'none';
+  }
+  
+  // Show the celebration modal with registration options
+  showPreviewCompletionModal();
+});
     
     // Add difficulty button event handlers
     const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
