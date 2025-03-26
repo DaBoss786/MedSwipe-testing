@@ -25,6 +25,7 @@ if (getStartedBtn) {
     console.log("Get Started clicked");
     
     // Hide the welcome screen
+    const welcomeScreen = document.getElementById('welcomeScreen');
     if (welcomeScreen) {
       welcomeScreen.style.display = 'none';
     }
@@ -34,11 +35,11 @@ if (getStartedBtn) {
     
     // Delay before starting quiz to show loading screen
     setTimeout(() => {
-      // Modify window.isPreviewMode first - this is important
+      // Set preview mode flag
       window.isPreviewMode = true;
       console.log("Preview mode set to:", window.isPreviewMode);
       
-      // Instead of calling loadPreviewQuiz directly, load questions manually
+      // Load preview questions
       try {
         Papa.parse(csvUrl, {
           download: true,
