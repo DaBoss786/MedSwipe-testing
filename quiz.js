@@ -843,3 +843,133 @@ function updateProgress() {
     updateUserXP();
   }
 }
+
+// Add this function to your quiz.js file
+
+function showPreviewCompletionModal() {
+  // Create modal if it doesn't exist
+  let modal = document.getElementById('previewCompletionModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'previewCompletionModal';
+    modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease;';
+    
+    modal.innerHTML = `
+      <div id="completionContent" style="background: #fff; border-radius: 20px; width: 90%; max-width: 360px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); overflow: hidden; animation: popIn 0.5s 0.2s both;">
+        <div id="completionHeader" style="background: linear-gradient(135deg, #0C72D3, #66a6ff); padding: 30px 20px; text-align: center; position: relative; overflow: hidden;">
+          <h2 id="completionTitle" style="color: white; font-size: 26px; font-weight: bold; margin: 0 0 10px 0; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); position: relative; z-index: 10;">Great Job!</h2>
+          <p style="color: white; margin: 0; font-size: 18px; position: relative; z-index: 10;">You've completed the preview!</p>
+        </div>
+        
+        <div id="completionBody" style="padding: 30px; text-align: center;">
+          <p style="font-size: 18px; color: #333; margin-bottom: 25px;">Let's create your profile so you can save your progress, track XP, and join the leaderboard.</p>
+          
+          <button id="modalCreateProfileBtn" style="display: block; width: 100%; padding: 12px; margin-bottom: 15px; background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); color: white; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: 500; cursor: pointer; box-shadow: 0 4px 10px rgba(12, 114, 211, 0.3);">
+            Create Your Profile
+          </button>
+          
+          <div style="color: #888; margin: 15px 0;">OR</div>
+          
+          <div id="modalContinueAsGuest" style="color: #0C72D3; font-weight: 500; cursor: pointer; padding: 8px;">
+            Continue as Guest
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add confetti effect (optional but adds to celebration feel)
+    addConfettiToModal(modal);
+    
+    // Add event listeners to the buttons
+    document.getElementById('modalCreateProfileBtn').addEventListener('click', function() {
+      hidePreviewCompletionModal();
+      showSignupScreen();
+    });
+    
+    document.getElementById('modalContinueAsGuest').addEventListener('click', function() {
+      hidePreviewCompletionModal();
+      // Go to the main dashboard
+      document.querySelector(".swiper").style.display = "none";
+      document.getElementById("bottomToolbar").style.display = "none";
+      document.getElementById("iconBar").style.display = "none";
+      document.getElementById("mainOptions").style.display = "flex";
+    });
+  }
+  
+  // Show the modal with fade in effect
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    modal.style.opacity = '1';
+  }, 10);
+  
+  // Play sound effect if available (optional)
+  if (window.Audio) {
+    try {
+      const completionSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013.wav');
+      completionSound.volume = 0.5;
+      completionSound.play();
+    } catch (e) {
+      console.log("Sound could not be played", e);
+    }
+  }
+}
+
+function hidePreviewCompletionModal() {
+  const modal = document.getElementById('previewCompletionModal');
+  if (modal) {
+    modal.style.opacity = '0';
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+  }
+}
+
+// Optional function to add confetti effect to the modal
+function addConfettiToModal(modal) {
+  const colors = ['#FFC700', '#FF3D00', '#00C853', '#2979FF', '#AA00FF', '#D500F9'];
+  
+  // Remove old confetti
+  const oldConfetti = modal.querySelectorAll('.confetti');
+  oldConfetti.forEach(c => c.remove());
+  
+  // Create new confetti pieces
+  for (let i = 0; i < 40; i++) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.cssText = `
+      position: absolute;
+      width: ${5 + Math.random() * 5}px;
+      height: ${5 + Math.random() * 5}px;
+      background-color: ${colors[Math.floor(Math.random() * colors.length)]};
+      left: ${Math.random() * 100}%;
+      top: ${Math.random() * 40}%;
+      transform: rotate(${Math.random() * 360}deg);
+      border-radius: 2px;
+      animation: confettiFall 1.5s forwards;
+      animation-delay: ${Math.random() * 1.5}s;
+    `;
+    
+    modal.appendChild(confetti);
+  }
+  
+  // Add the animation style if it doesn't exist
+  if (!document.getElementById('confettiAnimation')) {
+    const style = document.createElement('style');
+    style.id = 'confettiAnimation';
+    style.textContent = `
+      @keyframes confettiFall {
+        0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+      }
+      @keyframes popIn {
+        0% { transform: scale(0); opacity: 0; }
+        50% { transform: scale(1.1); opacity: 1; }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
