@@ -37,6 +37,7 @@ if (getStartedBtn) {
     setTimeout(() => {
       // Set preview mode flag
       window.isPreviewMode = true;
+      setToolbarToPreviewMode();
       console.log("Preview mode set to:", window.isPreviewMode);
       
       // Load preview questions
@@ -96,6 +97,7 @@ function loadPreviewQuiz() {
 
   // Set the preview mode flag
   window.isPreviewMode = true;
+  setToolbarToPreviewMode();
   
   console.log("Preview mode set to:", window.isPreviewMode);
   
