@@ -2873,3 +2873,19 @@ html, body {
     background-position: right 10px center;
   }
 }
+
+/* Preview Mode Toolbar Styling */
+.toolbar.preview-mode .toolbar-left,
+.toolbar.preview-mode .toolbar-right {
+  display: none; /* Completely hide the left and right sections */
+}
+
+.toolbar.preview-mode .logo {
+  pointer-events: none; /* Make logo non-clickable in preview mode */
+}
+
+/* Ensure the center section takes full width in preview mode */
+.toolbar.preview-mode .toolbar-center {
+  flex: 1;
+  text-align: center;
+}
