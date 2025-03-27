@@ -1582,24 +1582,27 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeSignup();
   
   // Update the "Create Your Profile" button click handler to show signup
-  const createProfileBtnCheck = setInterval(function() {
-    const createProfileBtn = document.getElementById('createProfileBtn');
-    if (createProfileBtn) {
-      clearInterval(createProfileBtnCheck);
+const createProfileBtnCheck = setInterval(function() {
+  const createProfileBtn = document.getElementById('createProfileBtn');
+  if (createProfileBtn) {
+    clearInterval(createProfileBtnCheck);
+    
+    // Replace existing event listener
+    createProfileBtn.replaceWith(createProfileBtn.cloneNode(true));
+    
+    // Add new event listener
+    document.getElementById('createProfileBtn').addEventListener('click', function() {
+      console.log('Create profile clicked');
+      showSignupScreen();
       
-      // Replace existing event listener
-      createProfileBtn.replaceWith(createProfileBtn.cloneNode(true));
+      // Reset preview mode flag
+      window.isPreviewMode = false;
       
-      // Add new event listener
-      document.getElementById('createProfileBtn').addEventListener('click', function() {
-        console.log('Create profile clicked');
-        showSignupScreen();
-      });
-      window.isPreviewMode = false; // Reset preview mode flag
-      restoreToolbarToNormalMode(); // Add this line
-    }
-  }, 1000); // Check every second until button is available
-});
+      // Restore toolbar to normal mode
+      restoreToolbarToNormalMode();
+    });
+  }
+}, 1000); // Check every second until button is available
 
 // Function to get IDs of questions due for review
 async function getDueQuestionIds() {
@@ -2209,10 +2212,35 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Restore toolbar to normal mode (with menu buttons)
+// Existing function to restore toolbar to normal mode
 function restoreToolbarToNormalMode() {
   const toolbar = document.querySelector(".toolbar");
   if (toolbar) {
     toolbar.classList.remove("preview-mode");
+    
+    // Restore full functionality to toolbar sections
+    const leftToolbar = document.querySelector(".toolbar-left");
+    const centerToolbar = document.querySelector(".toolbar-center");
+    const rightToolbar = document.querySelector(".toolbar-right");
+    const logo = document.getElementById("logoClick");
+    
+    if (leftToolbar) {
+      leftToolbar.style.display = "block";
+      leftToolbar.style.pointerEvents = "auto";
+    }
+    
+    if (centerToolbar) {
+      centerToolbar.style.pointerEvents = "auto";
+    }
+    
+    if (rightToolbar) {
+      rightToolbar.style.display = "flex";
+      rightToolbar.style.visibility = "visible";
+      rightToolbar.style.pointerEvents = "auto";
+    }
+    
+    if (logo) {
+      logo.style.pointerEvents = "auto";
+    }
   }
 }
