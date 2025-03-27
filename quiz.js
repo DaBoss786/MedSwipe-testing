@@ -829,21 +829,24 @@ function showPreviewCompletionModal() {
     
     document.body.appendChild(modal);
     
-    // Add confetti effect (optional but adds to celebration feel)
+    // Add confetti effect
     addConfettiToModal(modal);
     
     // Add event listeners to the buttons
     document.getElementById('modalCreateProfileBtn').addEventListener('click', function() {
+      // Reset preview mode INSIDE the handler
+      window.isPreviewMode = false;
+      restoreToolbarToNormalMode();
+      
       hidePreviewCompletionModal();
       showSignupScreen();
     });
-
-    // Add these two lines to reset preview mode:
-  window.isPreviewMode = false;
-  restoreToolbarToNormalMode();
-});
     
     document.getElementById('modalContinueAsGuest').addEventListener('click', function() {
+      // Reset preview mode INSIDE the handler
+      window.isPreviewMode = false;
+      restoreToolbarToNormalMode();
+      
       hidePreviewCompletionModal();
       // Go to the main dashboard
       document.querySelector(".swiper").style.display = "none";
@@ -852,11 +855,6 @@ function showPreviewCompletionModal() {
       document.getElementById("mainOptions").style.display = "flex";
     });
   }
-
-  // Add these two lines to reset preview mode:
-  window.isPreviewMode = false;
-  restoreToolbarToNormalMode();
-});
   
   // Show the modal with fade in effect
   modal.style.display = 'flex';
