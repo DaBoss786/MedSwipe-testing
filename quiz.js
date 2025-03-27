@@ -264,6 +264,9 @@ async function initializeQuiz(questions) {
     touchReleaseOnEdges: true
   });
 
+  window.mySwiper.allowSlideNext = true;
+window.mySwiper.allowSlidePrev = true;
+
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
     const previousIndex = window.mySwiper.previousIndex;
@@ -421,17 +424,22 @@ function addOptionListeners() {
             
             // When we arrive at the explanation slide, disable further swiping
             window.mySwiper.on('slideChangeTransitionEnd', function onLastSlide() {
-              const activeIndex = window.mySwiper.activeIndex;
-              const lastExplanationIndex = (totalQuestions * 2) - 1;
-              
-              if (activeIndex === lastExplanationIndex) {
-                // We're now on the last explanation slide, disable further swiping
-                window.mySwiper.allowSlideNext = false;
-                
-                // Remove this listener to prevent multiple executions
-                window.mySwiper.off('slideChangeTransitionEnd', onLastSlide);
-              }
-            });
+  const activeIndex = window.mySwiper.activeIndex;
+  const lastExplanationIndex = (totalQuestions * 2) - 1;
+  
+  if (activeIndex === lastExplanationIndex) {
+    // We're now on the last explanation slide
+    console.log("Reached last explanation slide");
+    
+    // IMPORTANT: We're only preventing navigation beyond the last slide
+    // but we should still allow moving back through previous slides
+    window.mySwiper.allowSlideNext = false;
+    window.mySwiper.allowSlidePrev = true; // Ensure previous slides remain navigable
+    
+    // Remove this listener to prevent multiple executions
+    window.mySwiper.off('slideChangeTransitionEnd', onLastSlide);
+  }
+});
           } else {
             // REGULAR MODE - Last question's explanation slide
             answerSlide.querySelector('.card').innerHTML = `
