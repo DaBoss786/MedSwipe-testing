@@ -181,6 +181,7 @@ function loadPreviewFinishScreen() {
     document.getElementById("mainOptions").style.display = "flex";
   });
   window.isPreviewMode = false; // Reset preview mode flag
+  restoreToolbarToNormalMode(); // Add this line
 }
 
 // Main app initialization
@@ -1103,6 +1104,7 @@ if (modalStartQuiz) {
     
     document.getElementById("quizSetupModal").style.display = "none";
     window.isPreviewMode = false; // Reset preview mode flag
+    restoreToolbarToNormalMode(); // Add this line
 
     // Update this part to include the spaced repetition option
     const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
@@ -1590,6 +1592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showSignupScreen();
       });
       window.isPreviewMode = false; // Reset preview mode flag
+      restoreToolbarToNormalMode(); // Add this line
     }
   }, 1000); // Check every second until button is available
 });
