@@ -2908,3 +2908,19 @@ html, body {
   flex: 1;
   text-align: center;
 }
+
+/* Enhanced Preview Mode Toolbar Styling */
+.toolbar.preview-mode .toolbar-left {
+  display: none !important; /* Force hide the left menu button */
+}
+
+.toolbar.preview-mode .toolbar-right {
+  display: flex !important; /* Force display the right section */
+  pointer-events: none !important; /* Make it not clickable */
+  opacity: 1 !important; /* Ensure it's visible */
+  visibility: visible !important; /* Ensure it's visible */
+}
+
+.toolbar.preview-mode .logo {
+  pointer-events: none !important; /* Make logo non-clickable */
+}
