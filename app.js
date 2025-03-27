@@ -1363,6 +1363,10 @@ document.getElementById('createAccountBtn').addEventListener('click', async func
       if (typeof updateUserMenu === 'function') {
         updateUserMenu();
       }
+      // Add these two lines to ensure preview mode is turned off:
+      window.isPreviewMode = false;
+      restoreToolbarToNormalMode();
+      
     } catch (error) {
       // Handle specific error types
       if (error.code === 'auth/email-already-in-use') {
