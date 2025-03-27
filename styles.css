@@ -2890,28 +2890,20 @@ html, body {
   text-align: center;
 }
 
-/* Preview Mode Toolbar Styling */
-.toolbar.preview-mode .toolbar-left {
-  display: none; /* Hide only the left menu button */
+/* Enhanced Preview Mode Toolbar with Centered Logo */
+.toolbar.preview-mode {
+  justify-content: center !important; /* Center all content */
 }
 
-.toolbar.preview-mode .toolbar-right {
-  pointer-events: none; /* Make right section visible but not clickable */
-}
-
-.toolbar.preview-mode .logo {
-  pointer-events: none; /* Make logo non-clickable in preview mode */
-}
-
-/* Adjust center section for better balance */
-.toolbar.preview-mode .toolbar-center {
-  flex: 1;
-  text-align: center;
-}
-
-/* Enhanced Preview Mode Toolbar Styling */
 .toolbar.preview-mode .toolbar-left {
   display: none !important; /* Force hide the left menu button */
+}
+
+.toolbar.preview-mode .toolbar-center {
+  position: absolute !important; /* Take it out of normal flow */
+  left: 50% !important; /* Position at 50% from left */
+  transform: translateX(-50%) !important; /* Center it precisely */
+  text-align: center !important;
 }
 
 .toolbar.preview-mode .toolbar-right {
