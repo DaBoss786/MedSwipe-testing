@@ -1604,6 +1604,35 @@ const createProfileBtnCheck = setInterval(function() {
   }
 }, 1000); // Check every second until button is available
 
+   // Add Continue as Guest handler
+  const continueAsGuestCheck = setInterval(function() {
+    const continueAsGuest = document.getElementById('continueAsGuest');
+    if (continueAsGuest) {
+      clearInterval(continueAsGuestCheck);
+      
+      // Replace existing event listener
+      continueAsGuest.replaceWith(continueAsGuest.cloneNode(true));
+      
+      // Add new event listener
+      document.getElementById('continueAsGuest').addEventListener('click', function() {
+        console.log('Continue as guest clicked');
+        
+        // Reset preview mode flag
+        window.isPreviewMode = false;
+        
+        // Restore toolbar to normal mode
+        restoreToolbarToNormalMode();
+        
+        // Hide the swiper and show main options
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+      });
+    }
+  }, 1000); // Check every second until button is available
+});
+
 // Function to get IDs of questions due for review
 async function getDueQuestionIds() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
