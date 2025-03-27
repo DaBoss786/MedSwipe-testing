@@ -2180,13 +2180,30 @@ function validateSignup() {
   return isValid;
 }
 
-// Set toolbar to preview mode (only logo, not clickable)
 function setToolbarToPreviewMode() {
   const toolbar = document.querySelector(".toolbar");
   if (toolbar) {
     toolbar.classList.add("preview-mode");
+    console.log("Preview mode class added to toolbar:", toolbar.classList.contains("preview-mode"));
+    
+    // Force-show the right toolbar section for XP display
+    const rightToolbar = document.querySelector(".toolbar-right");
+    if (rightToolbar) {
+      rightToolbar.style.display = "flex";
+      rightToolbar.style.visibility = "visible";
+      rightToolbar.style.pointerEvents = "none";
+      console.log("Right toolbar visibility enforced");
+    }
   }
 }
+
+// Add this to the end of app.js
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.isPreviewMode) {
+    console.log("Page loaded in preview mode, enforcing toolbar state");
+    setToolbarToPreviewMode();
+  }
+});
 
 // Restore toolbar to normal mode (with menu buttons)
 function restoreToolbarToNormalMode() {
