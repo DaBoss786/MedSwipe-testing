@@ -2174,3 +2174,19 @@ function validateSignup() {
   
   return isValid;
 }
+
+// Set toolbar to preview mode (only logo, not clickable)
+function setToolbarToPreviewMode() {
+  const toolbar = document.querySelector(".toolbar");
+  if (toolbar) {
+    toolbar.classList.add("preview-mode");
+  }
+}
+
+// Restore toolbar to normal mode (with menu buttons)
+function restoreToolbarToNormalMode() {
+  const toolbar = document.querySelector(".toolbar");
+  if (toolbar) {
+    toolbar.classList.remove("preview-mode");
+  }
+}
