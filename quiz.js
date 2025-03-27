@@ -837,6 +837,11 @@ function showPreviewCompletionModal() {
       hidePreviewCompletionModal();
       showSignupScreen();
     });
+
+    // Add these two lines to reset preview mode:
+  window.isPreviewMode = false;
+  restoreToolbarToNormalMode();
+});
     
     document.getElementById('modalContinueAsGuest').addEventListener('click', function() {
       hidePreviewCompletionModal();
@@ -847,6 +852,11 @@ function showPreviewCompletionModal() {
       document.getElementById("mainOptions").style.display = "flex";
     });
   }
+
+  // Add these two lines to reset preview mode:
+  window.isPreviewMode = false;
+  restoreToolbarToNormalMode();
+});
   
   // Show the modal with fade in effect
   modal.style.display = 'flex';
