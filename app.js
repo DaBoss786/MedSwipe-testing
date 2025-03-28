@@ -627,7 +627,7 @@ window.addEventListener('load', function() {
       node.remove();
     }
   });
-});
+};
 
 // Function to update the level progress circles and bar
 function updateLevelProgress(percent) {
