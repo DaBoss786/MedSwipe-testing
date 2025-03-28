@@ -1287,3 +1287,4 @@ function closeUserMenu() {
   if (userMenu) userMenu.classList.remove("open");
   if (menuOverlay) menuOverlay.classList.remove("show");
 }
+});
