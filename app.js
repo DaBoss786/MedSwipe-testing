@@ -33,28 +33,24 @@ document.addEventListener('DOMContentLoaded', function() {
   if (startGuestBtn) {
     startGuestBtn.addEventListener('click', function() {
       if (welcomeScreen) {
-        welcomeScreen.style.display = 'none'; // Hide welcome screen
-      setTimeout(() => { welcomeScreen.style.display = 'none'; }, 300); // Hide after fade
+        // Corrected fade out for welcome screen
+        welcomeScreen.style.opacity = '0';
+        setTimeout(() => { welcomeScreen.style.display = 'none'; }, 300); // Hide after fade
       }
 
-      // --- START MODIFICATION ---
-      // Instead of showing dashboard, load the 3-question intro quiz
+      // Load the 3-question intro quiz
       console.log("Guest starting. Loading introductory 3-question quiz.");
       if (typeof loadQuestions === 'function') {
-          // Use minimal options for the intro quiz
           loadQuestions({
               num: 3,
-              includeAnswered: false // Doesn't matter for guest, but good practice
-              // type: 'random' is implied if no category/bookmarks etc.
+              includeAnswered: false
           });
       } else {
           console.error("loadQuestions function not found! Cannot start intro quiz.");
-          // Fallback: Show dashboard if quiz fails to load, though ideally it shouldn't.
           const mainOptions = document.getElementById("mainOptions");
           if (mainOptions) mainOptions.style.display = "flex";
           alert("Error loading quiz. Please try again.");
       }
-      // We DON'T set up dashboard events here because the quiz loads first.
     });
   }
 
@@ -62,89 +58,44 @@ document.addEventListener('DOMContentLoaded', function() {
     loginBtn.addEventListener('click', function() {
       // Placeholder for login functionality
       alert('Login/Signup functionality will be added in the next steps!');
-      // In the future, this will likely show a login/signup modal or screen
     });
   }
 });
 
 // Main app initialization
-window.addEventListener('load', function() {
+window.addEventListener('load', function() { // <<< START OF window.load LISTENER
   // Ensure functions are globally available
-  window.updateUserXP = updateUserXP || function() {
-    console.log("updateUserXP not loaded yet");
-  };
-  
-  window.updateUserMenu = updateUserMenu || function() {
-    console.log("updateUserMenu not loaded yet");
-  };
-  
-  // Initialize user menu with username
-  // --- START: Corrected checkAuthAndInit ---
+  window.updateUserXP = updateUserXP || function() { console.log("updateUserXP not loaded yet"); };
+  window.updateUserMenu = updateUserMenu || function() { console.log("updateUserMenu not loaded yet"); };
+
+  // Auth Check and Initialization Logic
   const checkAuthAndInit = function() {
     const welcomeScreen = document.getElementById('welcomeScreen');
-
-    // 1. Check if welcome screen is blocking execution
     if (welcomeScreen && welcomeScreen.style.display !== 'none' && welcomeScreen.style.opacity === '1') {
         console.log("Welcome screen is visible, delaying auth init check.");
-        setTimeout(checkAuthAndInit, 1000); // Check again later
-        return; // Don't proceed yet
-    } // <<< Correct closing brace for welcome screen check
-
-    // --------------------------------------------------------------
-    // The rest of the logic runs ONLY if welcome screen is NOT blocking
-    // --------------------------------------------------------------
-
-    // 2. Check auth status (wait for Firebase auth to be ready)
+        setTimeout(checkAuthAndInit, 1000);
+        return;
+    }
     if (window.auth) {
-        // Firebase Auth object IS ready
-
         if (window.auth.currentUser) {
-            // --------- USER IS LOGGED IN ---------
             console.log("User logged in, initializing user state.");
             const mainOptions = document.getElementById("mainOptions");
-            if (mainOptions) mainOptions.style.display = "flex"; // Show dashboard
-            if (welcomeScreen) welcomeScreen.style.display = 'none'; // Ensure welcome is hidden
-
-            window.updateUserMenu(); // Update user-specific UI
-
-            if (typeof initializeDashboard === 'function') {
-                initializeDashboard(); // Load dashboard data for logged-in user
-            } else {
-                console.warn("initializeDashboard function not found...");
-            }
-             // Setup dashboard events for logged-in user
-             if (typeof setupDashboardEvents === 'function') {
-                 console.log("Logged-in user detected, setting up dashboard events.");
-                 setupDashboardEvents();
-             } else {
-                 console.error("setupDashboardEvents function not found! Dashboard buttons won't work.");
-             }
-            // --------- END LOGGED IN USER ---------
-
+            if (mainOptions) mainOptions.style.display = "flex";
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            if (typeof window.updateUserMenu === 'function') window.updateUserMenu();
+            if (typeof initializeDashboard === 'function') initializeDashboard();
+            if (typeof setupDashboardEvents === 'function') setupDashboardEvents();
         } else {
-            // --------- USER IS GUEST ---------
-            // Auth is ready, but NO user is logged in
             console.log("Auth ready, user is guest.");
-            // Guest flow is initiated by the 'Start Learning' button click.
-            // The dashboard is shown *there*. We don't need to do anything here
-            // unless there's specific guest initialization needed on load *after*
-            // the welcome screen is dismissed (which is unlikely right now).
-            // We do still need dashboard events setup if guest clicks "Start Learning"
-            // which is handled in the button's event listener.
-            // --------- END GUEST USER ---------
         }
-
     } else {
-        // Firebase auth object itself is NOT ready yet. Retry.
         console.log("Firebase auth object not ready, retrying...");
         setTimeout(checkAuthAndInit, 1000);
-    } // <<< Closing brace for if (window.auth)
+    }
+  };
+  setTimeout(checkAuthAndInit, 500); // Start the check
 
-  }; // <<< Correct closing brace for checkAuthAndInit function definition
-  // --- END: Corrected checkAuthAndInit ---
-  
-      // Start checking for auth state *after* a slight delay to let splash/welcome logic run
-  setTimeout(checkAuthAndInit, 500); // Delay the initial check slightly
+  // --- All Event Listeners directly inside window.load ---
   
   // Score circle click => open user menu
   const scoreCircle = document.getElementById("scoreCircle");
@@ -611,29 +562,26 @@ window.addEventListener('load', function() {
     }
   });
 
-  // --- START ADDITION: Registration Prompt Modal Listeners ---
+  // --- Registration Prompt Modal Listeners ---
   const registrationPromptModal = document.getElementById('registrationPromptModal');
   const promptSignUpBtn = document.getElementById('promptSignUpBtn');
   const promptContinueGuestBtn = document.getElementById('promptContinueGuestBtn');
-  // const promptCloseBtn = document.getElementById('promptCloseBtn'); // If you added a close button
-
   if (registrationPromptModal) {
       if (promptSignUpBtn) {
           promptSignUpBtn.addEventListener('click', function() {
-              // TODO: Implement actual Sign Up / Login flow
               alert('Sign Up / Login flow will be added here!');
               registrationPromptModal.style.opacity = '0';
               setTimeout(() => { registrationPromptModal.style.display = 'none'; }, 300);
           });
       }
-
       if (promptContinueGuestBtn) {
           promptContinueGuestBtn.addEventListener('click', function() {
-              // Simply hide the modal
               registrationPromptModal.style.opacity = '0';
-              setTimeout(() => { registrationPromptModal.style.display = 'none'; }, 300); // Hide after fade
+              setTimeout(() => { registrationPromptModal.style.display = 'none'; }, 300);
           });
       }
+  } // <<< *** CORRECTED: Closing brace for if (registrationPromptModal) ***
+
 
 // Function to update the level progress circles and bar
 function updateLevelProgress(percent) {
@@ -1321,4 +1269,3 @@ function closeUserMenu() {
   if (menuOverlay) menuOverlay.classList.remove("show");
 }
 });
-}); // This closes window.addEventListener('load', function() { ... });
