@@ -110,9 +110,10 @@ function getCurrentUser() {
  * @param {string} email - User's email
  * @param {string} password - User's password
  * @param {string} username - User's display name
+ * @param {string} experience - User's experience level
  * @returns {Promise<Object>} The newly created user
  */
-async function registerUser(email, password, username) {
+async function registerUser(email, password, username, experience) {
   const auth = window.auth;
   const db = window.db;
   
@@ -134,6 +135,7 @@ async function registerUser(email, password, username) {
       ...existingData,
       username: username,
       email: email,
+      experience: experience, // Add experience level
       isRegistered: true,
       updatedAt: serverTimestamp(),
       ...(userDoc.exists() ? {} : {
@@ -196,9 +198,10 @@ async function logoutUser() {
  * @param {string} email - User's email
  * @param {string} password - User's password
  * @param {string} username - User's display name
+ * @param {string} experience - User's experience level
  * @returns {Promise<Object>} The upgraded user
  */
-async function upgradeAnonymousUser(email, password, username) {
+async function upgradeAnonymousUser(email, password, username, experience) {
   // This is a simplified implementation
   // In a real app, you would use Firebase's linkWithCredential
   // For now, we'll just register a new user and copy their data
@@ -223,7 +226,7 @@ async function upgradeAnonymousUser(email, password, username) {
     await signOut(auth);
     
     // Create new registered user
-    const newUser = await registerUser(email, password, username);
+    const newUser = await registerUser(email, password, username, experience);
     
     // Copy data from anonymous user
     if (userDoc.exists()) {
@@ -232,6 +235,7 @@ async function upgradeAnonymousUser(email, password, username) {
         ...userData,
         username: username,
         email: email,
+        experience: experience, // Add experience level
         isRegistered: true,
         previousAnonymousUid: anonymousUid,
         updatedAt: serverTimestamp()
