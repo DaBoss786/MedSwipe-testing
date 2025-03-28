@@ -260,6 +260,7 @@ window.loadSpecificQuestions = loadSpecificQuestions; // Make globally available
 // Initialize the quiz UI with selected questions
 async function initializeQuiz(questions, quizOptions = {}) {
   console.log("Initializing quiz with", questions.length, "questions. Options:", quizOptions);
+  let isGuest = !window.auth || !window.auth.currentUser;
   currentQuizQuestions = questions; // Store questions for this quiz instance
   currentQuestionIndex = 0;
   currentQuizScore = 0;
@@ -267,6 +268,7 @@ async function initializeQuiz(questions, quizOptions = {}) {
   sessionStartXP = 0; // Reset start XP
 
   // Get starting XP only if user is logged in
+  if (!isGuest && window.db) { // Use the isGuest variable
   if (window.auth && window.auth.currentUser && window.db) {
       try {
           const uid = window.auth.currentUser.uid;
@@ -284,6 +286,9 @@ async function initializeQuiz(questions, quizOptions = {}) {
   updateProgress(); // Update progress bar/counter (0/total)
 
   let bookmarks = [];
+    if (!isGuest) { // Use the isGuest variable
+      bookmarks = await getBookmarks();
+  }
   if (window.auth && window.auth.currentUser) {
       bookmarks = await getBookmarks(); // Fetch bookmarks for logged-in user
   }
@@ -390,8 +395,8 @@ async function initializeQuiz(questions, quizOptions = {}) {
     }
   });
 
-  addOptionListeners(); // Add listeners to the newly created buttons
-  updateBookmarkIcon(); // Set initial bookmark icon for the first question
+  addOptionListeners();
+  if (typeof window.updateFavoriteIcon === 'function') window.updateFavoriteIcon(); // Use global function
 
   // --- Show Quiz UI ---
   const swiperElement = document.querySelector(".swiper");
