@@ -602,6 +602,30 @@ window.addEventListener('load', function() {
     }
   });
 
+  // --- START ADDITION: Registration Prompt Modal Listeners ---
+  const registrationPromptModal = document.getElementById('registrationPromptModal');
+  const promptSignUpBtn = document.getElementById('promptSignUpBtn');
+  const promptContinueGuestBtn = document.getElementById('promptContinueGuestBtn');
+  // const promptCloseBtn = document.getElementById('promptCloseBtn'); // If you added a close button
+
+  if (registrationPromptModal) {
+      if (promptSignUpBtn) {
+          promptSignUpBtn.addEventListener('click', function() {
+              // TODO: Implement actual Sign Up / Login flow
+              alert('Sign Up / Login flow will be added here!');
+              registrationPromptModal.style.opacity = '0';
+              setTimeout(() => { registrationPromptModal.style.display = 'none'; }, 300);
+          });
+      }
+
+      if (promptContinueGuestBtn) {
+          promptContinueGuestBtn.addEventListener('click', function() {
+              // Simply hide the modal
+              registrationPromptModal.style.opacity = '0';
+              setTimeout(() => { registrationPromptModal.style.display = 'none'; }, 300); // Hide after fade
+          });
+      }
+
 // Function to update the level progress circles and bar
 function updateLevelProgress(percent) {
   // Update the level progress circles
