@@ -177,20 +177,20 @@ window.addEventListener('load', function() {
   }
   
   // Bookmarks from user menu - start a bookmarks-only quiz
-const bookmarksFilterUser = document.getElementById("bookmarksFilterUser");
-if (bookmarksFilterUser) {
-  bookmarksFilterUser.addEventListener("click", function(e) {
-    e.preventDefault();
-    closeUserMenu();
-    if (typeof loadQuestions === 'function') { // Ensure function exists
-      // Start a quiz with only bookmarked questions
-      loadQuestions({
-        bookmarksOnly: true,
-        num: 50 // Large number to include all bookmarks
-      });
-    } // <<< Add the missing '}' here
-  }); // <<< This parenthesis now correctly closes the addEventListener call
-} // <<< This brace correctly closes the 'if (bookmarksFilterUser)' block
+  const bookmarksFilterUser = document.getElementById("bookmarksFilterUser");
+  if (bookmarksFilterUser) {
+    bookmarksFilterUser.addEventListener("click", function(e) {
+      e.preventDefault();
+      closeUserMenu();
+      if (typeof loadQuestions === 'function') {
+        // Start a quiz with only bookmarked questions
+        loadQuestions({
+          bookmarksOnly: true,
+          num: 50 // Large number to include all bookmarks
+        });
+      } // <<< *** THIS IS THE CORRECTED LINE - BRACE ADDED ***
+    }); // Closes addEventListener
+  } // Closes if (bookmarksFilterUser)
   
   
   // Reset progress from user menu
