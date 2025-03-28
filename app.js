@@ -34,18 +34,27 @@ document.addEventListener('DOMContentLoaded', function() {
     startGuestBtn.addEventListener('click', function() {
       if (welcomeScreen) {
         welcomeScreen.style.display = 'none'; // Hide welcome screen
+      setTimeout(() => { welcomeScreen.style.display = 'none'; }, 300); // Hide after fade
       }
-      // For now, show the main dashboard - this simulates entering as a guest
-      const mainOptions = document.getElementById("mainOptions");
-      if (mainOptions) {
-          mainOptions.style.display = "flex"; // Show the dashboard view
+
+      // --- START MODIFICATION ---
+      // Instead of showing dashboard, load the 3-question intro quiz
+      console.log("Guest starting. Loading introductory 3-question quiz.");
+      if (typeof loadQuestions === 'function') {
+          // Use minimal options for the intro quiz
+          loadQuestions({
+              num: 3,
+              includeAnswered: false // Doesn't matter for guest, but good practice
+              // type: 'random' is implied if no category/bookmarks etc.
+          });
+      } else {
+          console.error("loadQuestions function not found! Cannot start intro quiz.");
+          // Fallback: Show dashboard if quiz fails to load, though ideally it shouldn't.
+          const mainOptions = document.getElementById("mainOptions");
+          if (mainOptions) mainOptions.style.display = "flex";
+          alert("Error loading quiz. Please try again.");
       }
-      // Initialize necessary components for guest view if needed later
-      // Trigger dashboard event setup explicitly for guest mode start
-      if (typeof setupDashboardEvents === 'function') {
-          console.log("Guest started, setting up dashboard events.");
-          setupDashboardEvents();
-      }
+      // We DON'T set up dashboard events here because the quiz loads first.
     });
   }
 
