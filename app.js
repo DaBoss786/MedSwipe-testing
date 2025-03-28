@@ -603,6 +603,7 @@ function updateLevelProgress(percent) {
     levelProgressBar.style.width = `${percent}%`;
   }
 }
+window.updateLevelProgress = updateLevelProgress;
 
 // Function to check if a user's streak should be reset due to inactivity
 async function checkAndUpdateStreak() {
