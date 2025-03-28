@@ -50,31 +50,35 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Handle welcome screen buttons
-const startLearningBtn = document.getElementById('startLearningBtn');
-const existingAccountBtn = document.getElementById('existingAccountBtn');
+  const startLearningBtn = document.getElementById('startLearningBtn');
+  const existingAccountBtn = document.getElementById('existingAccountBtn');
 
-if (startLearningBtn) {
-  startLearningBtn.addEventListener('click', function() {
-    welcomeScreen.style.opacity = '0';
-    setTimeout(function() {
-      welcomeScreen.style.display = 'none';
-      mainOptions.style.display = 'flex';
-    }, 500);
-  });
-}
+  if (startLearningBtn) {
+    startLearningBtn.addEventListener('click', function() {
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        mainOptions.style.display = 'flex';
+      }, 500);
+    });
+  }
 
-if (existingAccountBtn) {
-  existingAccountBtn.addEventListener('click', function() {
-    welcomeScreen.style.opacity = '0';
-    setTimeout(function() {
-      welcomeScreen.style.display = 'none';
-      // Show the new login screen instead of the old modal
-      if (typeof window.showLoginScreen === 'function') {
-        window.showLoginScreen();
-      }
-    }, 500);
-  });
-}
+  if (existingAccountBtn) {
+    existingAccountBtn.addEventListener('click', function() {
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        // Show the new login screen instead of the old modal
+        if (typeof window.showLoginScreen === 'function') {
+          window.showLoginScreen();
+        } else {
+          // Fallback to the old login form if the new one isn't available
+          showLoginForm();
+        }
+      }, 500);
+    });
+  }
+});
 
 // Function to show the login form modal
 function showLoginForm() {
@@ -264,7 +268,6 @@ function getAuthErrorMessage(error) {
       return error.message || 'An unknown error occurred';
   }
 }
-
 
 // Main app initialization
 window.addEventListener('load', function() {
@@ -1045,7 +1048,7 @@ async function initializeDashboard() {
       loadLeaderboardPreview();
 
       // Also load review queue data
-updateReviewQueue();
+      updateReviewQueue();
     }
   } catch (error) {
     console.error("Error loading dashboard data:", error);
@@ -1175,26 +1178,26 @@ function setupDashboardEvents() {
   
   // Modal Start Quiz button
   const modalStartQuiz = document.getElementById("modalStartQuiz");
-if (modalStartQuiz) {
-  modalStartQuiz.addEventListener("click", function() {
-    const category = document.getElementById("modalCategorySelect").value;
-    const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
-    const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
-    
-    document.getElementById("quizSetupModal").style.display = "none";
+  if (modalStartQuiz) {
+    modalStartQuiz.addEventListener("click", function() {
+      const category = document.getElementById("modalCategorySelect").value;
+      const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
+      const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+      
+      document.getElementById("quizSetupModal").style.display = "none";
 
-    // Update this part to include the spaced repetition option
-    const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
-    
-    loadQuestions({
-      type: category ? 'custom' : 'random',
-      category: category,
-      num: numQuestions,
-      includeAnswered: includeAnswered,
-      spacedRepetition: useSpacedRepetition
+      // Update this part to include the spaced repetition option
+      const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+      
+      loadQuestions({
+        type: category ? 'custom' : 'random',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered,
+        spacedRepetition: useSpacedRepetition
+      });
     });
-  });
-} // <-- Add this closing curly brace
+  }
   
   // Modal Cancel button
   const modalCancelQuiz = document.getElementById("modalCancelQuiz");
@@ -1227,30 +1230,31 @@ if (modalStartQuiz) {
       showLeaderboard();
     });
   }
+  
   // Review Queue card click - start review
-const reviewQueueCard = document.getElementById("reviewQueueCard");
-if (reviewQueueCard) {
-  reviewQueueCard.addEventListener("click", async function() {
-    // Get count of due reviews
-    const { dueCount } = await countDueReviews();
-    
-    if (dueCount === 0) {
-      alert("You have no questions due for review today. Good job!");
-      return;
-    }
-    
-    // We need to get the actual due question IDs
-    const dueQuestionIds = await getDueQuestionIds();
-    
-    if (dueQuestionIds.length === 0) {
-      alert("No questions found for review. Please try again later.");
-      return;
-    }
-    
-    // Load ONLY the specific due questions, not mixed with new questions
-    loadSpecificQuestions(dueQuestionIds);
-  });
-}
+  const reviewQueueCard = document.getElementById("reviewQueueCard");
+  if (reviewQueueCard) {
+    reviewQueueCard.addEventListener("click", async function() {
+      // Get count of due reviews
+      const { dueCount } = await countDueReviews();
+      
+      if (dueCount === 0) {
+        alert("You have no questions due for review today. Good job!");
+        return;
+      }
+      
+      // We need to get the actual due question IDs
+      const dueQuestionIds = await getDueQuestionIds();
+      
+      if (dueQuestionIds.length === 0) {
+        alert("No questions found for review. Please try again later.");
+        return;
+      }
+      
+      // Load ONLY the specific due questions, not mixed with new questions
+      loadSpecificQuestions(dueQuestionIds);
+    });
+  }
 }
 
 // Function to fix streak calendar alignment
