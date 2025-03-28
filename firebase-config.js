@@ -1,8 +1,8 @@
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -21,6 +21,8 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+console.log("Firebase initialized successfully");
+
 // Make Firestore functions globally available
 window.analytics = analytics;
 window.logEvent = logEvent;
@@ -33,6 +35,25 @@ window.addDoc = addDoc;
 window.collection = collection;
 window.serverTimestamp = serverTimestamp;
 window.getDocs = getDocs;
+window.setDoc = setDoc;
 
-// Import auth module
-import "./auth.js";
+// Export Firebase auth methods for auth.js
+window.onAuthStateChanged = onAuthStateChanged;
+window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+window.signInAnonymously = signInAnonymously;
+window.signOut = signOut;
+window.updateProfile = updateProfile;
+
+// Once Firebase is fully initialized, initialize the auth module
+document.addEventListener('DOMContentLoaded', function() {
+  // Make sure auth.js has loaded
+  setTimeout(function() {
+    if (window.initAuthModule) {
+      console.log("Initializing auth module");
+      window.initAuthModule();
+    } else {
+      console.error("Auth module not loaded yet");
+    }
+  }, 500);
+});
