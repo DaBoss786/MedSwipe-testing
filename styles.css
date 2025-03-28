@@ -2347,3 +2347,160 @@ html, body {
     margin-bottom: 40px;
   }
 }
+
+/* Authentication Modal Styles */
+.auth-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-modal-content {
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.auth-modal h2 {
+  color: #0C72D3;
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.auth-error {
+  color: #dc3545;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  min-height: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.form-group small {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 3px;
+}
+
+.auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.auth-primary-btn {
+  font-size: 1rem;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-primary-btn:hover {
+  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+
+.auth-secondary-btn {
+  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid #0C72D3;
+  background: white;
+  color: #0C72D3;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-secondary-btn:hover {
+  background: #f0f7ff;
+}
+
+.auth-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.auth-close-btn:hover {
+  color: #333;
+}
+
+/* Add user info to the top toolbar when logged in */
+.user-profile-container {
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+}
+
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0C72D3;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  margin-right: 8px;
+  font-size: 0.8rem;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Media queries for better mobile experience */
+@media (max-width: 480px) {
+  .auth-modal-content {
+    padding: 20px 15px;
+  }
+  
+  .auth-buttons {
+    margin-top: 15px;
+  }
+}
