@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Setup welcome screen
   if (window.auth && typeof window.auth.setupWelcomeScreen === 'function') {
     welcomeScreen = window.auth.setupWelcomeScreen();
+  } else {
+    console.warn("Auth setup function not available");
   }
   
   // Hide splash screen after 2 seconds
@@ -31,6 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 500); // Matches the transition duration in CSS
     }
   }, 2000);
+  
+  // Rest of your existing code...
 
 // Main app initialization
 window.addEventListener('load', function() {
