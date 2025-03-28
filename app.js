@@ -1312,3 +1312,4 @@ function closeUserMenu() {
   if (menuOverlay) menuOverlay.classList.remove("show");
 }
 });
+}); // This closes window.addEventListener('load', function() { ... });
