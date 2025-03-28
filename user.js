@@ -555,37 +555,24 @@ async function updateUserMenu() {
   }
 }
 
+// Get or generate a username
 async function getOrGenerateUsername() {
   if (!window.auth || !window.auth.currentUser) {
     throw new Error("User not authenticated");
-  }
-  
-  // If user is anonymous, return empty/placeholder
-  if (window.auth.currentUser.isAnonymous) {
-    return "Guest User"; // Generic placeholder - won't be shown on leaderboard
   }
   
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
   const userDocSnap = await window.getDoc(userDocRef);
   let username;
-  
   if (userDocSnap.exists() && userDocSnap.data().username) {
     username = userDocSnap.data().username;
   } else {
-    // For registered users, use displayName if available
-    if (window.auth.currentUser.displayName) {
-      username = window.auth.currentUser.displayName;
-    } else {
-      // Fallback - should rarely happen for registered users
-      username = "User" + uid.substring(0, 5);
-    }
-    
+    username = generateRandomName();
     await window.runTransaction(window.db, async (transaction) => {
       const docSnap = await transaction.get(userDocRef);
       let data = docSnap.exists() ? docSnap.data() : {};
       data.username = username;
-      data.isRegistered = !window.auth.currentUser.isAnonymous;
       transaction.set(userDocRef, data, { merge: true });
     });
   }
@@ -881,36 +868,3 @@ async function fetchSpacedRepetitionData() {
 
 // Make the function available globally
 window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
-
-// Function to update username
-async function changeUsername(newUsername) {
-  if (!window.auth || !window.auth.currentUser) {
-    throw new Error("User not authenticated");
-  }
-  
-  // Validate username
-  if (!newUsername || newUsername.length < 3 || newUsername.length > 20) {
-    throw new Error("Username must be between 3 and 20 characters");
-  }
-  
-  try {
-    const uid = window.auth.currentUser.uid;
-    
-    // Update Auth profile (display name)
-    await window.updateProfile(window.auth.currentUser, {
-      displayName: newUsername
-    });
-    
-    // Update Firestore user document using setDoc with merge option
-    const userDocRef = window.doc(window.db, 'users', uid);
-    await window.setDoc(userDocRef, {
-      username: newUsername
-    }, { merge: true });
-    
-    console.log("Username updated successfully to:", newUsername);
-    return true;
-  } catch (error) {
-    console.error("Error updating username:", error);
-    throw error;
-  }
-}

@@ -168,23 +168,17 @@ async function displayPerformance() {
   });
 }
 
+// Load XP Rankings leaderboard with weekly/all-time toggle
 async function loadOverallData() {
   console.log(`Loading XP rankings leaderboard data`);
   const currentUid = window.auth.currentUser.uid;
-  
-  // Only get username if user is registered
-  let currentUsername = "Guest User";
-  if (!window.auth.currentUser.isAnonymous) {
-    currentUsername = await getOrGenerateUsername();
-  }
-  
+  const currentUsername = await getOrGenerateUsername();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let leaderboardEntries = [];
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    // ONLY include registered users (NOT anonymous)
-    if (data.stats && data.isRegistered === true) {
+    if (data.stats) {
       let xp = data.stats.xp || 0;
       const level = data.stats.level || 1;
       
@@ -244,8 +238,8 @@ async function loadOverallData() {
   
   html += `</ul>`;
   
-  // Only show current user's ranking if they're registered and not in top 10
-  if (currentUserEntry && !top10.some(e => e.uid === currentUid) && !window.auth.currentUser.isAnonymous) {
+  // Add current user's ranking if not in top 10
+  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
     html += `
       <div class="your-ranking">
         <h3>Your Ranking</h3>
@@ -263,28 +257,9 @@ async function loadOverallData() {
     `;
   }
   
-  // If user is anonymous, show message to register
-  if (window.auth.currentUser.isAnonymous) {
-    html += `
-      <div class="your-ranking" style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px;">
-        <h3>Join the Leaderboard</h3>
-        <p style="margin-bottom: 15px;">Create an account to track your progress and compete on the leaderboard!</p>
-        <button id="joinLeaderboardBtn" style="background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Create Account</button>
-      </div>
-    `;
-  }
-  
   html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
   
   document.getElementById("leaderboardView").innerHTML = html;
-  
-  // Add registration button handler
-  const joinLeaderboardBtn = document.getElementById("joinLeaderboardBtn");
-  if (joinLeaderboardBtn) {
-    joinLeaderboardBtn.addEventListener("click", function() {
-      showSignupScreen();
-    });
-  }
   
   // Add event listeners for tabs and back button
   document.getElementById("overallTab").addEventListener("click", function(){ 
@@ -307,21 +282,14 @@ async function loadOverallData() {
 // Load Streaks leaderboard (no time range tabs)
 async function loadStreaksData() {
   const currentUid = window.auth.currentUser.uid;
-  
-  // Only get username if user is registered
-  let currentUsername = "Guest User";
-  if (!window.auth.currentUser.isAnonymous) {
-    currentUsername = await getOrGenerateUsername();
-  }
-  
+  const currentUsername = await getOrGenerateUsername();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let streakEntries = [];
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    // ONLY include registered users (NOT anonymous)
-    if (data.isRegistered === true) {
-      let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
+    let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
+    if (streak > 0 || true) { // Include all users for comprehensive leaderboard
       streakEntries.push({
         uid: docSnap.id,
         username: data.username || "Anonymous",
@@ -377,8 +345,8 @@ async function loadStreaksData() {
   
   html += `</ul>`;
   
-  // Only show current user's ranking if they're registered and not in top 10
-  if (currentUserEntry && !top10.some(e => e.uid === currentUid) && !window.auth.currentUser.isAnonymous) {
+  // Add current user's ranking if not in top 10
+  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
     html += `
       <div class="your-ranking">
         <h3>Your Ranking</h3>
@@ -396,31 +364,12 @@ async function loadStreaksData() {
     `;
   }
   
-  // If user is anonymous, show message to register
-  if (window.auth.currentUser.isAnonymous) {
-    html += `
-      <div class="your-ranking" style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px;">
-        <h3>Join the Leaderboard</h3>
-        <p style="margin-bottom: 15px;">Create an account to track your progress and compete on the leaderboard!</p>
-        <button id="joinLeaderboardBtn" style="background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Create Account</button>
-      </div>
-    `;
-  }
-  
   html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
   
   document.getElementById("leaderboardView").innerHTML = html;
   
-  // Add registration button handler
-  const joinLeaderboardBtn = document.getElementById("joinLeaderboardBtn");
-  if (joinLeaderboardBtn) {
-    joinLeaderboardBtn.addEventListener("click", function() {
-      showSignupScreen();
-    });
-  }
-  
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
@@ -434,37 +383,29 @@ async function loadStreaksData() {
 // Load Total Answered leaderboard (no time range tabs)
 async function loadTotalAnsweredData() {
   const currentUid = window.auth.currentUser.uid;
-  
-  // Only get username if user is registered
-  let currentUsername = "Guest User";
-  if (!window.auth.currentUser.isAnonymous) {
-    currentUsername = await getOrGenerateUsername();
-  }
-  
+  const currentUsername = await getOrGenerateUsername();
   const weekStart = getStartOfWeek();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let answeredEntries = [];
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    // ONLY include registered users in leaderboard
-    if (data.isRegistered === true) {
-      let weeklyCount = 0;
-      if (data.answeredQuestions) {
-        for (const key in data.answeredQuestions) {
-          const answer = data.answeredQuestions[key];
-          if (answer.timestamp && answer.timestamp >= weekStart) {
-            weeklyCount++;
-          }
+    let weeklyCount = 0;
+    if (data.answeredQuestions) {
+      for (const key in data.answeredQuestions) {
+        const answer = data.answeredQuestions[key];
+        if (answer.timestamp && answer.timestamp >= weekStart) {
+          weeklyCount++;
         }
       }
-      
-      answeredEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        weeklyCount: weeklyCount
-      });
     }
+    
+    // Include all users for comprehensive leaderboard
+    answeredEntries.push({
+      uid: docSnap.id,
+      username: data.username || "Anonymous",
+      weeklyCount: weeklyCount
+    });
   });
   
   // Sort by weekly count (descending)
@@ -514,8 +455,8 @@ async function loadTotalAnsweredData() {
   
   html += `</ul>`;
   
-  // Only show current user's ranking if they're registered and not in top 10
-  if (currentUserEntry && !top10.some(e => e.uid === currentUid) && !window.auth.currentUser.isAnonymous) {
+  // Add current user's ranking if not in top 10
+  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
     html += `
       <div class="your-ranking">
         <h3>Your Ranking</h3>
@@ -533,31 +474,12 @@ async function loadTotalAnsweredData() {
     `;
   }
   
-  // If user is anonymous, show message to register
-  if (window.auth.currentUser.isAnonymous) {
-    html += `
-      <div class="your-ranking" style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px;">
-        <h3>Join the Leaderboard</h3>
-        <p style="margin-bottom: 15px;">Create an account to track your progress and compete on the leaderboard!</p>
-        <button id="joinLeaderboardBtn" style="background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Create Account</button>
-      </div>
-    `;
-  }
-  
   html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
   
   document.getElementById("leaderboardView").innerHTML = html;
   
-  // Add registration button handler
-  const joinLeaderboardBtn = document.getElementById("joinLeaderboardBtn");
-  if (joinLeaderboardBtn) {
-    joinLeaderboardBtn.addEventListener("click", function() {
-      showSignupScreen();
-    });
-  }
-  
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
@@ -567,6 +489,7 @@ async function loadTotalAnsweredData() {
     document.getElementById("aboutView").style.display = "none";
   });
 }
+
 // Default function to show leaderboard
 function showLeaderboard() {
   document.querySelector(".swiper").style.display = "none";

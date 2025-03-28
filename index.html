@@ -29,174 +29,6 @@
     </div>
   </div>
 </div>
- <!-- Welcome Screen (after splash) -->
-<div id="welcomeScreen" style="display: flex; z-index: 9997;">
- <div class="welcome-content">
-  <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="welcome-logo">
-  <p class="welcome-tagline">Swipe. Learn. Master Medicine.</p>
-  <div class="welcome-buttons">
-    <button id="getStartedBtn" class="welcome-btn">Get Started</button>
-    <button id="existingAccountBtn" class="welcome-btn secondary-btn">I Already Have an Account</button>
-  </div>
-</div>
-</div>
-
-  <!-- Loading Screen -->
-<div id="loadingScreen" style="display: none; z-index: 9998;">
-  <div class="loading-content">
-    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="loading-logo">
-    <div class="loading-spinner">
-      <div class="spinner"></div>
-    </div>
-    <p class="loading-text">Curating your questions...</p>
-  </div>
-</div>
-    
-    <!-- Rest of your signup form... -->
-<!-- Updated signup screen HTML -->
-<div id="signupScreen" style="display: none;">
-  <div class="signup-content">
-    <!-- Back button outside the header for proper positioning -->
-    <button id="backFromSignup" class="back-button">←</button>
-    
-    <!-- Logo centered above the text -->
-    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="signup-logo">
-    
-    <!-- Header text below the logo -->
-    <h2>Create Profile</h2>
-    
-    <div class="signup-form">
-      <!-- Username Field -->
-      <div class="form-group">
-        <input type="text" id="usernameInput" placeholder="Username" maxlength="20">
-        <p id="usernameMessage" class="input-message"></p>
-      </div>
-
-      <!-- Training Level Selection - with improved styling -->
-      <div class="form-group">
-        <select id="trainingLevelSelect" name="trainingLevel">
-          <option value="" disabled selected>Select Your Training Level</option>
-          <option value="Medical Student">Medical Student</option>
-          <option value="PGY 1-2">PGY 1-2</option>
-          <option value="PGY 3-4">PGY 3-4</option>
-          <option value="PGY 5+">PGY 5+</option>
-          <option value="Attending">Attending</option>
-          <option value="Other">Other</option>
-        </select>
-        <p id="trainingLevelMessage" class="input-message"></p>
-      </div>
-      
-      <!-- Email Field -->
-      <div class="form-group">
-        <input type="email" id="emailInput" placeholder="Email address">
-        <p id="emailMessage" class="input-message"></p>
-      </div>
-      
-      <!-- Password Field -->
-      <div class="form-group">
-        <input type="password" id="passwordInput" placeholder="Password">
-        <p id="passwordMessage" class="input-message"></p>
-      </div>
-      
-      <!-- Create Account Button -->
-      <button id="createAccountBtn" class="signup-btn">Create Profile</button>
-          
-      <!-- Terms Agreement Text -->
-      <p class="terms-text">By creating an account, you agree to our <a href="#" id="viewTOS">Terms of Service</a> and <a href="#" id="viewPrivacy">Privacy Policy</a>.</p>
-    </div>
-  </div>
-</div>
-
-    <!-- Terms of Service Modal -->
-<div id="termsOfServiceModal" class="modal">
-  <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <h2>Terms of Use</h2>
-    <div class="modal-text">
-      <h3>Terms of Use – MedSwipe</h3>
-      <p>Effective Date: March 2025</p>
-      <p>By using MedSwipe, you agree to the following terms:</p>
-      
-      <h4>Use of the App</h4>
-      <ul>
-        <li>MedSwipe is an educational tool for healthcare professionals. It does not provide medical advice.</li>
-        <li>You are responsible for keeping your login credentials secure.</li>
-      </ul>
-      
-      <h4>Intellectual Property</h4>
-      <ul>
-        <li>All app content (questions, explanations, analytics) is owned by MedSwipe and may not be copied, redistributed, or used for commercial purposes without permission.</li>
-      </ul>
-      
-      <h4>CME Disclaimer</h4>
-      <ul>
-        <li>CME credits are only available to registered users through eligible, accredited modules.</li>
-      </ul>
-      
-      <h4>Termination</h4>
-      <ul>
-        <li>We may suspend access to users who violate these terms or misuse the platform.</li>
-      </ul>
-      
-      <h4>Limitation of Liability</h4>
-      <ul>
-        <li>MedSwipe is not liable for decisions made based on app content. Always refer to professional guidelines and clinical judgment.</li>
-      </ul>
-      
-      <p>Contact us: support@medswipeapp.com</p>
-    </div>
-  </div>
-</div>
-
-<!-- Privacy Policy Modal -->
-<div id="privacyPolicyModal" class="modal">
-  <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <h2>Privacy Policy</h2>
-    <div class="modal-text">
-      <h3>Privacy Policy – MedSwipe</h3>
-      <p>Effective Date: March 2025</p>
-      <p>MedSwipe ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our app.</p>
-      
-      <h4>Information We Collect</h4>
-      <ul>
-        <li>Personal Information: When you register or sign in using Apple, Google, or email, we collect your name (if provided), email address, and authentication token.</li>
-        <li>Usage Data: We collect anonymous data on how you interact with the app (e.g., questions answered, categories used) to improve the user experience.</li>
-      </ul>
-      
-      <h4>How We Use Your Information</h4>
-      <ul>
-        <li>To create and manage your account</li>
-        <li>To track your learning progress and analytics</li>
-        <li>To improve app functionality and content</li>
-        <li>To communicate with you about app updates, features, or educational resources (you may unsubscribe at any time)</li>
-      </ul>
-      
-      <h4>Sharing</h4>
-      <ul>
-        <li>We do not sell or share your personal information with third parties, except trusted service providers like Firebase and analytics tools, solely for the purpose of delivering our services.</li>
-      </ul>
-      
-      <h4>Data Security</h4>
-      <ul>
-        <li>We use secure technologies and best practices to protect your data.</li>
-      </ul>
-      
-      <h4>Your Rights</h4>
-      <ul>
-        <li>You may request to access, modify, or delete your data by contacting us at support@medswipeapp.com.</li>
-      </ul>
-      
-      <h4>Changes to This Policy</h4>
-      <ul>
-        <li>We may update this policy periodically. Continued use of the app constitutes acceptance of any changes.</li>
-      </ul>
-      
-      <p>Contact us: support@medswipeapp.com</p>
-    </div>
-  </div>
-</div>
-    
   <!-- Top Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
@@ -539,18 +371,6 @@
       <button id="closeContactModal">Cancel</button>
     </div>
   </div>
-
-  <div id="changeUsernameModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1800; justify-content: center; align-items: center;">
-  <div style="background: #fff; padding: 20px; border-radius: 6px; width: 90%; max-width: 400px;">
-    <h3>Change Username</h3>
-    <p style="font-size:0.9rem; color:#333;">Your current username is: <span id="currentUsernameDisplay"></span></p>
-    <input type="text" id="newUsernameInput" placeholder="Enter new username" style="width:100%; padding: 8px; margin: 10px 0; border-radius: 4px; border: 1px solid #ccc;">
-    <p id="usernameChangeMessage" style="font-size:0.8rem; color:#ff0000;"></p>
-    <br>
-    <button id="submitUsernameChange" style="background: #0056b3; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Save New Username</button>
-    <button id="closeUsernameModal" style="background: #ccc; color: #333; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancel</button>
-  </div>
-</div>
   
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -571,7 +391,6 @@
   <script src="stats.js"></script>
   <script src="ui.js"></script>
   <script src="app.js"></script>
-    <script src="tos-privacy.js"></script>
   <script>
   // Register the service worker
   if ('serviceWorker' in navigator) {
