@@ -2335,3 +2335,38 @@ html, body {
 .welcome-btn.secondary:hover {
   background-color: rgba(12, 114, 211, 0.1);
 }
+
+/* START ADDITION: Registration Prompt Modal Styles */
+.registration-prompt {
+  /* Inherits .modalForm styles */
+  max-width: 380px; /* Slightly wider if needed */
+  text-align: center;
+  padding: 25px;
+}
+
+.registration-prompt h2 {
+  /* Inherits .modalForm h2 styles */
+  margin-bottom: 15px;
+  font-size: 1.5rem; /* Adjust size */
+}
+
+/* Use existing welcome-btn styles for consistency */
+.registration-prompt .welcome-btn {
+  /* Styles are already defined */
+  margin: 5px 0; /* Adjust margin if needed */
+}
+
+/* Optional: Style for a close button if added */
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    color: #aaa;
+    cursor: pointer;
+}
+.modal-close-btn:hover {
+    color: #777;
+}
