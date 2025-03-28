@@ -41,6 +41,56 @@
     </div>
   </div>
 </div>
+
+  <!-- Login Screen Container -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-content">
+    <div class="login-header">
+      <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="login-logo">
+      <h1 class="login-title">Welcome Back</h1>
+    </div>
+
+    <form id="loginScreenForm" class="login-form">
+      <div class="form-group">
+        <label for="loginScreenEmail">Email</label>
+        <input type="email" id="loginScreenEmail" required autocomplete="email">
+        <div class="form-error" id="emailError"></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="loginScreenPassword">Password</label>
+        <div class="password-container">
+          <input type="password" id="loginScreenPassword" required autocomplete="current-password">
+          <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+            <i class="eye-icon">👁️</i>
+          </button>
+        </div>
+        <div class="form-error" id="passwordError"></div>
+      </div>
+      
+      <div class="login-actions">
+        <button type="submit" id="loginScreenSubmit" class="login-button" disabled>Log In</button>
+        <a href="#" id="forgotPasswordLink" class="login-link">Forgot Password?</a>
+      </div>
+    </form>
+    
+    <div class="login-divider">
+      <span>or</span>
+    </div>
+    
+    <div class="login-alternative-options">
+      <button id="createAccountBtn" class="secondary-button">Create Account</button>
+      <button id="continueAsGuestBtn" class="tertiary-button">Continue as Guest</button>
+    </div>
+    
+    <div id="loginScreenError" class="login-error-message"></div>
+  </div>
+  
+  <div class="login-loader" id="loginLoader">
+    <div class="spinner"></div>
+    <p>Logging in...</p>
+  </div>
+</div>
   
   <!-- Top Toolbar -->
   <div class="toolbar">
