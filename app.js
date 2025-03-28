@@ -173,6 +173,18 @@ function showRegisterForm() {
             <input type="password" id="registerPassword" required minlength="6">
             <small>Password must be at least 6 characters</small>
           </div>
+          <div class="form-group">
+            <label for="registerExperience">Experience Level</label>
+            <select id="registerExperience" required>
+              <option value="" disabled selected>Select your experience level</option>
+              <option value="Medical Student">Medical Student</option>
+              <option value="PGY 1-2">PGY 1-2</option>
+              <option value="PGY 3-4">PGY 3-4</option>
+              <option value="PGY 5+">PGY 5+</option>
+              <option value="Attending">Attending</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
           <div class="auth-buttons">
             <button type="submit" class="auth-primary-btn">Create Account</button>
             <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
@@ -191,6 +203,7 @@ function showRegisterForm() {
       const username = document.getElementById('registerUsername').value;
       const email = document.getElementById('registerEmail').value;
       const password = document.getElementById('registerPassword').value;
+      const experience = document.getElementById('registerExperience').value;
       const errorElement = document.getElementById('registerError');
       
       try {
@@ -198,10 +211,10 @@ function showRegisterForm() {
         
         if (window.authState.user && window.authState.user.isAnonymous) {
           // Upgrade anonymous user
-          await window.authFunctions.upgradeAnonymousUser(email, password, username);
+          await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
         } else {
           // Create new user
-          await window.authFunctions.registerUser(email, password, username);
+          await window.authFunctions.registerUser(email, password, username, experience);
         }
         
         // Success - close modal and show dashboard
