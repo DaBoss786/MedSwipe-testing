@@ -1,21 +1,4 @@
 // auth.js - Authentication functionality for MedSwipe
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  signInAnonymously,
-  signOut,
-  onAuthStateChanged,
-  updateProfile
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
 // Global reference to the auth state listener
 let authStateListener = null;
@@ -31,9 +14,18 @@ window.authState = {
  * Initialize authentication system and set up listeners
  * This should be called once when the app starts
  */
-export function initAuth() {
-  const auth = getAuth();
-  const db = getFirestore();
+function initAuth() {
+  // We'll use the auth object from the window (set by firebase-config.js)
+  const auth = window.auth;
+  const db = window.db;
+  
+  if (!auth || !db) {
+    console.error("Firebase auth or db not initialized yet. Will retry in 500ms.");
+    setTimeout(initAuth, 500);
+    return;
+  }
+  
+  console.log("Initializing auth system");
   
   // Set up auth state listener
   authStateListener = onAuthStateChanged(auth, async (user) => {
@@ -101,7 +93,7 @@ export function initAuth() {
  * Check if the current user is registered (not anonymous)
  * @returns {boolean} True if user is registered, false if guest
  */
-export function isUserRegistered() {
+function isUserRegistered() {
   return window.authState.isRegistered;
 }
 
@@ -109,7 +101,7 @@ export function isUserRegistered() {
  * Get the current user object
  * @returns {Object|null} The current user or null if not signed in
  */
-export function getCurrentUser() {
+function getCurrentUser() {
   return window.authState.user;
 }
 
@@ -120,9 +112,9 @@ export function getCurrentUser() {
  * @param {string} username - User's display name
  * @returns {Promise<Object>} The newly created user
  */
-export async function registerUser(email, password, username) {
-  const auth = getAuth();
-  const db = getFirestore();
+async function registerUser(email, password, username) {
+  const auth = window.auth;
+  const db = window.db;
   
   try {
     // Create the user with email/password
@@ -171,8 +163,8 @@ export async function registerUser(email, password, username) {
  * @param {string} password - User's password
  * @returns {Promise<Object>} The logged in user
  */
-export async function loginUser(email, password) {
-  const auth = getAuth();
+async function loginUser(email, password) {
+  const auth = window.auth;
   
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -187,8 +179,8 @@ export async function loginUser(email, password) {
  * Log out the current user
  * @returns {Promise<void>}
  */
-export async function logoutUser() {
-  const auth = getAuth();
+async function logoutUser() {
+  const auth = window.auth;
   
   try {
     await signOut(auth);
@@ -206,13 +198,13 @@ export async function logoutUser() {
  * @param {string} username - User's display name
  * @returns {Promise<Object>} The upgraded user
  */
-export async function upgradeAnonymousUser(email, password, username) {
+async function upgradeAnonymousUser(email, password, username) {
   // This is a simplified implementation
   // In a real app, you would use Firebase's linkWithCredential
   // For now, we'll just register a new user and copy their data
   
-  const auth = getAuth();
-  const db = getFirestore();
+  const auth = window.auth;
+  const db = window.db;
   const currentUser = auth.currentUser;
   
   if (!currentUser || !currentUser.isAnonymous) {
@@ -278,5 +270,20 @@ window.authFunctions = {
   upgradeAnonymousUser
 };
 
-// Initialize authentication on script load
-initAuth();
+// These functions will be called from firebase-config.js after Firebase is initialized
+window.initAuthModule = function() {
+  // Setup access to Firebase methods from window
+  window.onAuthStateChanged = onAuthStateChanged;
+  window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+  window.signInAnonymously = signInAnonymously;
+  window.signOut = signOut;
+  window.updateProfile = updateProfile;
+  window.setDoc = setDoc;
+  window.getDoc = getDoc;
+  window.doc = doc;
+  window.serverTimestamp = serverTimestamp;
+  
+  // Initialize auth system
+  initAuth();
+};
