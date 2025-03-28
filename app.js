@@ -50,31 +50,31 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Handle welcome screen buttons
-  const startLearningBtn = document.getElementById('startLearningBtn');
-  const existingAccountBtn = document.getElementById('existingAccountBtn');
-  
-  if (startLearningBtn) {
-    startLearningBtn.addEventListener('click', function() {
-      welcomeScreen.style.opacity = '0';
-      setTimeout(function() {
-        welcomeScreen.style.display = 'none';
-        mainOptions.style.display = 'flex';
-      }, 500);
-    });
-  }
-  
-  if (existingAccountBtn) {
-    existingAccountBtn.addEventListener('click', function() {
-      // Show login form
-      welcomeScreen.style.opacity = '0';
-      setTimeout(function() {
-        welcomeScreen.style.display = 'none';
-        // Show login form (will need to be implemented)
-        showLoginForm();
-      }, 500);
-    });
-  }
-});
+const startLearningBtn = document.getElementById('startLearningBtn');
+const existingAccountBtn = document.getElementById('existingAccountBtn');
+
+if (startLearningBtn) {
+  startLearningBtn.addEventListener('click', function() {
+    welcomeScreen.style.opacity = '0';
+    setTimeout(function() {
+      welcomeScreen.style.display = 'none';
+      mainOptions.style.display = 'flex';
+    }, 500);
+  });
+}
+
+if (existingAccountBtn) {
+  existingAccountBtn.addEventListener('click', function() {
+    welcomeScreen.style.opacity = '0';
+    setTimeout(function() {
+      welcomeScreen.style.display = 'none';
+      // Show the new login screen instead of the old modal
+      if (typeof window.showLoginScreen === 'function') {
+        window.showLoginScreen();
+      }
+    }, 500);
+  });
+}
 
 // Function to show the login form modal
 function showLoginForm() {
