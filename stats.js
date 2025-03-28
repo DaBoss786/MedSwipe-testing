@@ -6,6 +6,21 @@ window.loadTotalAnsweredData = loadTotalAnsweredData;
 
 // Display performance stats with both accuracy chart and XP display
 async function displayPerformance() {
+  // Check if user is in guest mode - feature gate for detailed stats
+  if (window.isGuestUser && window.isGuestUser()) {
+    // Show feature gate prompt
+    if (window.auth && typeof window.auth.showFeatureGatePrompt === 'function') {
+      const prompted = window.auth.showFeatureGatePrompt('stats');
+      if (prompted) {
+        // Return to main view after prompt is shown
+        setTimeout(() => {
+          document.getElementById("performanceView").style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+        }, 300);
+        return;
+      }
+    }
+  }
   console.log("displayPerformance function called");
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
