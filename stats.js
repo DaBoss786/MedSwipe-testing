@@ -170,6 +170,21 @@ async function displayPerformance() {
 
 // Load XP Rankings leaderboard with weekly/all-time toggle
 async function loadOverallData() {
+  // Check if user is in guest mode - feature gate for leaderboard
+  if (window.isGuestUser && window.isGuestUser()) {
+    // Show feature gate prompt
+    if (window.auth && typeof window.auth.showFeatureGatePrompt === 'function') {
+      const prompted = window.auth.showFeatureGatePrompt('leaderboard');
+      if (prompted) {
+        // Return to main view after prompt is shown
+        setTimeout(() => {
+          document.getElementById("leaderboardView").style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+        }, 300);
+        return;
+      }
+    }
+  }
   console.log(`Loading XP rankings leaderboard data`);
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
@@ -281,6 +296,21 @@ async function loadOverallData() {
 
 // Load Streaks leaderboard (no time range tabs)
 async function loadStreaksData() {
+  // Check if user is in guest mode - feature gate for leaderboard
+  if (window.isGuestUser && window.isGuestUser()) {
+    // Show feature gate prompt
+    if (window.auth && typeof window.auth.showFeatureGatePrompt === 'function') {
+      const prompted = window.auth.showFeatureGatePrompt('leaderboard');
+      if (prompted) {
+        // Return to main view after prompt is shown
+        setTimeout(() => {
+          document.getElementById("leaderboardView").style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+        }, 300);
+        return;
+      }
+    }
+  }
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
@@ -382,6 +412,21 @@ async function loadStreaksData() {
 
 // Load Total Answered leaderboard (no time range tabs)
 async function loadTotalAnsweredData() {
+  // Check if user is in guest mode - feature gate for leaderboard
+  if (window.isGuestUser && window.isGuestUser()) {
+    // Show feature gate prompt
+    if (window.auth && typeof window.auth.showFeatureGatePrompt === 'function') {
+      const prompted = window.auth.showFeatureGatePrompt('leaderboard');
+      if (prompted) {
+        // Return to main view after prompt is shown
+        setTimeout(() => {
+          document.getElementById("leaderboardView").style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+        }, 300);
+        return;
+      }
+    }
+  }
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
   const weekStart = getStartOfWeek();
