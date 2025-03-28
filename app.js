@@ -56,31 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
-  
-  // Handle welcome screen buttons
-  const startLearningBtn = document.getElementById('startLearningBtn');
-  const existingAccountBtn = document.getElementById('existingAccountBtn');
-  
-  if (startLearningBtn) {
-    startLearningBtn.addEventListener('click', function() {
-      welcomeScreen.classList.remove('show');
-      setTimeout(function() {
-        welcomeScreen.style.display = 'none';
-        mainOptions.style.display = 'flex';
-      }, 500);
-    });
-  }
-  
-  if (existingAccountBtn) {
-    existingAccountBtn.addEventListener('click', function() {
-      welcomeScreen.classList.remove('show');
-      setTimeout(function() {
-        welcomeScreen.style.display = 'none';
-        mainOptions.style.display = 'flex';
-      }, 500);
-    });
-  }
-});
+
 
 // Main app initialization
 window.addEventListener('load', function() {
