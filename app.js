@@ -1,16 +1,8 @@
 // Add splash screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
-  let welcomeScreen;
   
-  // Setup welcome screen
-  if (window.auth && typeof window.auth.setupWelcomeScreen === 'function') {
-    welcomeScreen = window.auth.setupWelcomeScreen();
-  } else {
-    console.warn("Auth setup function not available");
-  }
-  
-  // Hide splash screen after 2 seconds
+  // Hide splash screen after 2 seconds and directly show main options
   setTimeout(function() {
     if (splashScreen) {
       splashScreen.classList.add('fade-out');
@@ -18,18 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Remove from DOM after fade-out animation completes
       setTimeout(function() {
         splashScreen.style.display = 'none';
-        
-        // Check if user is already logged in
-        if (window.auth && window.auth.currentUser && !window.auth.currentUser.isAnonymous) {
-          // User is logged in, show main options
-          document.getElementById("mainOptions").style.display = "flex";
-        } else if (welcomeScreen) {
-          // Not logged in, show welcome screen
-          welcomeScreen.style.display = 'flex';
-        } else {
-          // Fallback if welcome screen not available
-          document.getElementById("mainOptions").style.display = "flex";
-        }
+        document.getElementById("mainOptions").style.display = "flex";
       }, 500); // Matches the transition duration in CSS
     }
   }, 2000);
