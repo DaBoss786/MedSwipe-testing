@@ -1,18 +1,54 @@
-// Add splash screen functionality
+// Add splash screen and welcome screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
+  const welcomeScreen = document.getElementById('welcomeScreen');
+  const mainOptions = document.getElementById('mainOptions');
   
-  // Hide splash screen after 2 seconds
+  // Ensure dashboard is initially hidden
+  if (mainOptions) {
+    mainOptions.style.display = 'none';
+  }
+  
+  // Hide splash screen after 2 seconds and show welcome screen
   setTimeout(function() {
     if (splashScreen) {
       splashScreen.classList.add('fade-out');
       
-      // Remove from DOM after fade-out animation completes
+      // After splash fades out, display welcome screen
       setTimeout(function() {
         splashScreen.style.display = 'none';
+        
+        // Show welcome screen with fade-in effect
+        if (welcomeScreen) {
+          welcomeScreen.classList.add('show');
+        }
       }, 500); // Matches the transition duration in CSS
     }
   }, 2000);
+  
+  // Handle welcome screen buttons
+  const startLearningBtn = document.getElementById('startLearningBtn');
+  const existingAccountBtn = document.getElementById('existingAccountBtn');
+  
+  if (startLearningBtn) {
+    startLearningBtn.addEventListener('click', function() {
+      welcomeScreen.classList.remove('show');
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        mainOptions.style.display = 'flex';
+      }, 500);
+    });
+  }
+  
+  if (existingAccountBtn) {
+    existingAccountBtn.addEventListener('click', function() {
+      welcomeScreen.classList.remove('show');
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        mainOptions.style.display = 'flex';
+      }, 500);
+    });
+  }
 });
 
 // Main app initialization
