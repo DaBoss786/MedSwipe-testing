@@ -23,7 +23,7 @@ function setupWelcomeScreen() {
   // Event listeners for welcome screen buttons
   document.getElementById('startLearningBtn').addEventListener('click', function() {
     // Start as guest
-    signInAnonymously();
+    signInAsGuest();
     welcomeScreen.style.display = 'none';
     document.getElementById("mainOptions").style.display = "flex";
   });
@@ -38,9 +38,9 @@ function setupWelcomeScreen() {
 }
 
 // Function to sign in anonymously
-function signInAnonymously() {
-  if (window.auth) {
-    signInAnonymously(window.auth)
+function signInAsGuest() {
+  if (window.auth && window.signInAnonymously) {
+    window.signInAnonymously(window.auth)
       .then(() => { 
         console.log("Signed in anonymously as guest:", window.auth.currentUser.uid); 
         
@@ -56,6 +56,8 @@ function signInAnonymously() {
       .catch((error) => { 
         console.error("Anonymous sign-in error:", error); 
       });
+  } else {
+    console.error("Auth not initialized or signInAnonymously not available");
   }
 }
 
@@ -64,14 +66,14 @@ window.isUserRegistered = function() {
   return window.auth && 
          window.auth.currentUser && 
          !window.auth.currentUser.isAnonymous;
-}
+};
 
 // Function to check if user is in guest mode
 window.isGuestUser = function() {
   return window.auth && 
          window.auth.currentUser && 
          window.auth.currentUser.isAnonymous;
-}
+};
 
 // Function to show login modal
 function showLoginModal() {
@@ -112,8 +114,8 @@ function showLoginModal() {
       const password = document.getElementById('loginPassword').value;
       
       // Try to sign in with email and password
-      if (window.auth) {
-        signInWithEmailAndPassword(window.auth, email, password)
+      if (window.auth && window.signInWithEmailAndPassword) {
+        window.signInWithEmailAndPassword(window.auth, email, password)
           .then((userCredential) => {
             // Signed in
             const user = userCredential.user;
@@ -251,8 +253,8 @@ function showSignupModal() {
       }
       
       // Try to create account with email and password
-      if (window.auth) {
-        createUserWithEmailAndPassword(window.auth, email, password)
+      if (window.auth && window.createUserWithEmailAndPassword) {
+        window.createUserWithEmailAndPassword(window.auth, email, password)
           .then((userCredential) => {
             // Signed up
             const user = userCredential.user;
@@ -321,7 +323,10 @@ function showSignupModal() {
 
 // Function to save user profile to Firestore
 function saveUserProfile(uid, profileData) {
-  if (!window.db) return;
+  if (!window.db || !window.doc || !window.runTransaction) {
+    console.error("Firestore functions not available");
+    return;
+  }
   
   const userDocRef = window.doc(window.db, 'users', uid);
   window.runTransaction(window.db, async (transaction) => {
@@ -335,6 +340,8 @@ function saveUserProfile(uid, profileData) {
     data.registrationDate = new Date().toISOString();
     
     transaction.set(userDocRef, data, { merge: true });
+  }).catch(error => {
+    console.error("Error saving user profile:", error);
   });
 }
 
@@ -342,7 +349,10 @@ function saveUserProfile(uid, profileData) {
 function transferGuestData(newUid) {
   // Check for previously saved guest data
   const prevGuestUid = localStorage.getItem('guestUid');
-  if (!prevGuestUid || !window.db) return;
+  if (!prevGuestUid || !window.db || !window.doc || !window.getDoc || !window.runTransaction) {
+    console.error("Guest UID not found or Firestore functions not available");
+    return;
+  }
   
   const guestDocRef = window.doc(window.db, 'users', prevGuestUid);
   const newUserDocRef = window.doc(window.db, 'users', newUid);
@@ -401,8 +411,12 @@ function transferGuestData(newUid) {
         
         // Save merged data
         transaction.set(newUserDocRef, newUserData, { merge: true });
+      }).catch(error => {
+        console.error("Error transferring guest data:", error);
       });
     }
+  }).catch(error => {
+    console.error("Error getting guest data:", error);
   });
 }
 
@@ -427,8 +441,14 @@ function showWelcomeMessage() {
   
   // Auto hide after 5 seconds
   setTimeout(() => {
-    welcomeMsg.style.opacity = '0';
-    setTimeout(() => welcomeMsg.remove(), 300);
+    if (document.body.contains(welcomeMsg)) {
+      welcomeMsg.style.opacity = '0';
+      setTimeout(() => {
+        if (document.body.contains(welcomeMsg)) {
+          welcomeMsg.remove();
+        }
+      }, 300);
+    }
   }, 5000);
 }
 
