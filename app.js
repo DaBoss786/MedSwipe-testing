@@ -1,19 +1,58 @@
 // Add splash screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
+  const welcomeScreen = document.getElementById('welcomeScreen'); // Get welcome screen element
   
   // Hide splash screen after 2 seconds
   setTimeout(function() {
     if (splashScreen) {
       splashScreen.classList.add('fade-out');
-      
-      // Remove from DOM after fade-out animation completes
+
+      // Remove splash from DOM *and show Welcome Screen* after fade-out animation completes
       setTimeout(function() {
         splashScreen.style.display = 'none';
+        if (welcomeScreen) {
+          welcomeScreen.style.display = 'flex'; // Show welcome screen using flex
+          // Trigger the fade-in effect
+          setTimeout(() => { welcomeScreen.style.opacity = '1'; }, 10); // Small delay ensures transition occurs
+        }
       }, 500); // Matches the transition duration in CSS
+    } else {
+        // If no splash screen, show welcome screen immediately (fallback)
+         if (welcomeScreen) {
+            welcomeScreen.style.display = 'flex';
+            welcomeScreen.style.opacity = '1';
+         }
     }
-  }, 2000);
-});
+  }, 2000); // Splash screen duration
+
+  // Add listeners for Welcome Screen buttons
+  const startGuestBtn = document.getElementById('startGuestBtn');
+  const loginBtn = document.getElementById('loginBtn');
+
+  if (startGuestBtn) {
+    startGuestBtn.addEventListener('click', function() {
+      if (welcomeScreen) {
+        welcomeScreen.style.display = 'none'; // Hide welcome screen
+      }
+      // For now, show the main dashboard - this simulates entering as a guest
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) {
+          mainOptions.style.display = "flex"; // Show the dashboard view
+      }
+      // Initialize necessary components for guest view if needed later
+    });
+  }
+
+  if (loginBtn) {
+    loginBtn.addEventListener('click', function() {
+      // Placeholder for login functionality
+      alert('Login/Signup functionality will be added in the next steps!');
+      // In the future, this will likely show a login/signup modal or screen
+      // For now, we can just hide the welcome screen or leave it as is
+      // welcomeScreen.style.display = 'none';
+    });
+  }
 
 // Main app initialization
 window.addEventListener('load', function() {
@@ -28,17 +67,63 @@ window.addEventListener('load', function() {
   
   // Initialize user menu with username
   const checkAuthAndInit = function() {
+     const welcomeScreen = document.getElementById('welcomeScreen');
+    if (welcomeScreen && welcomeScreen.style.display !== 'none') {
+        console.log("Welcome screen is visible, delaying auth init check.");
+        setTimeout(checkAuthAndInit, 1000); // Check again later
+        return; // Don't proceed yet
+      
     if (window.auth && window.auth.currentUser) {
+       // If user is somehow already logged in (e.g., returning user session)
+      // Ensure dashboard is shown and welcome is hidden
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "flex";
+       if (welcomeScreen) welcomeScreen.style.display = 'none';
+      
       // Initialize user menu with username
       window.updateUserMenu();
+
+      // ALSO Initialize the dashboard for logged-in users
+       if (typeof initializeDashboard === 'function') {
+          initializeDashboard();
+       } else {
+           console.warn("initializeDashboard function not found, dashboard may not load correctly for logged-in user.");
+       }
+      
     } else {
-      // If auth isn't ready yet, check again in 1 second
+      // User is likely a guest or not yet logged in.
+      // Let the button clicks handle showing the dashboard for guests.
+      console.log("User not authenticated or auth not ready yet.");
+      // If auth isn't ready yet, check again in 1 second (original retry logic)
+      // We might need a separate check if Firebase takes time to initialize
+      if (!window.auth) {
       setTimeout(checkAuthAndInit, 1000);
     }
   };
+      // Start checking for auth state *after* a slight delay to let splash/welcome logic run
+  setTimeout(checkAuthAndInit, 500); // Delay the initial check slightly
   
   // Start checking for auth
   checkAuthAndInit();
+
+  // Make sure the dashboard event setup also respects the welcome screen state
+  const setupEventsWhenReady = function() {
+      const welcomeScreen = document.getElementById('welcomeScreen');
+       if (welcomeScreen && welcomeScreen.style.display !== 'none') {
+           console.log("Welcome screen visible, delaying dashboard event setup.");
+           setTimeout(setupEventsWhenReady, 1000);
+           return; // Wait until welcome screen is hidden
+       }
+       console.log("Setting up dashboard events.");
+       // Ensure setupDashboardEvents is defined before this point or globally
+       if (typeof setupDashboardEvents === 'function') {
+           setupDashboardEvents(); // Call the function that adds dashboard button listeners
+       } else {
+           console.error("setupDashboardEvents function is not defined! Dashboard buttons won't work.");
+       }
+  };
+  // Delay setup slightly to ensure welcome screen state is settled after load/auth check
+  setTimeout(setupEventsWhenReady, 1000);
   
   // Score circle click => open user menu
   const scoreCircle = document.getElementById("scoreCircle");
@@ -1067,8 +1152,7 @@ window.addEventListener('load', function() {
   const checkAuthAndInitAll = function() {
     if (window.auth && window.auth.currentUser) {
       checkAndUpdateStreak();
-      setupDashboardEvents();
-      initializeDashboard();
+      
     } else {
       // If auth isn't ready yet, check again in 1 second
       setTimeout(checkAuthAndInitAll, 1000);
