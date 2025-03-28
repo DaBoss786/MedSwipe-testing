@@ -1,101 +1,44 @@
 // Add splash screen functionality
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
-  const welcomeScreen = document.getElementById('welcomeScreen'); // Get welcome screen element
-
+  
   // Hide splash screen after 2 seconds
   setTimeout(function() {
     if (splashScreen) {
       splashScreen.classList.add('fade-out');
-
-      // Remove splash from DOM *and show Welcome Screen* after fade-out animation completes
+      
+      // Remove from DOM after fade-out animation completes
       setTimeout(function() {
         splashScreen.style.display = 'none';
-        if (welcomeScreen) {
-          welcomeScreen.style.display = 'flex'; // Show welcome screen using flex
-          // Trigger the fade-in effect
-          setTimeout(() => { welcomeScreen.style.opacity = '1'; }, 10); // Small delay ensures transition occurs
-        }
       }, 500); // Matches the transition duration in CSS
-    } else {
-        // If no splash screen, show welcome screen immediately (fallback)
-         if (welcomeScreen) {
-            welcomeScreen.style.display = 'flex';
-            welcomeScreen.style.opacity = '1';
-         }
     }
-  }, 2000); // Splash screen duration
-
-  // Add listeners for Welcome Screen buttons
-  const startGuestBtn = document.getElementById('startGuestBtn');
-  const loginBtn = document.getElementById('loginBtn');
-
-  if (startGuestBtn) {
-    startGuestBtn.addEventListener('click', function() {
-      if (welcomeScreen) {
-        // Corrected fade out for welcome screen
-        welcomeScreen.style.opacity = '0';
-        setTimeout(() => { welcomeScreen.style.display = 'none'; }, 300); // Hide after fade
-      }
-
-      // Load the 3-question intro quiz
-      console.log("Guest starting. Loading introductory 3-question quiz.");
-      if (typeof loadQuestions === 'function') {
-          loadQuestions({
-              num: 3,
-              includeAnswered: false
-          });
-      } else {
-          console.error("loadQuestions function not found! Cannot start intro quiz.");
-          const mainOptions = document.getElementById("mainOptions");
-          if (mainOptions) mainOptions.style.display = "flex";
-          alert("Error loading quiz. Please try again.");
-      }
-    });
-  }
-
-  if (loginBtn) {
-    loginBtn.addEventListener('click', function() {
-      // Placeholder for login functionality
-      alert('Login/Signup functionality will be added in the next steps!');
-    });
-  }
+  }, 2000);
 });
 
 // Main app initialization
-window.addEventListener('load', function() { // <<< START OF window.load LISTENER
+window.addEventListener('load', function() {
   // Ensure functions are globally available
-  window.updateUserXP = updateUserXP || function() { console.log("updateUserXP not loaded yet"); };
-  window.updateUserMenu = updateUserMenu || function() { console.log("updateUserMenu not loaded yet"); };
-
-  // Auth Check and Initialization Logic
+  window.updateUserXP = updateUserXP || function() {
+    console.log("updateUserXP not loaded yet");
+  };
+  
+  window.updateUserMenu = updateUserMenu || function() {
+    console.log("updateUserMenu not loaded yet");
+  };
+  
+  // Initialize user menu with username
   const checkAuthAndInit = function() {
-    const welcomeScreen = document.getElementById('welcomeScreen');
-    if (welcomeScreen && welcomeScreen.style.display !== 'none' && welcomeScreen.style.opacity === '1') {
-        console.log("Welcome screen is visible, delaying auth init check.");
-        setTimeout(checkAuthAndInit, 1000);
-        return;
-    }
-    if (window.auth) {
-        if (window.auth.currentUser) {
-            console.log("User logged in, initializing user state.");
-            const mainOptions = document.getElementById("mainOptions");
-            if (mainOptions) mainOptions.style.display = "flex";
-            if (welcomeScreen) welcomeScreen.style.display = 'none';
-            if (typeof window.updateUserMenu === 'function') window.updateUserMenu();
-            if (typeof initializeDashboard === 'function') initializeDashboard();
-            if (typeof setupDashboardEvents === 'function') setupDashboardEvents();
-        } else {
-            console.log("Auth ready, user is guest.");
-        }
+    if (window.auth && window.auth.currentUser) {
+      // Initialize user menu with username
+      window.updateUserMenu();
     } else {
-        console.log("Firebase auth object not ready, retrying...");
-        setTimeout(checkAuthAndInit, 1000);
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndInit, 1000);
     }
   };
-  setTimeout(checkAuthAndInit, 500); // Start the check
-
-  // --- All Event Listeners directly inside window.load ---
+  
+  // Start checking for auth
+  checkAuthAndInit();
   
   // Score circle click => open user menu
   const scoreCircle = document.getElementById("scoreCircle");
@@ -142,16 +85,14 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
     bookmarksFilterUser.addEventListener("click", function(e) {
       e.preventDefault();
       closeUserMenu();
-      if (typeof loadQuestions === 'function') {
-        // Start a quiz with only bookmarked questions
-        loadQuestions({
-          bookmarksOnly: true,
-          num: 50 // Large number to include all bookmarks
-        });
-      } // <<< *** THIS IS THE CORRECTED LINE - BRACE ADDED ***
-    }); // Closes addEventListener
-  } // Closes if (bookmarksFilterUser)
-  
+      
+      // Start a quiz with only bookmarked questions
+      loadQuestions({
+        bookmarksOnly: true,
+        num: 50 // Large number to include all bookmarks
+      });
+    });
+  }
   
   // Reset progress from user menu
   const resetProgressUser = document.getElementById("resetProgressUser");
@@ -292,8 +233,6 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
   if (bookmarksFilter) {
     bookmarksFilter.addEventListener("click", function(e) {
       e.preventDefault();
-      // TODO: Add guest check here later
-      alert("Bookmarks require an account (Feature coming soon!)");
       closeSideMenu();
     });
   }
@@ -303,12 +242,29 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
   if (startNewQuiz) {
     startNewQuiz.addEventListener("click", function() {
       closeSideMenu();
-      // Go back to the main dashboard view
-      const viewsToHide = [".swiper", "#bottomToolbar", "#iconBar", "#performanceView", "#leaderboardView", "#faqView", "#aboutView"];
-      viewsToHide.forEach(selector => {
-          const element = document.querySelector(selector);
-          if (element) element.style.display = "none";
-      });
+      window.filterMode = "all";
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
       const mainOptions = document.getElementById("mainOptions");
       if (mainOptions) mainOptions.style.display = "flex";
     });
@@ -319,12 +275,7 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
   if (leaderboardItem) {
     leaderboardItem.addEventListener("click", function() {
       closeSideMenu();
-      // TODO: Add guest check here later
-      if (typeof showLeaderboard === 'function') {
-        showLeaderboard();
-      } else {
-        alert("Leaderboard requires an account (Feature coming soon!)");
-      }
+      showLeaderboard();
     });
   }
   
@@ -346,18 +297,37 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
     });
   }
   
-  // CONTACT US from side menu
+  // CONTACT US
   const contactItem = document.getElementById("contactItem");
   if (contactItem) {
     contactItem.addEventListener("click", function() {
       closeSideMenu();
-      // Hide other views
-      const viewsToHide = [".swiper", "#bottomToolbar", "#iconBar", "#performanceView", "#leaderboardView", "#faqView", "#aboutView", "#mainOptions"];
-       viewsToHide.forEach(selector => {
-          const element = document.querySelector(selector);
-          if (element) element.style.display = "none";
-      });
-      if (typeof showContactModal === 'function') showContactModal(); // Show contact modal
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "none";
+      
+      showContactModal();
     });
   }
   
@@ -388,20 +358,36 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
     });
   }
   
-  // Logo click => go to main menu/dashboard
+  // Logo click => go to main menu
   const logoClick = document.getElementById("logoClick");
   if (logoClick) {
     logoClick.addEventListener("click", function() {
-       closeSideMenu();
-       closeUserMenu();
-       // Hide other views and show dashboard
-       const viewsToHide = [".swiper", "#bottomToolbar", "#iconBar", "#performanceView", "#leaderboardView", "#faqView", "#aboutView"];
-       viewsToHide.forEach(selector => {
-          const element = document.querySelector(selector);
-          if (element) element.style.display = "none";
-       });
-       const mainOptions = document.getElementById("mainOptions");
-       if (mainOptions) mainOptions.style.display = "flex";
+      closeSideMenu();
+      closeUserMenu();
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "flex";
     });
   }
   
@@ -482,11 +468,6 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
   const favoriteButton = document.getElementById("favoriteButton");
   if (favoriteButton) {
     favoriteButton.addEventListener("click", async function() {
-      // TODO: Add guest check here later
-        if (!window.auth || !window.auth.currentUser) {
-            alert("Bookmarking requires an account. Please sign up to save your favorite questions!");
-            return;
-        }
       let questionId = getCurrentQuestionId();
       if (!questionId) return;
       
@@ -561,27 +542,7 @@ window.addEventListener('load', function() { // <<< START OF window.load LISTENE
       node.remove();
     }
   });
-
-  // --- Registration Prompt Modal Listeners ---
-  const registrationPromptModal = document.getElementById('registrationPromptModal');
-  const promptSignUpBtn = document.getElementById('promptSignUpBtn');
-  const promptContinueGuestBtn = document.getElementById('promptContinueGuestBtn');
-  if (registrationPromptModal) {
-      if (promptSignUpBtn) {
-          promptSignUpBtn.addEventListener('click', function() {
-              alert('Sign Up / Login flow will be added here!');
-              registrationPromptModal.style.opacity = '0';
-              setTimeout(() => { registrationPromptModal.style.display = 'none'; }, 300);
-          });
-      }
-      if (promptContinueGuestBtn) {
-          promptContinueGuestBtn.addEventListener('click', function() {
-              registrationPromptModal.style.opacity = '0';
-              setTimeout(() => { registrationPromptModal.style.display = 'none'; }, 300);
-          });
-      }
-  } // <<< *** CORRECTED: Closing brace for if (registrationPromptModal) ***
-
+});
 
 // Function to update the level progress circles and bar
 function updateLevelProgress(percent) {
@@ -603,7 +564,20 @@ function updateLevelProgress(percent) {
     levelProgressBar.style.width = `${percent}%`;
   }
 }
-window.updateLevelProgress = updateLevelProgress;
+
+// Update user XP display function call
+window.addEventListener('load', function() {
+  // Call after Firebase auth is initialized
+  setTimeout(() => {
+    if (window.auth && window.auth.currentUser) {
+      if (typeof updateUserXP === 'function') {
+        updateUserXP();
+      } else if (typeof window.updateUserXP === 'function') {
+        window.updateUserXP();
+      }
+    }
+  }, 2000);
+});
 
 // Function to check if a user's streak should be reset due to inactivity
 async function checkAndUpdateStreak() {
@@ -940,151 +914,72 @@ async function updateReviewQueue() {
 
 // Set up event listeners for dashboard
 function setupDashboardEvents() {
-  console.log("Setting up event listeners for dashboard elements..."); // Debugging log
-  
-  // Start Quiz button (from Dashboard)
+  // Start Quiz button
   const startQuizBtn = document.getElementById("startQuizBtn");
   if (startQuizBtn) {
-    // Remove previous listeners if any (safer approach)
-    startQuizBtn.replaceWith(startQuizBtn.cloneNode(true));
-    const newStartQuizBtn = document.getElementById("startQuizBtn");
-    newStartQuizBtn.addEventListener("click", function() {
-      console.log("Dashboard Start Quiz button clicked");
-      const quizSetupModal = document.getElementById("quizSetupModal");
-      if (quizSetupModal) {
-        quizSetupModal.style.display = "block";
-      } else {
-        console.error("quizSetupModal not found");
-      }
+    startQuizBtn.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "block";
     });
-  } else {
-    console.warn("startQuizBtn not found");
   }
   
-  // Modal Start Quiz button (from Dashboard Modal)
+  // Modal Start Quiz button
   const modalStartQuiz = document.getElementById("modalStartQuiz");
-  if (modalStartQuiz) {
-     // Remove previous listeners if any
-     modalStartQuiz.replaceWith(modalStartQuiz.cloneNode(true));
-     const newModalStartQuiz = document.getElementById("modalStartQuiz");
-     newModalStartQuiz.addEventListener("click", function() {
-       console.log("Modal Start Quiz button clicked");
-       const category = document.getElementById("modalCategorySelect").value;
-       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
-       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
-       const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+if (modalStartQuiz) {
+  modalStartQuiz.addEventListener("click", function() {
+    const category = document.getElementById("modalCategorySelect").value;
+    const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
+    const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+    
+    document.getElementById("quizSetupModal").style.display = "none";
 
-       const quizSetupModal = document.getElementById("quizSetupModal");
-       if(quizSetupModal) quizSetupModal.style.display = "none";
-
-       if (typeof loadQuestions === 'function') { // Ensure function exists
-           loadQuestions({
-             type: category ? 'custom' : 'random',
-             category: category,
-             num: numQuestions,
-             includeAnswered: includeAnswered,
-             spacedRepetition: useSpacedRepetition
-           });
-       } else {
-           console.error("loadQuestions function not found");
-       }
+    // Update this part to include the spaced repetition option
+    const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+    
+    loadQuestions({
+      type: category ? 'custom' : 'random',
+      category: category,
+      num: numQuestions,
+      includeAnswered: includeAnswered,
+      spacedRepetition: useSpacedRepetition
     });
-  } else {
-    console.warn("modalStartQuiz not found");
-  }
+  });
+} // <-- Add this closing curly brace
   
-  // Modal Cancel button (from Dashboard Modal)
+  // Modal Cancel button
   const modalCancelQuiz = document.getElementById("modalCancelQuiz");
   if (modalCancelQuiz) {
-     // Remove previous listeners if any
-     modalCancelQuiz.replaceWith(modalCancelQuiz.cloneNode(true));
-     const newModalCancelQuiz = document.getElementById("modalCancelQuiz");
-     newModalCancelQuiz.addEventListener("click", function() {
-      console.log("Modal Cancel Quiz button clicked");
-      const quizSetupModal = document.getElementById("quizSetupModal");
-      if (quizSetupModal) {
-        quizSetupModal.style.display = "none";
-      } else {
-        console.error("quizSetupModal not found");
-      }
+    modalCancelQuiz.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "none";
     });
-  } else {
-    console.warn("modalCancelQuiz not found");
   }
   
   // User Progress card click - go to Performance
   const userProgressCard = document.getElementById("userProgressCard");
   if (userProgressCard) {
-     // Remove previous listeners if any
-     userProgressCard.replaceWith(userProgressCard.cloneNode(true));
-     const newUserProgressCard = document.getElementById("userProgressCard");
-     newUserProgressCard.addEventListener("click", function() {
-      console.log("User Progress Card clicked");
-      // TODO: Add guest check here later
-      if (typeof displayPerformance === 'function') {
-          displayPerformance();
-      } else {
-          console.error("displayPerformance function not found");
-          alert("Performance requires an account (Feature coming soon!)");
-      }
+    userProgressCard.addEventListener("click", function() {
+      displayPerformance();
     });
-  } else {
-    console.warn("userProgressCard not found");
   }
-
+  
   // Quick Stats card click - go to Performance
   const quickStatsCard = document.getElementById("quickStatsCard");
   if (quickStatsCard) {
-    // Remove previous listeners if any
-    quickStatsCard.replaceWith(quickStatsCard.cloneNode(true));
-    const newQuickStatsCard = document.getElementById("quickStatsCard");
-    newQuickStatsCard.addEventListener("click", function() {
-      console.log("Quick Stats Card clicked");
-       // TODO: Add guest check here later
-       if (typeof displayPerformance === 'function') {
-          displayPerformance();
-      } else {
-          console.error("displayPerformance function not found");
-          alert("Stats require an account (Feature coming soon!)");
-      }
+    quickStatsCard.addEventListener("click", function() {
+      displayPerformance();
     });
-  } else {
-    console.warn("quickStatsCard not found");
   }
-
+  
   // Leaderboard Preview card click - go to Leaderboard
   const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
   if (leaderboardPreviewCard) {
-     // Remove previous listeners if any
-     leaderboardPreviewCard.replaceWith(leaderboardPreviewCard.cloneNode(true));
-     const newLeaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
-     newLeaderboardPreviewCard.addEventListener("click", function() {
-      console.log("Leaderboard Preview Card clicked");
-      // TODO: Add guest check here later
-      if (typeof showLeaderboard === 'function') {
-        showLeaderboard();
-      } else {
-        console.error("showLeaderboard function not found");
-        alert("Leaderboard requires an account (Feature coming soon!)");
-      }
+    leaderboardPreviewCard.addEventListener("click", function() {
+      showLeaderboard();
     });
-  } else {
-    console.warn("leaderboardPreviewCard not found");
   }
-  
   // Review Queue card click - start review
-  const reviewQueueCard = document.getElementById("reviewQueueCard");
-  if (reviewQueueCard) {
-     // Remove previous listeners if any
-     reviewQueueCard.replaceWith(reviewQueueCard.cloneNode(true));
-     const newReviewQueueCard = document.getElementById("reviewQueueCard");
-     newReviewQueueCard.addEventListener("click", async function() {
-      console.log("Review Queue Card clicked");
-      // TODO: Add guest check here later
-      if (!window.auth || !window.auth.currentUser) {
-          alert("Review Queue requires an account. Please sign up to use spaced repetition!");
-          return;
-      }
+const reviewQueueCard = document.getElementById("reviewQueueCard");
+if (reviewQueueCard) {
+  reviewQueueCard.addEventListener("click", async function() {
     // Get count of due reviews
     const { dueCount } = await countDueReviews();
     
@@ -1104,9 +999,7 @@ function setupDashboardEvents() {
     // Load ONLY the specific due questions, not mixed with new questions
     loadSpecificQuestions(dueQuestionIds);
   });
-  } else {
-    console.warn("reviewQueueCard not found");
-  }
+}
 }
 
 // Function to fix streak calendar alignment
@@ -1167,6 +1060,30 @@ function fixStreakCalendar(streaks) {
     streakCalendar.appendChild(dayCircle);
   }
 }
+
+// Initialize the app
+window.addEventListener('load', function() {
+  // Check streak after Firebase auth is initialized
+  const checkAuthAndInitAll = function() {
+    if (window.auth && window.auth.currentUser) {
+      checkAndUpdateStreak();
+      setupDashboardEvents();
+      initializeDashboard();
+    } else {
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndInitAll, 1000);
+    }
+  };
+  
+  // Start checking for auth
+  checkAuthAndInitAll();
+  
+  // Also try after a delay to ensure all DOM elements are ready
+  setTimeout(function() {
+    setupDashboardEvents();
+    initializeDashboard();
+  }, 2000);
+});
 
 // Function to get IDs of questions due for review
 async function getDueQuestionIds() {
@@ -1254,19 +1171,3 @@ async function loadSpecificQuestions(questionIds) {
     }
   });
 }
-
-// --- Need utility functions like closeSideMenu, closeUserMenu ---
-function closeSideMenu() {
-  const sideMenu = document.getElementById("sideMenu");
-  const menuOverlay = document.getElementById("menuOverlay");
-  if (sideMenu) sideMenu.classList.remove("open");
-  if (menuOverlay) menuOverlay.classList.remove("show");
-}
-
-function closeUserMenu() {
-  const userMenu = document.getElementById("userMenu");
-  const menuOverlay = document.getElementById("menuOverlay");
-  if (userMenu) userMenu.classList.remove("open");
-  if (menuOverlay) menuOverlay.classList.remove("show");
-}
-});
