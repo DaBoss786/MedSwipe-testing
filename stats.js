@@ -1,12 +1,24 @@
-// Make functions globally available
-window.displayPerformance = displayPerformance;
-window.loadOverallData = loadOverallData;
-window.loadStreaksData = loadStreaksData;
-window.loadTotalAnsweredData = loadTotalAnsweredData;
 
-// Display performance stats with both accuracy chart and XP display
+// Note: Assumes Chart.js is loaded via index.html
+// Note: Assumes Firestore functions (getDocs, collection) and auth are available globally
+// Note: Assumes helper functions (getOrGenerateUsername, getStartOfWeek, leaderboardTabsHTML) are available globally
+
+// Display performance stats for logged-in users
 async function displayPerformance() {
-  console.log("displayPerformance function called");
+   // Add guest check
+  if (!window.auth || !window.auth.currentUser) {
+    alert("Please sign up or log in to view your performance statistics!");
+    // Optionally show signup prompt
+    // showRegistrationPrompt('performance_access');
+    return;
+  }
+   if (!window.db) {
+      alert("Database connection not available.");
+      return;
+  }
+
+  console.log("Displaying Performance View for logged-in user.");
+  // Hide other views
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
   document.getElementById("iconBar").style.display = "none";
@@ -14,508 +26,382 @@ async function displayPerformance() {
   document.getElementById("leaderboardView").style.display = "none";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
-  document.getElementById("performanceView").style.display = "block";
-  
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
-  console.log("User document exists:", userDocSnap.exists());
-  
-  if (!userDocSnap.exists()) {
-    document.getElementById("performanceView").innerHTML = `
-      <h2>Performance</h2>
-      <p>No performance data available yet.</p>
-      <button id='backToMain'>Back</button>
-    `;
-    document.getElementById("backToMain").addEventListener("click", () => {
-      document.getElementById("performanceView").style.display = "none";
-      document.getElementById("mainOptions").style.display = "flex";
-    });
-    return;
+
+  const performanceView = document.getElementById("performanceView");
+  if (!performanceView) {
+      console.error("Performance view container not found.");
+      return;
   }
-  const data = userDocSnap.data();
-  const stats = data.stats || {};
-  
-  const totalAnswered = stats.totalAnswered || 0;
-  const xp = stats.xp || 0;
-  const level = stats.level || 1;
-  
-  let questionBank = [];
+  performanceView.style.display = "block";
+  performanceView.innerHTML = `<p>Loading performance data...</p>`; // Loading state
+
   try {
-    questionBank = await fetchQuestionBank();
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+          performanceView.innerHTML = `
+            <h2>Performance</h2>
+            <p>No performance data available yet. Start answering questions!</p>
+            <button id='backToMain' class="start-quiz-btn">Back to Dashboard</button>
+          `;
+          document.getElementById("backToMain").addEventListener("click", () => {
+              performanceView.style.display = "none";
+              document.getElementById("mainOptions").style.display = "flex";
+          });
+          return;
+      }
+
+      const data = userDocSnap.data();
+      const stats = data.stats || {};
+      const totalAnswered = stats.totalAnswered || 0;
+      const totalCorrect = stats.totalCorrect || 0;
+      const xp = stats.xp || 0;
+      const level = stats.level || 1;
+      const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+
+      // Fetch total questions in bank (consider caching this later)
+      let totalInBank = 0;
+      try {
+          if (allQuestions && allQuestions.length > 0) { // Use cached if available
+              totalInBank = allQuestions.length;
+          } else {
+               const bank = await fetchQuestionBank(); // Fetch if not cached
+               totalInBank = bank.length;
+               allQuestions = bank; // Cache it
+          }
+      } catch (fetchError) {
+          console.error("Error fetching question bank for stats:", fetchError);
+      }
+      const remaining = Math.max(0, totalInBank - totalAnswered);
+
+      // Get level progress info
+      const levelInfo = getLevelInfo(level); // Use global function
+      const levelProgress = calculateLevelProgress(xp); // Use global function
+      const xpInCurrentLevel = xp - (levelInfo.currentLevelXp || 0);
+      const xpRequiredForNextLevel = levelInfo.nextLevelXp ? levelInfo.nextLevelXp - (levelInfo.currentLevelXp || 0) : 0;
+
+      // Build category breakdown HTML
+      let categoryBreakdown = "<p>No category data available.</p>";
+      if (stats.categories && Object.keys(stats.categories).length > 0) {
+          categoryBreakdown = Object.keys(stats.categories).sort().map(cat => { // Sort categories alphabetically
+              const c = stats.categories[cat];
+              const answered = c.answered || 0;
+              const correct = c.correct || 0;
+              const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+              return `
+                <div class="category-item">
+                  <strong>${cat}</strong>: ${correct}/${answered} (${percent}%)
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${percent}%"></div>
+                  </div>
+                </div>`;
+          }).join("");
+      }
+
+      // --- Populate Performance View HTML ---
+      performanceView.innerHTML = `
+        <h2 style="text-align:center; color:#0056b3; margin-bottom: 25px;">Your Performance</h2>
+
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-bottom:25px;">
+          <!-- Accuracy Doughnut Chart -->
+          <div style="flex: 1; min-width: 200px; max-width: 250px; text-align: center;">
+            <canvas id="overallScoreChart" width="180" height="180" style="margin: 0 auto;"></canvas>
+            <p style="font-size:1.1rem; color:#333; margin-top:15px;">
+              Overall Accuracy: <strong>${overallPercent}%</strong>
+            </p>
+          </div>
+
+          <!-- XP Level Display -->
+          <div style="flex: 1; min-width: 200px; max-width: 250px; text-align: center;">
+            <div class="level-progress-circle" style="width:100px; height:100px; margin: 20px auto 10px;">
+              <div class="level-circle-background"></div>
+              <div class="level-circle-progress" id="performanceLevelProgress" style="--progress: ${levelProgress}%;"></div>
+              <div class="level-number">${level}</div>
+            </div>
+            <p style="font-size:1.2rem; color:#0056b3; font-weight: 500; margin:5px 0;">
+              ${xp} XP
+            </p>
+            <p style="font-size:0.85rem; color:#666; margin-top:0;">
+              ${levelInfo.nextLevelXp ? `${xpRequiredForNextLevel - xpInCurrentLevel} XP to Level ${level + 1}` : 'Max Level Reached!'}
+            </p>
+          </div>
+        </div>
+
+        <div style="background:#f8f9fa; border-radius:8px; padding: 15px; margin:20px 0; border: 1px solid #eee;">
+          <h3 style="margin-top:0; color:#333; text-align:center; font-size: 1.1rem;">Summary</h3>
+          <p>Total Questions Answered: <strong>${totalAnswered}</strong></p>
+          <p>Correct Answers: <strong>${totalCorrect}</strong></p>
+          ${totalInBank > 0 ? `<p>Questions Remaining in Bank: <strong>${remaining}</strong></p>` : ''}
+        </div>
+
+        <hr style="margin: 25px 0;">
+        <h3 style="text-align:center; color:#0056b3; margin-bottom: 15px;">Performance by Category</h3>
+        <div class="category-breakdown-container">
+           ${categoryBreakdown}
+        </div>
+
+        <button id="backToMain" class="start-quiz-btn" style="margin-top:25px;">Back to Dashboard</button>
+      `;
+
+      // --- Draw Chart ---
+      const ctx = document.getElementById("overallScoreChart")?.getContext("2d");
+      if (ctx) {
+          new Chart(ctx, {
+              type: "doughnut",
+              data: {
+                  labels: ["Correct", "Incorrect"],
+                  datasets: [{
+                      data: [totalCorrect, totalAnswered - totalCorrect],
+                      backgroundColor: ["#28a745", "#dc3545"],
+                      borderWidth: 2, // Add border for definition
+                      borderColor: '#fff'
+                  }]
+              },
+              options: {
+                  responsive: true, // Make it responsive
+                  maintainAspectRatio: false, // Allow custom sizing
+                  cutout: "70%", // Adjust thickness
+                  plugins: {
+                      legend: { display: false }, // Hide default legend
+                      tooltip: { enabled: true } // Keep tooltips
+                  }
+              }
+          });
+      } else {
+          console.warn("Could not find canvas context for score chart.");
+      }
+
+      // Add listener for back button
+      document.getElementById("backToMain").addEventListener("click", function() {
+          performanceView.style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+      });
+
   } catch (error) {
-    console.error("Error fetching question bank:", error);
+      console.error("Error displaying performance:", error);
+      performanceView.innerHTML = `<p>Error loading performance data.</p><button id='backToMain' class="start-quiz-btn">Back</button>`;
+       document.getElementById("backToMain").addEventListener("click", () => {
+          performanceView.style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+      });
   }
-  const totalInBank = questionBank.length;
-  console.log("Total in bank: ", totalInBank, "Total answered: ", totalAnswered);
-  
-  let remaining = totalInBank - totalAnswered;
-  if (remaining < 0) { remaining = 0; }
-  
-  const totalCorrect = stats.totalCorrect || 0;
-  const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-  
-  // Get level progress info
-  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
-  const currentLevelXp = levelThresholds[level - 1] || 0;
-  const nextLevelXp = level < levelThresholds.length ? levelThresholds[level] : null;
-  
-  const xpInCurrentLevel = xp - currentLevelXp;
-  const xpRequiredForNextLevel = nextLevelXp ? nextLevelXp - currentLevelXp : 1000; // Default to 1000 if at max level
-  const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
-  
-  let categoryBreakdown = "";
-  if (stats.categories) {
-    categoryBreakdown = Object.keys(stats.categories).map(cat => {
-      const c = stats.categories[cat];
-      const answered = c.answered;
-      const correct = c.correct;
-      const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-      return `
-        <div class="category-item">
-          <strong>${cat}</strong>: ${correct}/${answered} (${percent}%)
-          <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${percent}%"></div>
-          </div>
-        </div>
-      `;
-    }).join("");
-  } else {
-    categoryBreakdown = "<p>No category data available.</p>";
-  }
-  
-  document.getElementById("performanceView").innerHTML = `
-    <h2 style="text-align:center; color:#0056b3;">Performance</h2>
-    
-    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-bottom:20px;">
-      <!-- Accuracy Doughnut Chart -->
-      <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
-        <canvas id="overallScoreChart" width="200" height="200"></canvas>
-        <p style="font-size:1.2rem; color:#333; margin-top:10px; text-align:center;">
-          Accuracy: ${overallPercent}%
-        </p>
-      </div>
-      
-      <!-- XP Level Display -->
-      <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
-        <div class="level-progress-circle" style="width:100px; height:100px; margin:20px auto;">
-          <div class="level-circle-background"></div>
-          <div class="level-circle-progress" id="performanceLevelProgress"></div>
-          <div class="level-number" style="font-size:2rem; transform:scale(0.85);">${level}</div>
-        </div>
-        <p style="font-size:1.4rem; color:#0056b3; margin:10px 0 5px 0; text-align:center;">
-          ${xp} XP
-        </p>
-        <p style="font-size:0.9rem; color:#666; margin-top:0; text-align:center;">
-          ${nextLevelXp ? `${xpInCurrentLevel}/${xpRequiredForNextLevel} XP to Level ${level + 1}` : 'Max Level Reached!'}
-        </p>
-      </div>
-    </div>
-    
-    <div style="background:#f5f5f5; border-radius:8px; padding:15px; margin:20px 0;">
-      <h3 style="margin-top:0; color:#0056b3; text-align:center;">Stats Summary</h3>
-      <p style="font-size:1rem; color:#333;">
-        Total Questions Answered: <strong>${totalAnswered}</strong>
-      </p>
-      <p style="font-size:1rem; color:#333;">
-        Correct Answers: <strong>${totalCorrect}</strong> (${overallPercent}%)
-      </p>
-      <p style="font-size:1rem; color:#333;">
-        Questions Remaining: <strong>${remaining}</strong>
-      </p>
-    </div>
-    
-    <hr>
-    <h3 style="text-align:center; color:#0056b3;">By Category</h3>
-    ${categoryBreakdown}
-    <button id="backToMain" style="margin-top:20px;">Back</button>
-  `;
-  
-  // Draw accuracy doughnut chart
-  const ctx = document.getElementById("overallScoreChart").getContext("2d");
-  new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Correct", "Incorrect"],
-      datasets: [{
-        data: [
-          totalCorrect,
-          totalAnswered - totalCorrect
-        ],
-        backgroundColor: ["#28a745", "#dc3545"]
-      }]
-    },
-    options: {
-      responsive: false,
-      cutout: "60%",
-      plugins: {
-        legend: {
-          display: true
-        }
-      }
+}
+window.displayPerformance = displayPerformance; // Make globally available
+
+// --- Leaderboard Functions ---
+
+// Helper to render leaderboard list items
+function renderLeaderboardEntries(entries, currentUid, valueKey, valueLabel) {
+    let html = '<ul class="leaderboard-entry-list">';
+    if (entries.length === 0) {
+        html += `<div class="empty-state">No data available yet. Be the first!</div>`;
+    } else {
+        entries.forEach((entry, index) => {
+            const isCurrentUser = entry.uid === currentUid;
+            const rank = index + 1;
+            html += `
+              <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
+                <div class="rank-container rank-${rank}">${rank}</div>
+                <div class="user-info">
+                  <p class="username">${entry.username || 'Anonymous'}</p>
+                </div>
+                <div class="user-stats">
+                  <p class="stat-value">${entry[valueKey]}</p>
+                  <p class="stat-label">${valueLabel}</p>
+                </div>
+              </li>`;
+        });
     }
-  });
-  
-  // Set the level progress circle fill
-  const performanceLevelProgress = document.getElementById("performanceLevelProgress");
-  if (performanceLevelProgress) {
-    performanceLevelProgress.style.setProperty('--progress', `${levelProgress}%`);
-  }
-  
-  document.getElementById("backToMain").addEventListener("click", function() {
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-  });
+    html += '</ul>';
+    return html;
 }
 
-// Load XP Rankings leaderboard with weekly/all-time toggle
+// Helper to render current user's rank if not in top 10
+function renderCurrentUserRank(currentUserEntry, currentUserRank, valueKey, valueLabel) {
+    if (!currentUserEntry) return '';
+    return `
+      <div class="your-ranking">
+        <h3>Your Ranking</h3>
+        <div class="leaderboard-entry current-user">
+          <div class="rank-container">${currentUserRank}</div>
+          <div class="user-info">
+            <p class="username">${currentUserEntry.username || 'Anonymous'}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${currentUserEntry[valueKey]}</p>
+            <p class="stat-label">${valueLabel}</p>
+          </div>
+        </div>
+      </div>`;
+}
+
+// Load Overall XP Rankings Leaderboard
 async function loadOverallData() {
-  console.log(`Loading XP rankings leaderboard data`);
-  const currentUid = window.auth.currentUser.uid;
-  const currentUsername = await getOrGenerateUsername();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
-  let leaderboardEntries = [];
-  
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    if (data.stats) {
-      let xp = data.stats.xp || 0;
-      const level = data.stats.level || 1;
-      
-      leaderboardEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        xp: xp,
-        level: level
-      });
-    }
-  });
-  
-  // Sort by XP (descending)
-  leaderboardEntries.sort((a, b) => b.xp - a.xp);
-  
-  // Get top performers and assign ranks
-  let top10 = leaderboardEntries.slice(0, 10);
-  
-  // Find current user's entry
-  let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
-  let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
-  
-  // Generate HTML without timeRange toggle buttons
-  let html = `
-    <h2>Leaderboard - XP Rankings</h2>
-    
-    <div id="leaderboardTabs">
-      <button class="leaderboard-tab active" id="overallTab">XP Rankings</button>
-      <button class="leaderboard-tab" id="streaksTab">Streaks</button>
-      <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
-    </div>
-    
-    <ul class="leaderboard-entry-list">
-  `;
-  
-  if (top10.length === 0) {
-    html += `<div class="empty-state">No leaderboard data available yet. Start answering questions to be the first on the leaderboard!</div>`;
-  } else {
-    top10.forEach((entry, index) => {
-      const isCurrentUser = entry.uid === currentUid;
-      const rank = index + 1;
-      
-      html += `
-        <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
-          <div class="rank-container rank-${rank}">${rank}</div>
-          <div class="user-info">
-            <p class="username">${entry.username}</p>
-          </div>
-          <div class="user-stats">
-            <p class="stat-value">${entry.xp}</p>
-            <p class="stat-label">XP</p>
-          </div>
-        </li>
-      `;
-    });
-  }
-  
-  html += `</ul>`;
-  
-  // Add current user's ranking if not in top 10
-  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
-    html += `
-      <div class="your-ranking">
-        <h3>Your Ranking</h3>
-        <div class="leaderboard-entry current-user">
-          <div class="rank-container">${currentUserRank}</div>
-          <div class="user-info">
-            <p class="username">${currentUsername}</p>
-          </div>
-          <div class="user-stats">
-            <p class="stat-value">${currentUserEntry.xp}</p>
-            <p class="stat-label">XP</p>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-  
-  document.getElementById("leaderboardView").innerHTML = html;
-  
-  // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ 
-    loadOverallData(); 
-  });
-  document.getElementById("streaksTab").addEventListener("click", function(){ 
-    loadStreaksData(); 
-  });
-  document.getElementById("answeredTab").addEventListener("click", function(){ 
-    loadTotalAnsweredData(); 
-  });
-  
-  document.getElementById("leaderboardBack").addEventListener("click", function(){
-    document.getElementById("leaderboardView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-    document.getElementById("aboutView").style.display = "none";
-  });
-}
+   // Guest check performed by showLeaderboard which calls this
+  console.log(`Loading XP rankings leaderboard`);
+   const leaderboardView = document.getElementById("leaderboardView");
+   leaderboardView.innerHTML = `<p>Loading XP Rankings...</p>`; // Loading state
 
-// Load Streaks leaderboard (no time range tabs)
-async function loadStreaksData() {
-  const currentUid = window.auth.currentUser.uid;
-  const currentUsername = await getOrGenerateUsername();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
-  let streakEntries = [];
-  
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
-    if (streak > 0 || true) { // Include all users for comprehensive leaderboard
-      streakEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        streak: streak
-      });
-    }
-  });
-  
-  // Sort by streak length (descending)
-  streakEntries.sort((a, b) => b.streak - a.streak);
-  
-  // Get top performers
-  let top10 = streakEntries.slice(0, 10);
-  
-  // Find current user's entry
-  let currentUserEntry = streakEntries.find(e => e.uid === currentUid);
-  let currentUserRank = streakEntries.findIndex(e => e.uid === currentUid) + 1;
-  
-  // Generate HTML without time range tabs
-  let html = `
-    <h2>Leaderboard - Streaks</h2>
-    
-    <div id="leaderboardTabs">
-      <button class="leaderboard-tab" id="overallTab">XP Rankings</button>
-      <button class="leaderboard-tab active" id="streaksTab">Streaks</button>
-      <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
-    </div>
-    
-    <ul class="leaderboard-entry-list">
-  `;
-  
-  if (top10.length === 0) {
-    html += `<div class="empty-state">No streak data available yet. Use the app daily to build your streak!</div>`;
-  } else {
-    top10.forEach((entry, index) => {
-      const isCurrentUser = entry.uid === currentUid;
-      const rank = index + 1;
-      
-      html += `
-        <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
-          <div class="rank-container rank-${rank}">${rank}</div>
-          <div class="user-info">
-            <p class="username">${entry.username}</p>
-          </div>
-          <div class="user-stats">
-            <p class="stat-value">${entry.streak}</p>
-            <p class="stat-label">DAYS</p>
-          </div>
-        </li>
-      `;
-    });
-  }
-  
-  html += `</ul>`;
-  
-  // Add current user's ranking if not in top 10
-  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
-    html += `
-      <div class="your-ranking">
-        <h3>Your Ranking</h3>
-        <div class="leaderboard-entry current-user">
-          <div class="rank-container">${currentUserRank}</div>
-          <div class="user-info">
-            <p class="username">${currentUsername}</p>
-          </div>
-          <div class="user-stats">
-            <p class="stat-value">${currentUserEntry.streak}</p>
-            <p class="stat-label">DAYS</p>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-  
-  document.getElementById("leaderboardView").innerHTML = html;
-  
-  // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
-  document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
-  document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
-  
-  document.getElementById("leaderboardBack").addEventListener("click", function(){
-    document.getElementById("leaderboardView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-    document.getElementById("aboutView").style.display = "none";
-  });
-}
+  try {
+      const currentUid = window.auth.currentUser.uid;
+      const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+      let leaderboardEntries = [];
 
-// Load Total Answered leaderboard (no time range tabs)
-async function loadTotalAnsweredData() {
-  const currentUid = window.auth.currentUser.uid;
-  const currentUsername = await getOrGenerateUsername();
-  const weekStart = getStartOfWeek();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
-  let answeredEntries = [];
-  
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    let weeklyCount = 0;
-    if (data.answeredQuestions) {
-      for (const key in data.answeredQuestions) {
-        const answer = data.answeredQuestions[key];
-        if (answer.timestamp && answer.timestamp >= weekStart) {
-          weeklyCount++;
-        }
+      querySnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data.stats) {
+              leaderboardEntries.push({
+                  uid: docSnap.id,
+                  username: data.username || "Anonymous",
+                  xp: data.stats.xp || 0
+              });
+          }
+      });
+
+      leaderboardEntries.sort((a, b) => b.xp - a.xp); // Sort descending XP
+
+      const top10 = leaderboardEntries.slice(0, 10);
+      const currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
+      const currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
+
+      let html = `<h2>Leaderboard</h2>${leaderboardTabsHTML("overall")}`; // Use global tab function
+      html += renderLeaderboardEntries(top10, currentUid, 'xp', 'XP');
+      if (currentUserRank > 10) {
+           html += renderCurrentUserRank(currentUserEntry, currentUserRank, 'xp', 'XP');
       }
-    }
-    
-    // Include all users for comprehensive leaderboard
-    answeredEntries.push({
-      uid: docSnap.id,
-      username: data.username || "Anonymous",
-      weeklyCount: weeklyCount
-    });
-  });
-  
-  // Sort by weekly count (descending)
-  answeredEntries.sort((a, b) => b.weeklyCount - a.weeklyCount);
-  
-  // Get top performers
-  let top10 = answeredEntries.slice(0, 10);
-  
-  // Find current user's entry
-  let currentUserEntry = answeredEntries.find(e => e.uid === currentUid);
-  let currentUserRank = answeredEntries.findIndex(e => e.uid === currentUid) + 1;
-  
-  // Generate HTML without time range tabs
-  let html = `
-    <h2>Leaderboard - Total Answered Questions This Week</h2>
-    
-    <div id="leaderboardTabs">
-      <button class="leaderboard-tab" id="overallTab">XP Rankings</button>
-      <button class="leaderboard-tab" id="streaksTab">Streaks</button>
-      <button class="leaderboard-tab active" id="answeredTab">Total Answered</button>
-    </div>
-    
-    <ul class="leaderboard-entry-list">
-  `;
-  
-  if (top10.length === 0) {
-    html += `<div class="empty-state">No questions answered this week yet. Start answering questions to appear on the leaderboard!</div>`;
-  } else {
-    top10.forEach((entry, index) => {
-      const isCurrentUser = entry.uid === currentUid;
-      const rank = index + 1;
-      
-      html += `
-        <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
-          <div class="rank-container rank-${rank}">${rank}</div>
-          <div class="user-info">
-            <p class="username">${entry.username}</p>
-          </div>
-          <div class="user-stats">
-            <p class="stat-value">${entry.weeklyCount}</p>
-            <p class="stat-label">QUESTIONS</p>
-          </div>
-        </li>
-      `;
-    });
-  }
-  
-  html += `</ul>`;
-  
-  // Add current user's ranking if not in top 10
-  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
-    html += `
-      <div class="your-ranking">
-        <h3>Your Ranking</h3>
-        <div class="leaderboard-entry current-user">
-          <div class="rank-container">${currentUserRank}</div>
-          <div class="user-info">
-            <p class="username">${currentUsername}</p>
-          </div>
-          <div class="user-stats">
-            <p class="stat-value">${currentUserEntry.weeklyCount}</p>
-            <p class="stat-label">QUESTIONS</p>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-  
-  document.getElementById("leaderboardView").innerHTML = html;
-  
-  // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
-  document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
-  document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
-  
-  document.getElementById("leaderboardBack").addEventListener("click", function(){
-    document.getElementById("leaderboardView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-    document.getElementById("aboutView").style.display = "none";
-  });
-}
+      html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back to Dashboard</button>`;
 
-// Default function to show leaderboard
-function showLeaderboard() {
-  document.querySelector(".swiper").style.display = "none";
-  document.getElementById("bottomToolbar").style.display = "none";
-  document.getElementById("iconBar").style.display = "none";
-  document.getElementById("performanceView").style.display = "none";
-  document.getElementById("mainOptions").style.display = "none";
-  document.getElementById("aboutView").style.display = "none";
-  document.getElementById("faqView").style.display = "none";
-  document.getElementById("leaderboardView").style.display = "block";
-  
-  // Use the loadOverallData function with 'weekly' as default
-  if (typeof window.loadOverallData === 'function') {
-    window.loadOverallData('weekly');
-  } else {
-    // Fallback message if function is not available
-    document.getElementById("leaderboardView").innerHTML = `
-      <h2>Leaderboard</h2>
-      <p>Leaderboards are loading... Please try again in a moment.</p>
-      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
-    `;
-    document.getElementById("leaderboardBack").addEventListener("click", function(){
-      document.getElementById("leaderboardView").style.display = "none";
-      document.getElementById("mainOptions").style.display = "flex";
-    });
-    
-    console.log("loadOverallData function not found");
+      leaderboardView.innerHTML = html;
+      addLeaderboardListeners(); // Add listeners for tabs/back button
+
+  } catch (error) {
+      console.error("Error loading overall leaderboard:", error);
+      leaderboardView.innerHTML = `<p>Error loading leaderboard.</p><button id="leaderboardBack">Back</button>`;
+      document.getElementById("leaderboardBack").addEventListener("click", () => { /* Go back */ });
   }
 }
+window.loadOverallData = loadOverallData; // Make globally available
+
+// Load Streaks Leaderboard
+async function loadStreaksData() {
+    // Guest check performed by showLeaderboard which calls this
+    console.log(`Loading Streaks leaderboard`);
+    const leaderboardView = document.getElementById("leaderboardView");
+    leaderboardView.innerHTML = `<p>Loading Streaks...</p>`;
+
+    try {
+        const currentUid = window.auth.currentUser.uid;
+        const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+        let streakEntries = [];
+
+        querySnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+             // Use current streak for ranking
+            const streak = data.streaks?.currentStreak || 0;
+            streakEntries.push({
+                uid: docSnap.id,
+                username: data.username || "Anonymous",
+                streak: streak
+            });
+        });
+
+        streakEntries.sort((a, b) => b.streak - a.streak); // Sort descending streak
+
+        const top10 = streakEntries.slice(0, 10);
+        const currentUserRank = streakEntries.findIndex(e => e.uid === currentUid) + 1;
+        const currentUserEntry = streakEntries.find(e => e.uid === currentUid);
+
+        let html = `<h2>Leaderboard</h2>${leaderboardTabsHTML("streaks")}`;
+        html += renderLeaderboardEntries(top10, currentUid, 'streak', 'DAYS');
+        if (currentUserRank > 10) {
+           html += renderCurrentUserRank(currentUserEntry, currentUserRank, 'streak', 'DAYS');
+        }
+        html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back to Dashboard</button>`;
+
+        leaderboardView.innerHTML = html;
+        addLeaderboardListeners();
+
+    } catch (error) {
+        console.error("Error loading streaks leaderboard:", error);
+         leaderboardView.innerHTML = `<p>Error loading leaderboard.</p><button id="leaderboardBack">Back</button>`;
+        document.getElementById("leaderboardBack").addEventListener("click", () => { /* Go back */ });
+    }
+}
+window.loadStreaksData = loadStreaksData; // Make globally available
+
+// Load Total Answered (Weekly) Leaderboard
+async function loadTotalAnsweredData() {
+     // Guest check performed by showLeaderboard which calls this
+    console.log(`Loading Weekly Answered leaderboard`);
+    const leaderboardView = document.getElementById("leaderboardView");
+    leaderboardView.innerHTML = `<p>Loading Weekly Answered...</p>`;
+
+    try {
+        const currentUid = window.auth.currentUser.uid;
+        const weekStartTimestamp = getStartOfWeek(); // Use global helper
+        const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+        let answeredEntries = [];
+
+        querySnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            let weeklyCount = 0;
+            if (data.answeredQuestions) {
+                // Count questions answered since the start of the week
+                weeklyCount = Object.values(data.answeredQuestions)
+                                   .filter(ans => ans.timestamp && ans.timestamp >= weekStartTimestamp)
+                                   .length;
+            }
+             answeredEntries.push({
+                uid: docSnap.id,
+                username: data.username || "Anonymous",
+                weeklyAnswered: weeklyCount
+            });
+        });
+
+        answeredEntries.sort((a, b) => b.weeklyAnswered - a.weeklyAnswered); // Sort desc weekly count
+
+        const top10 = answeredEntries.slice(0, 10);
+        const currentUserRank = answeredEntries.findIndex(e => e.uid === currentUid) + 1;
+        const currentUserEntry = answeredEntries.find(e => e.uid === currentUid);
+
+        let html = `<h2>Leaderboard</h2>${leaderboardTabsHTML("answered")}`;
+        html += renderLeaderboardEntries(top10, currentUid, 'weeklyAnswered', 'QUESTIONS');
+         if (currentUserRank > 10) {
+           html += renderCurrentUserRank(currentUserEntry, currentUserRank, 'weeklyAnswered', 'QUESTIONS');
+        }
+        html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back to Dashboard</button>`;
+
+        leaderboardView.innerHTML = html;
+        addLeaderboardListeners();
+
+    } catch (error) {
+        console.error("Error loading total answered leaderboard:", error);
+        leaderboardView.innerHTML = `<p>Error loading leaderboard.</p><button id="leaderboardBack">Back</button>`;
+        document.getElementById("leaderboardBack").addEventListener("click", () => { /* Go back */ });
+    }
+}
+window.loadTotalAnsweredData = loadTotalAnsweredData; // Make globally available
+
+// Add event listeners for leaderboard tabs and back button
+function addLeaderboardListeners() {
+    const overallTab = document.getElementById("overallTab");
+    const streaksTab = document.getElementById("streaksTab");
+    const answeredTab = document.getElementById("answeredTab");
+    const backBtn = document.getElementById("leaderboardBack");
+
+    if (overallTab) overallTab.addEventListener("click", loadOverallData);
+    if (streaksTab) streaksTab.addEventListener("click", loadStreaksData);
+    if (answeredTab) answeredTab.addEventListener("click", loadTotalAnsweredData);
+
+    if (backBtn) {
+        backBtn.addEventListener("click", function() {
+            const leaderboardView = document.getElementById("leaderboardView");
+            const mainOptions = document.getElementById("mainOptions");
+            if (leaderboardView) leaderboardView.style.display = "none";
+            if (mainOptions) mainOptions.style.display = "flex"; // Return to dashboard
+        });
+    }
+}
+// addLeaderboardListeners is internal to stats.js
