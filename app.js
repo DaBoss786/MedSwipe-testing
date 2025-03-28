@@ -4,9 +4,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const welcomeScreen = document.getElementById('welcomeScreen');
   const mainOptions = document.getElementById('mainOptions');
   
-  // Ensure dashboard is initially hidden
+  // Immediately hide the dashboard to prevent it from being visible at any point
   if (mainOptions) {
     mainOptions.style.display = 'none';
+  }
+  
+  // Ensure welcome screen is ready but hidden
+  if (welcomeScreen) {
+    welcomeScreen.style.display = 'flex';
+    welcomeScreen.style.opacity = '0';
   }
   
   // Hide splash screen after 2 seconds and show welcome screen
@@ -14,17 +20,42 @@ document.addEventListener('DOMContentLoaded', function() {
     if (splashScreen) {
       splashScreen.classList.add('fade-out');
       
-      // After splash fades out, display welcome screen
+      // Make welcome screen visible before splash fully fades out
+      if (welcomeScreen) {
+        welcomeScreen.style.opacity = '1';
+      }
+      
+      // After splash fades out, remove it from DOM
       setTimeout(function() {
         splashScreen.style.display = 'none';
-        
-        // Show welcome screen with fade-in effect
-        if (welcomeScreen) {
-          welcomeScreen.classList.add('show');
-        }
       }, 500); // Matches the transition duration in CSS
     }
   }, 2000);
+  
+  // Handle welcome screen buttons
+  const startLearningBtn = document.getElementById('startLearningBtn');
+  const existingAccountBtn = document.getElementById('existingAccountBtn');
+  
+  if (startLearningBtn) {
+    startLearningBtn.addEventListener('click', function() {
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        mainOptions.style.display = 'flex';
+      }, 500);
+    });
+  }
+  
+  if (existingAccountBtn) {
+    existingAccountBtn.addEventListener('click', function() {
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        mainOptions.style.display = 'flex';
+      }, 500);
+    });
+  }
+});
   
   // Handle welcome screen buttons
   const startLearningBtn = document.getElementById('startLearningBtn');
