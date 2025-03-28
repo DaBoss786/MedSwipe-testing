@@ -1,5 +1,4 @@
 // Session tracking
-let questionStartTime = 0; // This might be better in quiz.js if only used there
 let sessionStartTime = Date.now(); // Seems unused, consider removing
 
 // Fetch already answered questions from Firestore
