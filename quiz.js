@@ -413,6 +413,8 @@ async function initializeQuiz(questions, quizOptions = {}) {
 }
 // initializeQuiz doesn't necessarily need to be global, only called by loadQuestions/loadSpecificQuestions
 
+
+
 // Update the bookmark icon based on the current question's bookmark status
 function updateBookmarkIcon() { // This function is now in utils.js and global
     // Kept here temporarily for reference during refactor, should be removed
@@ -515,20 +517,28 @@ async function handleAnswerSelection() {
         // Increment guest counter and check for prompt
         if (isGuest) {
             guestQuestionCounter++;
-            // Show prompt after 3 questions, then every 10 (adjust thresholds)
-            if (guestQuestionCounter === 3 || (guestQuestionCounter > 3 && (guestQuestionCounter - 3) % 10 === 0)) {
-                 // Trigger registration prompt modal (implementation in next step)
-                 console.log(`Guest answered ${guestQuestionCounter} questions. Time for registration prompt!`);
-                 // showRegistrationPrompt('quiz_milestone'); // Example call
-            }
-        }
+            console.log(`Guest question count: ${guestQuestionCounter}`); // Debug log
 
-        // Record answer (only for logged-in users)
-        if (!isGuest) {
-            await recordAnswer(qId, category, isCorrect, timeSpent);
-            await updateQuestionStats(qId, isCorrect); // Update global stats
+            // Define prompt thresholds
+            const firstPromptThreshold = 3;
+            const subsequentPromptInterval = 10; // Show again every 10 questions after the first
+
+            // Check if prompt should be shown
+            if (guestQuestionCounter === firstPromptThreshold ||
+               (guestQuestionCounter > firstPromptThreshold && (guestQuestionCounter - firstPromptThreshold) % subsequentPromptInterval === 0))
+            {
+                 console.log(`Threshold reached. Showing registration prompt.`);
+                 // Call the function to show the prompt modal
+                 if (typeof showRegistrationPrompt === 'function') {
+                     showRegistrationPrompt('quiz_milestone'); // Pass context 'quiz_milestone'
+                 } else {
+                     console.warn("showRegistrationPrompt function not found!");
+                 }
+            }
         } else {
-             // Optionally store guest progress locally (localStorage) if needed for session resume
+            // Logged-in user: Record answer and update stats
+            await recordAnswer(qId, category, isCorrect, timeSpent);
+            await updateQuestionStats(qId, isCorrect);
         }
 
 
@@ -755,3 +765,32 @@ function updateProgress() {
   }
 }
 // updateProgress internal
+
+// --- ADDITION: Function to show Registration Prompt Modal ---
+// (This function will be called by handleAnswerSelection)
+function showRegistrationPrompt(triggerContext = 'generic') {
+    const modal = document.getElementById('registrationPromptModal');
+    const messageEl = document.getElementById('promptMessage');
+
+    if (!modal || !messageEl) {
+        console.error("Registration prompt modal elements not found!");
+        return;
+    }
+
+    // --- Customize Message Based on Context (Optional but Recommended) ---
+    let message = "Sign up to save your progress and unlock all features!";
+    if (triggerContext === 'quiz_milestone') {
+        message = "You're doing great! Sign up to save your progress, track your stats, and compete on the leaderboards.";
+    } else if (triggerContext === 'feature_gate') {
+        message = "This feature requires an account. Sign up for free to unlock it!";
+    } // Add more contexts later (e.g., 'quiz_complete', 'high_score')
+
+    messageEl.textContent = message;
+
+    // Show the modal
+    modal.style.display = 'flex'; // Use flex for centering
+    // Optionally add fade-in animation via CSS class
+    setTimeout(() => { modal.style.opacity = '1'; }, 10);
+}
+// Make it global so it can be called from other places later if needed
+window.showRegistrationPrompt = showRegistrationPrompt;
