@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -21,6 +21,15 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Sign in anonymously
+signInAnonymously(auth)
+  .then(() => { 
+    console.log("Signed in anonymously as", auth.currentUser.uid); 
+  })
+  .catch((error) => { 
+    console.error("Anonymous sign-in error:", error); 
+  });
+
 // Make Firestore functions globally available
 window.analytics = analytics;
 window.logEvent = logEvent;
@@ -33,8 +42,3 @@ window.addDoc = addDoc;
 window.collection = collection;
 window.serverTimestamp = serverTimestamp;
 window.getDocs = getDocs;
-
-// Make authentication functions globally available
-window.signInAnonymously = signInAnonymously;
-window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-window.signInWithEmailAndPassword = signInWithEmailAndPassword;

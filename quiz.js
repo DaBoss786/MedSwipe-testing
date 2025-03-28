@@ -421,37 +421,6 @@ difficultyButtons.forEach(btn => {
           // Record the answer in the database
           await recordAnswer(qId, category, isCorrect, timeSpent);
           await updateQuestionStats(qId, isCorrect);
-
-          // Check if user is in guest mode and track question count
-if (window.isGuestUser && window.isGuestUser()) {
-  if (window.auth && typeof window.auth.incrementGuestQuestionCount === 'function') {
-    const questionCount = window.auth.incrementGuestQuestionCount();
-    
-    // Show registration prompts at specific intervals
-    if (questionCount === 3) {
-      // Show first prompt after 3 questions
-      setTimeout(() => {
-        if (window.auth && typeof window.auth.showSignupPrompt === 'function') {
-          window.auth.showSignupPrompt("Great job! Create an account to save your progress and track your learning journey.");
-        }
-      }, 1000);
-    } else if (questionCount % 10 === 0) {
-      // Show additional prompts every 10 questions
-      setTimeout(() => {
-        if (window.auth && typeof window.auth.showSignupPrompt === 'function') {
-          const messages = [
-            "You're doing great! Sign up to save your progress and access all features.",
-            "Create an account to join the leaderboard and compete with other users!",
-            "Want to see your performance stats? Create an account to unlock detailed analytics."
-          ];
-          const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-          window.auth.showSignupPrompt(randomMessage);
-        }
-      }, 1000);
-    }
-  }
-}
-
           
           // Prepare and show the summary button once data is loaded
           prepareSummary();

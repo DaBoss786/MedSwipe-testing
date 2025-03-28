@@ -612,14 +612,6 @@ async function getBookmarks() {
 
 // Toggle a bookmark (add if not present, remove if present)
 async function toggleBookmark(questionId) {
-  // Check if user is in guest mode - feature gate for bookmarks
-  if (window.isGuestUser && window.isGuestUser()) {
-    // Show feature gate prompt
-    if (window.auth && typeof window.auth.showFeatureGatePrompt === 'function') {
-      window.auth.showFeatureGatePrompt('bookmarks');
-      return false; // Don't proceed with bookmarking
-    }
-  }
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated for toggleBookmark");
     return false;
@@ -805,14 +797,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to update spaced repetition data for a question
 async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval) {
-  // Check if user is in guest mode - feature gate for spaced repetition
-  if (window.isGuestUser && window.isGuestUser()) {
-    // Show feature gate prompt
-    if (window.auth && typeof window.auth.showFeatureGatePrompt === 'function') {
-      window.auth.showFeatureGatePrompt('spacedRepetition');
-      return; // Don't proceed with spaced repetition update
-    }
-  }
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated, can't update spaced repetition data");
     return;
