@@ -1,4 +1,4 @@
-// Add splash screen and welcome screen functionality
+// Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
   const welcomeScreen = document.getElementById('welcomeScreen');
@@ -15,22 +15,39 @@ document.addEventListener('DOMContentLoaded', function() {
     welcomeScreen.style.opacity = '0';
   }
   
-  // Hide splash screen after 2 seconds and show welcome screen
-  setTimeout(function() {
-    if (splashScreen) {
-      splashScreen.classList.add('fade-out');
-      
-      // Make welcome screen visible before splash fully fades out
-      if (welcomeScreen) {
-        welcomeScreen.style.opacity = '1';
-      }
-      
-      // After splash fades out, remove it from DOM
+  // Listen for authentication state changes
+  window.addEventListener('authStateChanged', function(event) {
+    console.log('Auth state changed in app.js:', event.detail);
+    
+    // Once authentication is initialized and not loading
+    if (!event.detail.isLoading) {
+      // Hide splash screen after 2 seconds
       setTimeout(function() {
-        splashScreen.style.display = 'none';
-      }, 500); // Matches the transition duration in CSS
+        if (splashScreen) {
+          splashScreen.classList.add('fade-out');
+          
+          // After splash fades out, decide where to go based on auth state
+          setTimeout(function() {
+            splashScreen.style.display = 'none';
+            
+            if (event.detail.isRegistered) {
+              // Registered user - go straight to dashboard
+              console.log('User is registered, showing dashboard');
+              if (mainOptions) {
+                mainOptions.style.display = 'flex';
+              }
+            } else {
+              // Guest user - show welcome screen
+              console.log('User is guest, showing welcome screen');
+              if (welcomeScreen) {
+                welcomeScreen.style.opacity = '1';
+              }
+            }
+          }, 500); // Matches the transition duration in CSS
+        }
+      }, 2000);
     }
-  }, 2000);
+  });
   
   // Handle welcome screen buttons
   const startLearningBtn = document.getElementById('startLearningBtn');
@@ -48,14 +65,192 @@ document.addEventListener('DOMContentLoaded', function() {
   
   if (existingAccountBtn) {
     existingAccountBtn.addEventListener('click', function() {
+      // Show login form
       welcomeScreen.style.opacity = '0';
       setTimeout(function() {
         welcomeScreen.style.display = 'none';
-        mainOptions.style.display = 'flex';
+        // Show login form (will need to be implemented)
+        showLoginForm();
       }, 500);
     });
   }
 });
+
+// Function to show the login form modal
+function showLoginForm() {
+  // Create login modal if it doesn't exist
+  let loginModal = document.getElementById('loginModal');
+  
+  if (!loginModal) {
+    loginModal = document.createElement('div');
+    loginModal.id = 'loginModal';
+    loginModal.className = 'auth-modal';
+    
+    loginModal.innerHTML = `
+      <div class="auth-modal-content">
+        <h2>Log In to MedSwipe</h2>
+        <div id="loginError" class="auth-error"></div>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" required>
+          </div>
+          <div class="auth-buttons">
+            <button type="submit" class="auth-primary-btn">Log In</button>
+            <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
+          </div>
+        </form>
+        <button id="closeLoginBtn" class="auth-close-btn">×</button>
+      </div>
+    `;
+    
+    document.body.appendChild(loginModal);
+    
+    // Add event listeners
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const errorElement = document.getElementById('loginError');
+      
+      try {
+        errorElement.textContent = '';
+        await window.authFunctions.loginUser(email, password);
+        // Success - close modal and show dashboard
+        loginModal.style.display = 'none';
+        document.getElementById('mainOptions').style.display = 'flex';
+      } catch (error) {
+        // Show error message
+        errorElement.textContent = getAuthErrorMessage(error);
+      }
+    });
+    
+    document.getElementById('createAccountBtn').addEventListener('click', function() {
+      loginModal.style.display = 'none';
+      showRegisterForm();
+    });
+    
+    document.getElementById('closeLoginBtn').addEventListener('click', function() {
+      loginModal.style.display = 'none';
+      document.getElementById('mainOptions').style.display = 'flex';
+    });
+  }
+  
+  // Show the modal
+  loginModal.style.display = 'flex';
+}
+
+// Function to show the registration form modal
+function showRegisterForm() {
+  // Create registration modal if it doesn't exist
+  let registerModal = document.getElementById('registerModal');
+  
+  if (!registerModal) {
+    registerModal = document.createElement('div');
+    registerModal.id = 'registerModal';
+    registerModal.className = 'auth-modal';
+    
+    registerModal.innerHTML = `
+      <div class="auth-modal-content">
+        <h2>Create MedSwipe Account</h2>
+        <div id="registerError" class="auth-error"></div>
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="registerUsername">Username</label>
+            <input type="text" id="registerUsername" required>
+          </div>
+          <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" required>
+          </div>
+          <div class="form-group">
+            <label for="registerPassword">Password</label>
+            <input type="password" id="registerPassword" required minlength="6">
+            <small>Password must be at least 6 characters</small>
+          </div>
+          <div class="auth-buttons">
+            <button type="submit" class="auth-primary-btn">Create Account</button>
+            <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
+          </div>
+        </form>
+        <button id="closeRegisterBtn" class="auth-close-btn">×</button>
+      </div>
+    `;
+    
+    document.body.appendChild(registerModal);
+    
+    // Add event listeners
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('registerUsername').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const errorElement = document.getElementById('registerError');
+      
+      try {
+        errorElement.textContent = '';
+        
+        if (window.authState.user && window.authState.user.isAnonymous) {
+          // Upgrade anonymous user
+          await window.authFunctions.upgradeAnonymousUser(email, password, username);
+        } else {
+          // Create new user
+          await window.authFunctions.registerUser(email, password, username);
+        }
+        
+        // Success - close modal and show dashboard
+        registerModal.style.display = 'none';
+        document.getElementById('mainOptions').style.display = 'flex';
+      } catch (error) {
+        // Show error message
+        errorElement.textContent = getAuthErrorMessage(error);
+      }
+    });
+    
+    document.getElementById('goToLoginBtn').addEventListener('click', function() {
+      registerModal.style.display = 'none';
+      showLoginForm();
+    });
+    
+    document.getElementById('closeRegisterBtn').addEventListener('click', function() {
+      registerModal.style.display = 'none';
+      document.getElementById('mainOptions').style.display = 'flex';
+    });
+  }
+  
+  // Show the modal
+  registerModal.style.display = 'flex';
+}
+
+// Helper function to get user-friendly error messages
+function getAuthErrorMessage(error) {
+  const errorCode = error.code;
+  
+  switch (errorCode) {
+    case 'auth/invalid-email':
+      return 'Invalid email address format';
+    case 'auth/user-disabled':
+      return 'This account has been disabled';
+    case 'auth/user-not-found':
+      return 'No account found with this email';
+    case 'auth/wrong-password':
+      return 'Incorrect password';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists';
+    case 'auth/weak-password':
+      return 'Password is too weak';
+    case 'auth/network-request-failed':
+      return 'Network error - please check your connection';
+    default:
+      return error.message || 'An unknown error occurred';
+  }
+}
 
 
 // Main app initialization
