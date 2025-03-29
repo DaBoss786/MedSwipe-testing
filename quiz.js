@@ -297,6 +297,7 @@ async function initializeQuiz(questions) {
   document.getElementById("iconBar").style.display = "flex";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
+  ensureEventListenersAttached(); // Add this line
 }
 
 // Update the bookmark icon based on the current question's bookmark status
@@ -668,6 +669,7 @@ function showSummary() {
     document.getElementById("performanceView").style.display = "none";
     document.getElementById("leaderboardView").style.display = "none";
     document.getElementById("mainOptions").style.display = "flex";
+    ensureEventListenersAttached(); // Add this line
   });
   
   document.getElementById("leaderboardButton").addEventListener("click", function() {
@@ -680,6 +682,7 @@ function showSummary() {
     document.getElementById("faqView").style.display = "none";
     document.getElementById("mainOptions").style.display = "none";
     showLeaderboard();
+    ensureEventListenersAttached(); // Add this line
   });
 }
 
