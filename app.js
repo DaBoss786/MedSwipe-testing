@@ -76,35 +76,28 @@ window.addEventListener('authStateChanged', function(event) {
   }
 
   if (existingAccountBtn) {
-    existingAccountBtn.addEventListener('click', function() {
-      console.log("'I already have an account' button clicked");
-      const welcomeScreen = document.getElementById('welcomeScreen');
-      const loginScreen = document.getElementById('loginScreen');
+  existingAccountBtn.addEventListener('click', function() {
+    console.log("'I already have an account' button clicked");
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    
+    if (welcomeScreen) {
+      // Fade out welcome screen
+      welcomeScreen.style.opacity = '0';
       
-      if (welcomeScreen && loginScreen) {
-        // Fade out welcome screen
-        welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        // Hide welcome screen
+        welcomeScreen.style.display = 'none';
         
-        setTimeout(function() {
-          // Hide welcome screen
-          welcomeScreen.style.display = 'none';
-          
-          // Show login screen - but do NOT call ensureAllScreensHidden here
-          loginScreen.style.display = 'flex';
-          
-          // Use setTimeout to ensure a smooth transition
-          setTimeout(function() {
-            loginScreen.style.opacity = '1';
-            console.log("Login screen should now be visible");
-          }, 50);
-        }, 500);
-      }
-    });
-  }
+        // Show the login form with back button (true = from welcome screen)
+        showLoginForm(true);
+      }, 500);
+    }
+  });
+}
 });
 
 // Function to show the login form modal
-function showLoginForm() {
+function showLoginForm(fromWelcomeScreen = false) {
   // Create login modal if it doesn't exist
   let loginModal = document.getElementById('loginModal');
   
@@ -114,30 +107,34 @@ function showLoginForm() {
     loginModal.className = 'auth-modal';
     
     loginModal.innerHTML = `
-  <div class="auth-modal-content">
-    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
-    <h2>Log In to MedSwipe</h2>
-    <div id="loginError" class="auth-error"></div>
-    <form id="loginForm">
-      <div class="form-group">
-        <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" required>
+      <div class="auth-modal-content">
+        ${fromWelcomeScreen ? '<button id="backToWelcomeBtn" style="position: absolute; top: 15px; left: 15px; background: none; border: none; font-size: 1.2rem; color: #0056b3; cursor: pointer;">&larr;</button>' : ''}
+        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
+        <h2>Log In to MedSwipe</h2>
+        <div id="loginError" class="auth-error"></div>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" required>
+          </div>
+          <div class="auth-buttons">
+            <button type="submit" class="auth-primary-btn">Log In</button>
+          </div>
+          <div style="text-align: center; margin-top: 15px;">
+            <a href="#" id="forgotPasswordLink" style="color: #0056b3; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
+          </div>
+          <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+            <p style="margin-bottom: 10px; color: #666;">Don't have an account?</p>
+            <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
+          </div>
+        </form>
+        <button id="closeLoginBtn" class="auth-close-btn">×</button>
       </div>
-      <div class="form-group">
-        <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" required>
-      </div>
-      <div class="auth-buttons">
-        <button type="submit" class="auth-primary-btn">Log In</button>
-        <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
-      </div>
-      <div style="text-align: center; margin-top: 15px;">
-        <a href="#" id="forgotPasswordLink" style="color: #0056b3; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
-      </div>
-    </form>
-    <button id="closeLoginBtn" class="auth-close-btn">×</button>
-  </div>
-`;
+    `;
     
     document.body.appendChild(loginModal);
     
@@ -155,7 +152,7 @@ function showLoginForm() {
         // Success - close modal and show dashboard
         loginModal.style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
-        ensureEventListenersAttached(); // Add this line
+        ensureEventListenersAttached(); // Make sure event listeners are attached
       } catch (error) {
         // Show error message
         errorElement.textContent = getAuthErrorMessage(error);
@@ -171,6 +168,40 @@ function showLoginForm() {
       loginModal.style.display = 'none';
       document.getElementById('mainOptions').style.display = 'flex';
     });
+    
+    // Add back button functionality if coming from welcome screen
+    if (fromWelcomeScreen) {
+      document.getElementById('backToWelcomeBtn').addEventListener('click', function() {
+        loginModal.style.display = 'none';
+        document.getElementById('welcomeScreen').style.display = 'flex';
+        document.getElementById('welcomeScreen').style.opacity = '1';
+      });
+    }
+  } else {
+    // If modal already exists but we need to add/remove back button
+    const existingBackBtn = loginModal.querySelector('#backToWelcomeBtn');
+    const modalContent = loginModal.querySelector('.auth-modal-content');
+    
+    if (fromWelcomeScreen && !existingBackBtn) {
+      // Add back button if coming from welcome screen
+      const backBtn = document.createElement('button');
+      backBtn.id = 'backToWelcomeBtn';
+      backBtn.innerHTML = '&larr;';
+      backBtn.style = 'position: absolute; top: 15px; left: 15px; background: none; border: none; font-size: 1.2rem; color: #0056b3; cursor: pointer;';
+      
+      backBtn.addEventListener('click', function() {
+        loginModal.style.display = 'none';
+        document.getElementById('welcomeScreen').style.display = 'flex';
+        document.getElementById('welcomeScreen').style.opacity = '1';
+      });
+      
+      if (modalContent) {
+        modalContent.insertBefore(backBtn, modalContent.firstChild);
+      }
+    } else if (!fromWelcomeScreen && existingBackBtn) {
+      // Remove back button if not coming from welcome screen
+      existingBackBtn.remove();
+    }
   }
   
   // Show the modal
