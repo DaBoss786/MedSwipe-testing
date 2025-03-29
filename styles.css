@@ -2866,3 +2866,35 @@ html, body {
   margin: 0 auto 15px;
   display: block;
 }
+
+// Add this CSS to your styles.css file
+
+.terms-container {
+  margin-top: 15px;
+}
+
+.terms-checkbox {
+  display: flex;
+  align-items: flex-start;
+}
+
+.terms-checkbox input[type="checkbox"] {
+  margin-top: 4px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.terms-checkbox label {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #555;
+}
+
+.terms-checkbox a {
+  color: #0C72D3;
+  text-decoration: none;
+}
+
+.terms-checkbox a:hover {
+  text-decoration: underline;
+}
