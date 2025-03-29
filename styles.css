@@ -2939,3 +2939,241 @@ html, body {
   flex: 1; /* Allow label to wrap properly */
   text-align: left;
 }
+
+/* Authentication Modal Styling */
+.auth-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-modal-content {
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  max-height: 85vh; /* Limit height */
+  overflow-y: auto; /* Enable scrolling */
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-logo {
+  max-width: 120px;
+  margin: 0 auto 15px;
+  display: block;
+}
+
+.auth-modal h2 {
+  color: #0C72D3;
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.form-group small {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 3px;
+}
+
+/* Terms Container Styling */
+.terms-container {
+  margin: 20px 0 15px 0;
+}
+
+.terms-checkbox {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.terms-checkbox input[type="checkbox"] {
+  margin-top: 3px;
+  margin-right: 10px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.terms-checkbox label {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #555;
+  flex: 1; /* Allow label to wrap properly */
+  text-align: left;
+}
+
+.terms-checkbox a {
+  color: #0C72D3;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.terms-checkbox a:hover {
+  text-decoration: underline;
+}
+
+.form-error {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 5px;
+  min-height: 16px;
+}
+
+/* Button Styling */
+.auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.auth-primary-btn {
+  font-size: 1rem;
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-primary-btn:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.auth-secondary-btn {
+  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid #0C72D3;
+  background: white;
+  color: #0C72D3;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-secondary-btn:hover {
+  background: #f0f7ff;
+}
+
+.auth-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.auth-close-btn:hover {
+  color: #333;
+}
+
+/* Terms of Service & Privacy Policy Modals */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2050;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #0C72D3;
+}
+
+.close-modal {
+  font-size: 1.5rem;
+  color: #999;
+  cursor: pointer;
+}
+
+.close-modal:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .auth-modal-content {
+    padding: 20px 15px;
+    max-height: 80vh;
+  }
+  
+  .form-group {
+    margin-bottom: 12px;
+  }
+  
+  .terms-checkbox label {
+    font-size: 0.8rem;
+  }
+  
+  .auth-buttons {
+    margin-top: 15px;
+  }
+}
