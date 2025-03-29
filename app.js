@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Update the auth state change listener to properly handle welcome screen
 window.addEventListener('authStateChanged', function(event) {
   console.log('Auth state changed in app.js:', event.detail);
+  if (event.detail.user && event.detail.user.isAnonymous && !event.detail.isRegistered) {
+    cleanupOnLogout();
+  }
   
   // Once authentication is initialized and not loading
   if (!event.detail.isLoading) {
@@ -1481,8 +1484,23 @@ function ensureEventListenersAttached() {
 function forceReinitializeDashboard() {
   console.log("Force reinitializing dashboard...");
   
-  // First, ensure all screens are properly hidden
+  // First ensure all screens are properly hidden
   ensureAllScreensHidden();
+  
+  // IMPORTANT: Reset all user data displays based on current auth state
+  const isAnonymous = window.auth.currentUser && window.auth.currentUser.isAnonymous;
+  if (isAnonymous) {
+    // For anonymous users, ensure stats display 0/blank
+    cleanupOnLogout();
+  } else {
+    // For registered users, refresh displays from database
+    if (typeof updateUserXP === 'function') {
+      updateUserXP();
+    }
+    if (typeof updateUserMenu === 'function') {
+      updateUserMenu();
+    }
+  }
   
   // 1. Check for any overlays that might be active and remove them
   const menuOverlay = document.getElementById("menuOverlay");
