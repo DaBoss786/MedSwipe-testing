@@ -2898,3 +2898,44 @@ html, body {
 .terms-checkbox a:hover {
   text-decoration: underline;
 }
+
+/* CSS Fixes for Registration Form Layout */
+
+/* Fix overall modal height */
+.auth-modal-content {
+  max-height: 90vh; /* Limit height to 90% of viewport */
+  overflow-y: auto; /* Add scrolling if needed */
+  padding: 20px; /* Slightly reduce padding */
+}
+
+/* Fix logo display */
+.auth-logo {
+  max-width: 120px;
+  margin: 0 auto 15px;
+  display: block;
+}
+
+/* Improve terms checkbox layout */
+.terms-container {
+  margin: 15px 0;
+}
+
+.terms-checkbox {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 5px;
+}
+
+.terms-checkbox input[type="checkbox"] {
+  margin-top: 3px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.terms-checkbox label {
+  font-size: 0.85rem;
+  line-height: 1.3;
+  color: #555;
+  flex: 1; /* Allow label to wrap properly */
+  text-align: left;
+}
