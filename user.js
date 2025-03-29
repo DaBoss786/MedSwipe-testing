@@ -6,8 +6,9 @@ let sessionStartTime = Date.now();
 
 // Fetch already answered questions from Firestore
 async function fetchPersistentAnsweredIds() {
+  // Ensure dependencies are loaded
   if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) {
-    console.log("System not ready for fetchPersistentAnsweredIds");
+    console.error("System not ready for fetchPersistentAnsweredIds (Firebase missing).");
     return [];
   }
 
@@ -27,10 +28,12 @@ async function fetchPersistentAnsweredIds() {
 
 // Record answer in Firestore with XP calculation
 async function recordAnswer(questionId, category, isCorrect, timeSpent) {
-  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.runTransaction || !window.getDoc) {
-    console.log("System not ready to record answer");
+   // Ensure dependencies are loaded
+   if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.runTransaction || !window.getDoc || typeof calculateLevel !== 'function' || typeof updateUserXP !== 'function' || typeof updateUserMenu !== 'function' || typeof initializeDashboard !== 'function' || typeof showLevelUpAnimation !== 'function' ) {
+    console.error("System not ready to record answer (dependencies missing).");
     return;
   }
+
 
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
@@ -41,275 +44,214 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
     let totalXP = 0;
 
     await window.runTransaction(window.db, async (transaction) => {
-      const userDoc = await transaction.get(userDocRef); // Changed from window.getDoc to use transaction
+      const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
 
-      // Initialize stats if needed
-      if (!data.stats) {
-        data.stats = {
-          totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0,
-          xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0
-        };
-      }
-      // Ensure sub-fields exist
+      // Initialize stats if needed, ensuring nested objects
+      data.stats = data.stats ?? {};
       data.stats.xp = data.stats.xp ?? 0;
       data.stats.level = data.stats.level ?? 1;
       data.stats.achievements = data.stats.achievements ?? {};
       data.stats.currentCorrectStreak = data.stats.currentCorrectStreak ?? 0;
+      data.stats.categories = data.stats.categories ?? {};
+      data.stats.totalAnswered = data.stats.totalAnswered ?? 0;
+      data.stats.totalCorrect = data.stats.totalCorrect ?? 0;
+      data.stats.totalIncorrect = data.stats.totalIncorrect ?? 0;
+      data.stats.totalTimeSpent = data.stats.totalTimeSpent ?? 0;
+
       data.answeredQuestions = data.answeredQuestions ?? {};
       data.streaks = data.streaks ?? { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-      data.stats.categories = data.stats.categories ?? {};
 
-      // --- Start modification for streak/timestamp update ---
+
+      // --- Streak Update Logic ---
       const currentDate = new Date();
-      const currentTimestamp = currentDate.getTime(); // Use Firebase server timestamp later if possible
-      const currentFormatted = currentDate.toLocaleString();
-
-      // Only record if not already answered *in this session/load*
-      // The check `if (data.answeredQuestions[questionId]) return;` should happen *before* the transaction potentially
-      // For now, assume the logic only calls recordAnswer for unanswered questions in the session.
-      // Let's proceed with the update, assuming this is a new answer for the user overall.
-
-      // Update streaks *before* checking if question already exists in DB if streak depends on *any* answer today
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      let streakUpdated = false;
       const normalizedCurrent = normalizeDate(currentDate);
+      let streakUpdated = false;
 
       if (data.streaks.lastAnsweredDate) {
-        try {
+         try {
             const lastDate = new Date(data.streaks.lastAnsweredDate);
             if (!isNaN(lastDate.getTime())) {
                 const normalizedLast = normalizeDate(lastDate);
                 const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
-
                 if (diffDays === 1) {
-                    data.streaks.currentStreak = (data.streaks.currentStreak || 0) + 1;
-                    streakUpdated = true;
+                    data.streaks.currentStreak = (data.streaks.currentStreak || 0) + 1; streakUpdated = true;
                 } else if (diffDays > 1) {
-                    data.streaks.currentStreak = 1; // Reset streak
-                    streakUpdated = true;
-                }
-                 // If diffDays is 0, don't change streak, just update lastAnsweredDate if needed
-                data.streaks.lastAnsweredDate = currentDate.toISOString(); // Always update last answered date
-
-            } else { // Handle invalid date format
-                 console.warn("Invalid lastAnsweredDate in streaks, resetting streak.");
-                 data.streaks.lastAnsweredDate = currentDate.toISOString();
-                 data.streaks.currentStreak = 1;
-                 streakUpdated = true;
+                    data.streaks.currentStreak = 1; streakUpdated = true; // Reset
+                } // else diffDays is 0 or negative, don't change streak count
+            } else { // Handle invalid stored date
+                 data.streaks.currentStreak = 1; streakUpdated = true;
             }
-        } catch(e) {
-             console.error("Error processing streak date:", e);
-             // Fallback: Reset streak
-             data.streaks.lastAnsweredDate = currentDate.toISOString();
-             data.streaks.currentStreak = 1;
-             streakUpdated = true;
-        }
-
-      } else { // No last answered date - first time answering?
-        data.streaks.lastAnsweredDate = currentDate.toISOString();
-        data.streaks.currentStreak = 1;
-        streakUpdated = true;
+         } catch(e) { // Catch parsing errors
+              console.error("Error parsing streak date:", e); data.streaks.currentStreak = 1; streakUpdated = true;
+         }
+      } else { // No previous date
+        data.streaks.currentStreak = 1; streakUpdated = true;
       }
-
-      if (data.streaks.currentStreak > (data.streaks.longestStreak || 0)) {
-        data.streaks.longestStreak = data.streaks.currentStreak;
-      }
-      // --- End modification ---
-
-      // Check if this specific question was already answered and stored in DB
-      // We do this *after* potentially updating the streak for daily activity
-      if (data.answeredQuestions[questionId]) {
-          console.log(`Question ${questionId} already answered by user. Skipping stat/XP update.`);
-          // Still need to save potential streak update
-          transaction.set(userDocRef, { streaks: data.streaks }, { merge: true });
-          return; // Exit the transaction function early
-      }
+      // Always update last answered date and longest streak
+      data.streaks.lastAnsweredDate = currentDate.toISOString();
+      data.streaks.longestStreak = Math.max(data.streaks.longestStreak || 0, data.streaks.currentStreak);
+      // --- End Streak Update ---
 
 
-      // --- Continue with recording the answer details and stats ---
+       // Check if already answered (after streak update, before stats/XP)
+       if (data.answeredQuestions[questionId]) {
+           console.log(`Question ${questionId} previously answered. Updating streak only.`);
+           transaction.set(userDocRef, { streaks: data.streaks }, { merge: true }); // Only save streak changes
+           return; // Skip stats/XP/level updates
+       }
+
+      // --- Record Answer Details ---
+      const currentTimestamp = currentDate.getTime();
+      const currentFormatted = currentDate.toLocaleString();
       data.answeredQuestions[questionId] = {
         isCorrect, category, timestamp: currentTimestamp, timestampFormatted: currentFormatted, timeSpent
       };
 
-      // Track consecutive correct answers
-      if (isCorrect) {
-        data.stats.currentCorrectStreak++;
-      } else {
-        data.stats.currentCorrectStreak = 0;
-      }
+      // Update consecutive streak
+      data.stats.currentCorrectStreak = isCorrect ? (data.stats.currentCorrectStreak + 1) : 0;
 
       // Update basic stats
       data.stats.totalAnswered++;
-      if (isCorrect) data.stats.totalCorrect++;
-      else data.stats.totalIncorrect++;
-      data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
+      if (isCorrect) data.stats.totalCorrect++; else data.stats.totalIncorrect++;
+      data.stats.totalTimeSpent += timeSpent;
 
       // Update category stats
       if (!data.stats.categories[category]) {
         data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
       }
-      data.stats.categories[category].answered++;
-      if (isCorrect) data.stats.categories[category].correct++;
-      else data.stats.categories[category].incorrect++;
+      const catStats = data.stats.categories[category];
+      catStats.answered++;
+      if (isCorrect) catStats.correct++; else catStats.incorrect++;
+
 
       // --- XP Calculation ---
-      let earnedXP = 1; // Base XP
+      let earnedXP = 1 + (isCorrect ? 2 : 0);
       let bonusXP = 0;
       let bonusMessages = [];
+      const achievements = data.stats.achievements;
+      const currentStreak = data.streaks.currentStreak;
+      const totalCorrect = data.stats.totalCorrect;
+      const consecutiveCorrect = data.stats.currentCorrectStreak;
 
-      if (isCorrect) earnedXP += 2; // Correct answer XP
+      // One-time Achievements
+      if (data.stats.totalAnswered === 10 && !achievements.first10Questions) { bonusXP += 50; bonusMessages.push("First 10 questions: +50 XP"); achievements.first10Questions = true; }
+      if (currentStreak === 7 && !achievements.first7DayStreak) { bonusXP += 50; bonusMessages.push("First 7-day streak: +50 XP"); achievements.first7DayStreak = true; }
+      if (consecutiveCorrect === 5 && !achievements.first5Correct) { bonusXP += 20; bonusMessages.push("First 5 correct row: +20 XP"); achievements.first5Correct = true; }
 
-      // --- Achievement Bonuses (One-time) ---
-      if (data.stats.totalAnswered === 10 && !data.stats.achievements.first10Questions) {
-        bonusXP += 50; bonusMessages.push("First 10 questions answered: +50 XP"); data.stats.achievements.first10Questions = true;
-      }
-      if (data.streaks.currentStreak === 7 && !data.stats.achievements.first7DayStreak) {
-        bonusXP += 50; bonusMessages.push("7-day streak achieved: +50 XP"); data.stats.achievements.first7DayStreak = true;
-      }
-      if (data.stats.currentCorrectStreak === 5 && !data.stats.achievements.first5Correct) {
-        bonusXP += 20; bonusMessages.push("First 5 correct in a row: +20 XP"); data.stats.achievements.first5Correct = true;
-      }
-
-      // --- Streak Bonuses (Awarded when streak increases) ---
+      // Repeatable Streak Bonuses (only on day streak increases)
       if (streakUpdated) {
-        const streakMilestones = { 3: 5, 7: 15, 14: 30, 30: 75, 60: 150, 100: 500 };
-        if (streakMilestones[data.streaks.currentStreak]) {
-          const streakBonus = streakMilestones[data.streaks.currentStreak];
-          bonusXP += streakBonus;
-          bonusMessages.push(`${data.streaks.currentStreak}-day streak: +${streakBonus} XP`);
-        }
+          const streakMilestones = { 3: 5, 7: 15, 14: 30, 30: 75, 60: 150, 100: 500 };
+          if (streakMilestones[currentStreak]) { bonusXP += streakMilestones[currentStreak]; bonusMessages.push(`${currentStreak}-day streak: +${streakMilestones[currentStreak]} XP`); }
       }
-
-      // --- Correct Answer Milestone Bonuses ---
-      if (isCorrect) {
-        const correctMilestones = { 10: 10, 25: 25, 50: 75 }; // Add more if needed
-         if (correctMilestones[data.stats.totalCorrect]) {
-            const correctBonus = correctMilestones[data.stats.totalCorrect];
-            bonusXP += correctBonus;
-            bonusMessages.push(`${data.stats.totalCorrect} correct answers: +${correctBonus} XP`);
-         }
+      // Repeatable Correct Answer Milestones
+       if (isCorrect) {
+          const correctMilestones = { 10: 10, 25: 25, 50: 75, 100: 100, 200: 150 }; // Example
+          if (correctMilestones[totalCorrect]) { bonusXP += correctMilestones[totalCorrect]; bonusMessages.push(`${totalCorrect} correct: +${correctMilestones[totalCorrect]} XP`); }
       }
+      // Repeatable Consecutive Correct Bonuses
+       const consecutiveMilestones = { 5: 10, 10: 25, 20: 75, 30: 125 }; // Example
+       if (consecutiveMilestones[consecutiveCorrect]) { bonusXP += consecutiveMilestones[consecutiveCorrect]; bonusMessages.push(`${consecutiveCorrect} correct row: +${consecutiveMilestones[consecutiveCorrect]} XP`); }
 
-      // --- Consecutive Correct Answer Bonuses ---
-       const consecutiveMilestones = { 5: 10, 10: 25, 20: 75 }; // Add more if needed
-       if (consecutiveMilestones[data.stats.currentCorrectStreak]) {
-          const consecutiveBonus = consecutiveMilestones[data.stats.currentCorrectStreak];
-          bonusXP += consecutiveBonus;
-          bonusMessages.push(`${data.stats.currentCorrectStreak} correct in a row: +${consecutiveBonus} XP`);
-       }
 
-      // --- Final XP Update ---
-      const totalEarnedXP = earnedXP + bonusXP;
-      data.stats.xp += totalEarnedXP;
-      totalXP = data.stats.xp; // Store for level up check
-
-      // Store bonus messages
+      // Final XP Update
+      data.stats.xp += (earnedXP + bonusXP);
+      totalXP = data.stats.xp; // For level up check
       data.stats.lastBonusMessages = bonusMessages.length > 0 ? bonusMessages : null;
 
-      // --- Level Update ---
+      // Level Update
       const oldLevel = data.stats.level;
       newLevel = calculateLevel(data.stats.xp);
-      data.stats.level = newLevel;
       if (newLevel > oldLevel) {
         levelUp = true;
+        data.stats.level = newLevel;
       }
 
-      // --- Save all changes ---
+      // Save all changes
       transaction.set(userDocRef, data, { merge: true });
     }); // End transaction
 
-    console.log("Recorded answer for", questionId);
+    console.log(`Answer processed for ${questionId}. XP: ${totalXP}, Level: ${newLevel}, LevelUp: ${levelUp}`);
 
     // Update UI after successful transaction
-    if (typeof updateUserXP === 'function') updateUserXP();
-    if (typeof updateUserMenu === 'function') updateUserMenu();
-    if (typeof initializeDashboard === 'function') initializeDashboard(); // Update dashboard view
+    updateUserXP(); // Ensure this function updates all relevant UI parts
+    updateUserMenu();
+    initializeDashboard(); // Refresh dashboard view
 
-    // Show level-up animation if applicable
     if (levelUp) {
-      setTimeout(() => {
-         if (typeof showLevelUpAnimation === 'function') showLevelUpAnimation(newLevel, totalXP);
-      }, 1000);
+      setTimeout(() => showLevelUpAnimation(newLevel, totalXP), 500); // Delay slightly
     }
 
   } catch (error) {
-    console.error("Error recording answer:", error);
-    // Handle error appropriately, maybe inform the user
+    console.error("Error recording answer transaction:", error);
   }
 }
 
 
 // Calculate level based on XP thresholds
 function calculateLevel(xp) {
-  const levelThresholds = [
-    0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500
-  ];
+  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
   let level = 1;
   for (let i = 1; i < levelThresholds.length; i++) {
-    if (xp >= levelThresholds[i]) level = i + 1;
-    else break;
+    if (xp >= levelThresholds[i]) level = i + 1; else break;
   }
   return level;
 }
 
 // Calculate progress to next level (as percentage)
 function calculateLevelProgress(xp) {
-  const levelThresholds = [
-    0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500
-  ];
+  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
   const level = calculateLevel(xp);
-  if (level >= levelThresholds.length) return 100; // Max level
-
+  if (level >= levelThresholds.length) return 100;
   const currentLevelXp = levelThresholds[level - 1];
   const nextLevelXp = levelThresholds[level];
+  if (nextLevelXp === currentLevelXp) return 100; // Avoid division by zero if thresholds are same
   const xpInCurrentLevel = xp - currentLevelXp;
   const xpRequiredForNextLevel = nextLevelXp - currentLevelXp;
-  return Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
+  return Math.min(100, Math.max(0, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100)));
 }
 
 // XP info for a specific level
 function getLevelInfo(level) {
-  const levelThresholds = [
-    0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500
-  ];
+  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
   const actualLevel = Math.min(level, levelThresholds.length);
-  const currentLevelXp = levelThresholds[actualLevel - 1] ?? levelThresholds[levelThresholds.length - 1]; // Handle max level case better
-  let nextLevelXp = null;
-  if (actualLevel < levelThresholds.length) nextLevelXp = levelThresholds[actualLevel];
+  const currentLevelXp = levelThresholds[actualLevel - 1] ?? levelThresholds[levelThresholds.length - 1];
+  let nextLevelXp = (actualLevel < levelThresholds.length) ? levelThresholds[actualLevel] : null;
   return { currentLevelXp, nextLevelXp };
 }
 
-
-// Update question stats in Firestore (Separate collection for scalability)
+// Update question stats in Firestore (Separate collection)
 async function updateQuestionStats(questionId, isCorrect) {
-  if (!window.db || !window.doc || !window.runTransaction || !window.getDoc) {
-    console.log("System not ready for updateQuestionStats");
+   if (!window.db || !window.doc || !window.runTransaction || !window.getDoc) {
+    console.error("System not ready for updateQuestionStats (Firebase missing).");
     return;
   }
+  if (!questionId) { console.error("updateQuestionStats: questionId is missing."); return; }
 
-  console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
-  const questionStatsRef = window.doc(window.db, "questionStats", questionId); // Assuming 'questionStats' collection
+  // console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect); // Can be noisy
+  const questionStatsRef = window.doc(window.db, "questionStats", questionId);
   try {
     await window.runTransaction(window.db, async (transaction) => {
       const statsDoc = await transaction.get(questionStatsRef);
-      let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
+      let statsData = statsDoc.exists() ? statsDoc.data() : {};
+      // Ensure fields exist and are numbers
       statsData.totalAttempts = (statsData.totalAttempts || 0) + 1;
       if (isCorrect) {
         statsData.correctAttempts = (statsData.correctAttempts || 0) + 1;
       }
       transaction.set(questionStatsRef, statsData, { merge: true });
     });
-    console.log("Updated stats for question", questionId);
+    // console.log("Updated stats for question", questionId); // Can be noisy
   } catch (error) {
-    console.error("Error updating question stats:", error);
+    console.error(`Error updating question stats for ${questionId}:`, error);
   }
 }
 
 // Update user XP display in UI elements
 async function updateUserXP() {
-  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) {
-    console.log("System not ready for updateUserXP");
+  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc || typeof calculateLevelProgress !== 'function' || typeof getLevelInfo !== 'function') {
+    console.error("System not ready for updateUserXP (dependencies missing).");
     return;
   }
 
@@ -318,78 +260,54 @@ async function updateUserXP() {
     const userDocRef = window.doc(window.db, 'users', uid);
     const userDocSnap = await window.getDoc(userDocRef);
 
+    let xp = 0, level = 1, progress = 0, lastBonusMessages = null; // Defaults
+
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
-      const xp = data.stats?.xp || 0;
-      const level = data.stats?.level || 1;
-      const progress = calculateLevelProgress(xp);
-
-      // Top Bar Level Circle
-      const scoreCircle = document.getElementById("scoreCircle");
-      if (scoreCircle) scoreCircle.textContent = level;
-
-      // Top Bar XP Text
-      const xpDisplay = document.getElementById("xpDisplay");
-      if (xpDisplay) xpDisplay.textContent = `${xp} XP`;
-
-      // User Menu Level Circle
-      const userScoreCircle = document.getElementById("userScoreCircle");
-      if (userScoreCircle) userScoreCircle.textContent = level;
-
-      // User Menu XP Text
-      const userXpDisplay = document.getElementById("userXpDisplay");
-      if (userXpDisplay) {
-        const levelInfo = getLevelInfo(level);
-        if (levelInfo.nextLevelXp !== null) {
-          userXpDisplay.textContent = `${xp}/${levelInfo.nextLevelXp} XP`;
-        } else {
-          userXpDisplay.textContent = `${xp} XP (Max Level)`;
-        }
-      }
-
-      // Update Progress Visuals (Circles/Bars)
-      if (typeof updateLevelProgress === 'function') {
-        updateLevelProgress(progress);
-      } else {
-         console.warn("updateLevelProgress function not found");
-      }
-
-      // --- Bonus Message Handling ---
-      const lastBonusMessages = data.stats?.lastBonusMessages;
-      // Check if the notification container exists AND has children to avoid race conditions
-      const notificationsContainer = document.getElementById("xpNotifications");
-      const notificationsExist = notificationsContainer && notificationsContainer.children.length > 0;
-
-      if (lastBonusMessages && Array.isArray(lastBonusMessages) && lastBonusMessages.length > 0 && !notificationsExist) {
-         if (typeof showBonusMessages === 'function') {
-             showBonusMessages(lastBonusMessages);
-         } else {
-             console.warn("showBonusMessages function not found");
-         }
-
-        // Clear the messages in Firestore *after* showing them
-        if (window.runTransaction) { // Ensure function exists
-           await window.runTransaction(window.db, async (transaction) => {
-             const latestUserDoc = await transaction.get(userDocRef); // Get latest doc within transaction
-             if (latestUserDoc.exists()) {
-               const latestUserData = latestUserDoc.data();
-               if (latestUserData.stats) {
-                 latestUserData.stats.lastBonusMessages = null;
-                 transaction.set(userDocRef, latestUserData, { merge: true });
-               }
-             }
-           }).catch(err => console.error("Error clearing bonus messages:", err));
-        }
-      }
-      // --- End Bonus Message Handling ---
-
+      xp = data.stats?.xp || 0;
+      level = data.stats?.level || 1;
+      progress = calculateLevelProgress(xp);
+      lastBonusMessages = data.stats?.lastBonusMessages;
     } else {
-        console.log("User document doesn't exist in updateUserXP");
-        // Maybe set defaults in UI?
-        const scoreCircle = document.getElementById("scoreCircle"); if (scoreCircle) scoreCircle.textContent = '1';
-        const xpDisplay = document.getElementById("xpDisplay"); if (xpDisplay) xpDisplay.textContent = `0 XP`;
-        // etc. for other UI elements
+       console.warn("User document doesn't exist in updateUserXP - showing defaults.");
     }
+
+    // Update UI elements safely
+    const scoreCircle = document.getElementById("scoreCircle"); if (scoreCircle) scoreCircle.textContent = level;
+    const xpDisplay = document.getElementById("xpDisplay"); if (xpDisplay) xpDisplay.textContent = `${xp} XP`;
+    const userScoreCircle = document.getElementById("userScoreCircle"); if (userScoreCircle) userScoreCircle.textContent = level;
+    const userXpDisplay = document.getElementById("userXpDisplay");
+    if (userXpDisplay) {
+        const levelInfo = getLevelInfo(level);
+        userXpDisplay.textContent = (levelInfo.nextLevelXp !== null) ? `${xp}/${levelInfo.nextLevelXp} XP` : `${xp} XP (Max Lvl)`;
+    }
+
+    // Update Progress Visuals
+    if (typeof updateLevelProgress === 'function') { updateLevelProgress(progress); }
+    else { console.warn("updateLevelProgress function not found"); }
+
+    // Handle Bonus Messages
+    const notificationsContainer = document.getElementById("xpNotifications");
+    const notificationsExist = notificationsContainer && notificationsContainer.children.length > 0;
+    if (lastBonusMessages && Array.isArray(lastBonusMessages) && lastBonusMessages.length > 0 && !notificationsExist) {
+        if (typeof showBonusMessages === 'function') showBonusMessages(lastBonusMessages);
+        else console.warn("showBonusMessages function not found");
+
+        // Clear messages in Firestore
+        if (window.runTransaction) {
+            await window.runTransaction(window.db, async (transaction) => {
+                const latestUserDoc = await transaction.get(userDocRef);
+                if (latestUserDoc.exists()) {
+                    const latestUserData = latestUserDoc.data();
+                    if (latestUserData.stats) {
+                        latestUserData.stats.lastBonusMessages = null;
+                        transaction.set(userDocRef, latestUserData, { merge: true });
+                    }
+                }
+            }).catch(err => console.error("Error clearing bonus messages:", err));
+        }
+    }
+
   } catch (error) {
     console.error("Error updating user XP display:", error);
   }
@@ -400,54 +318,46 @@ async function updateUserXP() {
 function showBonusMessages(messages) {
   if (!messages || !Array.isArray(messages) || messages.length === 0) return;
 
-  // Ensure container exists or create it
   let notificationContainer = document.getElementById("xpNotifications");
   if (!notificationContainer) {
     notificationContainer = document.createElement("div");
     notificationContainer.id = "xpNotifications";
     Object.assign(notificationContainer.style, {
       position: "fixed", top: "70px", right: "20px", zIndex: "9999",
-      display: 'flex', flexDirection: 'column', gap: '10px' // Use flexbox for spacing
+      display: 'flex', flexDirection: 'column', gap: '10px'
     });
     document.body.appendChild(notificationContainer);
   }
 
-  // Function to create and animate a single notification
   const createNotification = (message, index) => {
     const notification = document.createElement("div");
-    notification.className = "xp-notification";
-    notification.innerHTML = `<div class="xp-icon" style="margin-right: 10px; font-size: 1.3rem;">✨</div><div>${message}</div>`; // Wrap message text
+    notification.className = "xp-notification"; // For potential CSS styling
+    notification.innerHTML = `<div class="xp-icon" style="margin-right: 10px; font-size: 1.3rem; line-height: 1;">✨</div><div style="line-height: 1.3;">${message}</div>`;
     Object.assign(notification.style, {
-      backgroundColor: "#0056b3", color: "white", padding: "10px 15px",
-      borderRadius: "6px", boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-      display: "flex", alignItems: "center", opacity: "0",
-      transform: "translateX(50px)", transition: "opacity 0.5s ease, transform 0.5s ease"
+      backgroundColor: "rgba(0, 86, 179, 0.9)", // Slightly transparent blue
+      color: "white", padding: "10px 15px", borderRadius: "6px",
+      boxShadow: "0 2px 10px rgba(0,0,0,0.2)", display: "flex",
+      alignItems: "center", opacity: "0", maxWidth: "300px", // Limit width
+      transform: "translateX(100%)", // Start off-screen right
+      transition: "opacity 0.4s ease-out, transform 0.4s ease-out"
     });
-
     notificationContainer.appendChild(notification);
 
-    // Animate in after a slight delay based on index
-    setTimeout(() => {
-      notification.style.opacity = "1";
-      notification.style.transform = "translateX(0)";
-    }, 100 * index);
+    // Animate in
+    setTimeout(() => { notification.style.opacity = "1"; notification.style.transform = "translateX(0)"; }, 50 + 100 * index);
 
     // Schedule removal
     setTimeout(() => {
       notification.style.opacity = "0";
-      notification.style.transform = "translateX(50px)";
-      // Remove from DOM after fade out transition
+      notification.style.transform = "translateX(100%)";
       setTimeout(() => {
-         notification.remove();
-         // If container is empty after removal, remove container itself
-         if (notificationContainer.children.length === 0) {
-             notificationContainer.remove();
+         if (notification.parentNode) notification.remove(); // Check if still attached
+         if (notificationContainer && notificationContainer.children.length === 0) {
+             notificationContainer.remove(); // Clean up container if empty
          }
-     }, 500); // Matches transition duration
-    }, 5000 + 100 * index); // Stagger removal slightly
+     }, 400); // Matches transition duration
+    }, 4500 + 100 * index); // Show for ~4.5 seconds, staggered
   };
-
-  // Create notifications for each message
   messages.forEach(createNotification);
 }
 
@@ -455,29 +365,22 @@ function showBonusMessages(messages) {
 // Update the user menu with current username and score
 async function updateUserMenu() {
   if (!window.auth || !window.auth.currentUser) {
-    console.log("Auth not initialized for updateUserMenu");
-    return;
+    console.log("Auth not initialized for updateUserMenu"); return;
+  }
+  // Check dependencies
+  if (typeof getOrGenerateUsername !== 'function' || typeof updateUserXP !== 'function') {
+     console.error("updateUserMenu dependencies missing (getOrGenerateUsername or updateUserXP)"); return;
   }
 
   try {
-    let username = "Guest"; // Default
-    if (typeof getOrGenerateUsername === 'function'){
-       username = await getOrGenerateUsername();
-    } else {
-       console.warn("getOrGenerateUsername function not found");
-    }
-
+    const username = await getOrGenerateUsername(); // Fetch/generate username
     const usernameDisplay = document.getElementById("usernameDisplay");
     if (usernameDisplay) {
       usernameDisplay.textContent = username;
-    }
-
-    // Update XP/Level display in the menu
-    if (typeof updateUserXP === 'function') {
-       await updateUserXP(); // Make sure XP/Level is up-to-date
     } else {
-       console.warn("updateUserXP function not found");
+       console.warn("usernameDisplay element not found in user menu.");
     }
+    await updateUserXP(); // Update XP/Level display in the menu
   } catch (error) {
     console.error("Error updating user menu:", error);
   }
@@ -485,9 +388,10 @@ async function updateUserMenu() {
 
 // Get or generate a username
 async function getOrGenerateUsername() {
-  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc || !window.runTransaction) {
-    // console.warn("System not ready for getOrGenerateUsername"); // Too noisy?
-    return "Guest"; // Return default if system isn't ready
+  // Check dependencies first
+  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc || !window.runTransaction || typeof generateRandomName !== 'function') {
+    console.warn("System not ready for getOrGenerateUsername.");
+    return "Guest";
   }
 
   try {
@@ -496,35 +400,35 @@ async function getOrGenerateUsername() {
     const userDocSnap = await window.getDoc(userDocRef);
 
     if (userDocSnap.exists() && userDocSnap.data().username) {
-      return userDocSnap.data().username;
+      return userDocSnap.data().username; // Username exists, return it
     } else {
-      // User doc might exist but without username (e.g., anonymous first load)
-      // Or user doc doesn't exist yet (should be handled by auth state change, but fallback here)
+      // Username doesn't exist, need to generate and save
       const newUsername = generateRandomName();
       console.log(`Generating username for ${uid}: ${newUsername}`);
-      await window.runTransaction(window.db, async (transaction) => {
-        // Read the doc again *inside* the transaction
-        const docInTransaction = await transaction.get(userDocRef);
-        let data = docInTransaction.exists() ? docInTransaction.data() : {};
-        // Only set username if it doesn't already exist to avoid race conditions
-        if (!data.username) {
-           data.username = newUsername;
-           // Set or update the document
-           transaction.set(userDocRef, data, { merge: true });
-        } else {
-             console.log("Username already set in transaction, skipping generation.");
-             // If username exists now, use it instead of the generated one
-             return data.username;
-        }
-      });
-      // Re-fetch after transaction to be sure, although runTransaction should handle consistency
-      // const updatedSnap = await window.getDoc(userDocRef);
-      // return updatedSnap.exists() ? (updatedSnap.data().username || newUsername) : newUsername;
-      return newUsername; // Return the generated name optimistically
+      try {
+          await window.runTransaction(window.db, async (transaction) => {
+              const docInTransaction = await transaction.get(userDocRef);
+              let data = docInTransaction.exists() ? docInTransaction.data() : {};
+              // Only set if username is missing/falsy to prevent overwriting
+              if (!data.username) {
+                  data.username = newUsername;
+                  transaction.set(userDocRef, data, { merge: true }); // Use merge:true to add username without overwriting other fields
+              } else {
+                  // If username magically appeared between getDoc and transaction, use the existing one
+                  console.log("Username already exists in transaction, using that instead.");
+                  return data.username;
+              }
+          });
+          return newUsername; // Return generated name after successful transaction
+      } catch (transactionError) {
+          console.error("Transaction failed in getOrGenerateUsername:", transactionError);
+          // Fallback: return generated name, hoping it gets saved later, or default
+          return newUsername; // Or return "Guest Error"
+      }
     }
   } catch (error) {
-      console.error("Error in getOrGenerateUsername:", error);
-      return "Guest Error"; // Return error indicator
+      console.error("Error getting/generating username:", error);
+      return "Guest Error"; // Indicate an error occurred
   }
 }
 
@@ -542,607 +446,402 @@ function generateRandomName() {
 // Bookmark functions - enhanced for toggling
 async function getBookmarks() {
   if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) {
-    console.log("System not ready for getBookmarks");
-    return [];
+    console.warn("System not ready for getBookmarks."); return [];
   }
-
   try {
     const uid = window.auth.currentUser.uid;
     const userDocRef = window.doc(window.db, 'users', uid);
     const userDocSnap = await window.getDoc(userDocRef);
-    if(userDocSnap.exists()){
-      const data = userDocSnap.data();
-      return data.bookmarks || []; // Return empty array if 'bookmarks' field doesn't exist
-    }
+    return userDocSnap.exists() ? (userDocSnap.data().bookmarks || []) : [];
   } catch (error) {
-    console.error("Error getting bookmarks:", error);
+    console.error("Error getting bookmarks:", error); return [];
   }
-  return [];
 }
 
 // Toggle a bookmark (add if not present, remove if present)
 async function toggleBookmark(questionId) {
    if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.runTransaction || !window.getDoc) {
-    console.log("System not ready for toggleBookmark");
-    return false; // Indicate failure or inability to toggle
+    console.error("System not ready for toggleBookmark."); return false;
   }
-
   if (!questionId || typeof questionId !== 'string' || questionId.trim() === '') {
-     console.error("Invalid questionId provided to toggleBookmark");
-     return false;
+     console.error("Invalid questionId provided to toggleBookmark."); return false;
   }
 
   try {
     const uid = window.auth.currentUser.uid;
     const userDocRef = window.doc(window.db, 'users', uid);
-    let isBookmarked = false; // Track the final state
+    let isNowBookmarked = false; // Track the final state
 
     await window.runTransaction(window.db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
-      let bookmarks = data.bookmarks || []; // Initialize bookmarks array if it doesn't exist
-
+      let bookmarks = data.bookmarks || [];
       const index = bookmarks.indexOf(questionId);
 
-      if (index === -1) { // Not bookmarked -> Add
-        bookmarks.push(questionId);
-        isBookmarked = true;
-      } else { // Already bookmarked -> Remove
-        bookmarks.splice(index, 1);
-        isBookmarked = false;
-      }
+      if (index === -1) { bookmarks.push(questionId); isNowBookmarked = true; }
+      else { bookmarks.splice(index, 1); isNowBookmarked = false; }
 
-      // Update the document within the transaction
       transaction.set(userDocRef, { bookmarks: bookmarks }, { merge: true });
     });
 
-    // Update the UI immediately after successful transaction
+    // Update UI immediately
     const currentSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
-    if (currentSlide) {
-      currentSlide.dataset.bookmarked = isBookmarked ? "true" : "false";
-    }
-     // Also update the favorite button icon if it's the current question
+    if (currentSlide) currentSlide.dataset.bookmarked = isNowBookmarked ? "true" : "false";
     const favoriteButton = document.getElementById("favoriteButton");
     const currentVisibleQuestionId = typeof getCurrentQuestionId === 'function' ? getCurrentQuestionId() : null;
     if (favoriteButton && currentVisibleQuestionId === questionId) {
-         favoriteButton.innerText = isBookmarked ? "★" : "☆";
-         favoriteButton.style.color = isBookmarked ? "#007BFF" : "";
+         favoriteButton.innerText = isNowBookmarked ? "★" : "☆";
+         favoriteButton.style.color = isNowBookmarked ? "#007BFF" : "";
     }
-
-
-    return isBookmarked; // Return the *new* state
+    return isNowBookmarked;
 
   } catch (error) {
-    console.error("Error toggling bookmark:", error);
-    return false; // Indicate failure
+    console.error("Error toggling bookmark:", error); return false;
   }
 }
 
 
 // Function to show the level-up modal and animation
 function showLevelUpAnimation(newLevel, totalXP) {
-   // Check if modal already exists
    let modal = document.getElementById('levelUpModal');
-   if (!modal) {
-       modal = document.createElement('div');
-       modal.id = 'levelUpModal';
-       // Use textContent for security and simplicity where possible
-       modal.innerHTML = `
-         <div id="levelUpContent">
-           <div id="levelUpHeader">
-             <h2 id="levelUpTitle">LEVEL UP!</h2>
-           </div>
-           <div id="levelUpBadge">
-             <span id="levelNumber"></span>
-           </div>
-           <div id="levelUpBody">
-             <p id="levelUpMessage"></p>
-             <p id="levelUpXP"></p>
-             <button id="levelUpButton">Continue</button>
-           </div>
-         </div>
-       `;
+   if (!modal) { // Create modal if it doesn't exist
+       modal = document.createElement('div'); modal.id = 'levelUpModal';
+       modal.innerHTML = `<div id="levelUpContent"><div id="levelUpHeader"><h2 id="levelUpTitle">LEVEL UP!</h2></div><div id="levelUpBadge"><span id="levelNumber"></span></div><div id="levelUpBody"><p id="levelUpMessage"></p><p id="levelUpXP"></p><button id="levelUpButton">Continue</button></div></div>`;
        document.body.appendChild(modal);
-
-       // Add event listener ONCE when modal is created
        const closeButton = document.getElementById('levelUpButton');
-       if (closeButton) {
-           closeButton.addEventListener('click', hideLevelUpModal); // Reference the hide function
-       } else {
-           console.error("Could not find level up close button to attach listener.");
-       }
+       if (closeButton) closeButton.addEventListener('click', hideLevelUpModal);
+       else console.error("Could not find level up close button.");
    }
 
-   // --- Update modal content ---
-   const levelNumberEl = document.getElementById('levelNumber');
-   const levelUpXPEl = document.getElementById('levelUpXP');
+   // Update content safely
+   const levelNumberEl = document.getElementById('levelNumber'); if (levelNumberEl) levelNumberEl.textContent = newLevel;
+   const levelUpXPEl = document.getElementById('levelUpXP'); if (levelUpXPEl) levelUpXPEl.textContent = `Total XP: ${totalXP}`;
    const levelUpMessageEl = document.getElementById('levelUpMessage');
-
-   if (levelNumberEl) levelNumberEl.textContent = newLevel;
-   if (levelUpXPEl) levelUpXPEl.textContent = `Total XP: ${totalXP}`;
-
-   // Custom messages
-   let message = "Congratulations! Keep up the good work!";
-   if (newLevel >= 10) message = "Amazing progress! You've reached an elite level!";
-   else if (newLevel >= 5) message = "Great job! You're becoming a master!";
-   if(levelUpMessageEl) levelUpMessageEl.textContent = message;
-
-   // --- Show modal ---
-   modal.style.display = 'flex';
-   // Trigger fade-in animation (slight delay ensures transition works)
-   requestAnimationFrame(() => {
-       requestAnimationFrame(() => {
-           modal.style.opacity = '1';
-       });
-   });
-
-   // --- Effects ---
-   if (typeof createConfetti === 'function') createConfetti();
-
-   // Play sound effect
-   if (window.Audio) {
-     try {
-       // Choose a suitable sound URL
-       const levelUpSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_c4b035d4a7.mp3?filename=level-up-arcade-6442.mp3'); // Example sound
-       levelUpSound.volume = 0.4; // Adjust volume
-       levelUpSound.play().catch(e => console.log("Audio play prevented:", e)); // Catch play errors
-     } catch (e) {
-       console.log("Audio could not be played", e);
-     }
+   if(levelUpMessageEl) {
+       let message = "Congratulations! Keep up the good work!";
+       if (newLevel >= 10) message = "Amazing progress! Elite level!"; else if (newLevel >= 5) message = "Great job! Becoming a master!";
+       levelUpMessageEl.textContent = message;
    }
-}
 
+   // Show modal and animate
+   modal.style.display = 'flex';
+   requestAnimationFrame(() => { requestAnimationFrame(() => { modal.style.opacity = '1'; }); }); // Fade in
+
+   if (typeof createConfetti === 'function') createConfetti(); // Add confetti effect
+
+   // Play sound
+   if (window.Audio) { try { const s = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_c4b035d4a7.mp3?filename=level-up-arcade-6442.mp3'); s.volume = 0.4; s.play().catch(e=>console.warn("Audio play failed:", e)); } catch (e) { console.error("Audio init failed", e); }}
+}
 
 // Function to hide the level-up modal
 function hideLevelUpModal() {
   const modal = document.getElementById('levelUpModal');
-  if (modal) {
-    modal.style.opacity = '0';
-    // Wait for fade out transition before hiding
-    setTimeout(() => {
-      modal.style.display = 'none';
-    }, 300); // Should match transition duration
-  }
+  if (modal) { modal.style.opacity = '0'; setTimeout(() => { modal.style.display = 'none'; }, 300); }
 }
 
-// Function to create confetti effect
+// Function to create confetti effect for level up
 function createConfetti() {
-   const modal = document.getElementById('levelUpModal');
-   if (!modal) return;
+   const modalContent = document.getElementById('levelUpContent'); // Target content div
+   if (!modalContent) return;
 
-   const confettiContainer = document.createElement('div');
-   confettiContainer.style.position = 'absolute';
-   confettiContainer.style.top = '0';
-   confettiContainer.style.left = '0';
-   confettiContainer.style.width = '100%';
-   confettiContainer.style.height = '100%';
-   confettiContainer.style.overflow = 'hidden';
-   confettiContainer.style.pointerEvents = 'none'; // Allow clicks through
-   confettiContainer.style.zIndex = '5'; // Below content but above background
-   modal.querySelector('#levelUpContent').insertBefore(confettiContainer, modal.querySelector('#levelUpHeader')); // Insert before header
+   // Create a container *inside* the modal content for confetti
+   let confettiContainer = modalContent.querySelector('.confetti-container');
+   if (!confettiContainer) {
+      confettiContainer = document.createElement('div');
+      confettiContainer.className = 'confetti-container';
+      Object.assign(confettiContainer.style, { position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none', zIndex: '5' });
+      modalContent.insertBefore(confettiContainer, modalContent.firstChild); // Insert at the beginning
+   } else {
+      confettiContainer.innerHTML = ''; // Clear previous confetti
+   }
 
    const colors = ['#FFC700', '#FF3D00', '#00C853', '#2979FF', '#AA00FF', '#D500F9'];
-   const confettiCount = 50;
+   const confettiCount = 60; // More confetti!
 
    for (let i = 0; i < confettiCount; i++) {
        const confetti = document.createElement('div');
-       confetti.className = 'confetti'; // Use class for potential CSS targeting
-       const size = 5 + Math.random() * 5;
+       const size = 6 + Math.random() * 6; // Slightly larger range
        Object.assign(confetti.style, {
-           position: 'absolute',
-           width: `${size}px`,
-           height: `${size}px`,
+           position: 'absolute', width: `${size}px`, height: `${size}px`,
            backgroundColor: colors[Math.floor(Math.random() * colors.length)],
-           borderRadius: `${Math.random() * 3}px`, // Slight shape variation
-           left: Math.random() * 100 + '%',
-           top: '-10%', // Start above the modal
-           opacity: '1',
-           transform: `rotate(${Math.random() * 360}deg)`,
-           // Use CSS animation defined in styles.css for falling
-           animation: `confettiFall ${1.5 + Math.random() * 1}s ${Math.random() * 0.5}s linear forwards`
+           borderRadius: `${Math.random() * 50}%`, // More varied shapes
+           left: `${Math.random() * 100}%`, top: `${-10 - Math.random() * 20}%`, // Start higher up
+           opacity: '1', transform: `rotate(${Math.random() * 360}deg)`,
+           animation: `confettiFall ${1.8 + Math.random() * 1.2}s ${Math.random() * 0.6}s linear forwards` // Longer duration, varied delay
        });
        confettiContainer.appendChild(confetti);
    }
-
-   // Clean up the container after animation finishes (longest possible duration)
-   setTimeout(() => {
-      confettiContainer.remove();
-   }, 2500); // 1.5s base + 1s random duration + 0.5s random delay
+   // Clean up container later
+   setTimeout(() => { if (confettiContainer.parentNode) confettiContainer.remove(); }, 3000); // Increased timeout
 }
 
-
-// Clean up any existing LEVEL UP text on page load (just in case)
-document.addEventListener('DOMContentLoaded', function() {
-  const textNodes = document.querySelectorAll('body > *:not([id]):not(script):not(style)');
-  textNodes.forEach(node => {
-    if (node.textContent && node.textContent.includes('LEVEL UP')) {
-      console.log("Removing stray 'LEVEL UP' text node on load.");
-      node.remove();
-    }
-  });
-});
-
-// Function to update spaced repetition data for a question
+// Spaced Repetition Data Update
 async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval) {
-  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.runTransaction) {
-    console.log("System not ready for updateSpacedRepetitionData");
-    return;
-  }
-   if (!questionId || typeof questionId !== 'string' || questionId.trim() === '') {
-     console.error("Invalid questionId provided to updateSpacedRepetitionData");
-     return ;
-  }
+  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.runTransaction) { console.error("System not ready for SR update."); return; }
+  if (!questionId) { console.error("Invalid questionId for SR update."); return ; }
 
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
-
   try {
     await window.runTransaction(window.db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
-      data.spacedRepetition = data.spacedRepetition || {}; // Ensure object exists
-
-      const now = new Date();
-      const nextReviewDate = new Date();
-      // Ensure interval is a positive number, default to 1 if invalid
+      data.spacedRepetition = data.spacedRepetition || {};
+      const now = new Date(); const nextReviewDate = new Date();
       const intervalDays = (typeof nextReviewInterval === 'number' && nextReviewInterval > 0) ? nextReviewInterval : 1;
       nextReviewDate.setDate(now.getDate() + intervalDays);
-
-      // Retrieve existing review count, default to 0 if not present
       const currentReviewCount = data.spacedRepetition[questionId]?.reviewCount || 0;
-
       data.spacedRepetition[questionId] = {
-        lastReviewedAt: now.toISOString(),
-        nextReviewDate: nextReviewDate.toISOString(),
-        reviewInterval: intervalDays, // Store the validated interval
-        difficulty: difficulty, // Store user's perceived difficulty
-        lastResult: isCorrect ? 'correct' : 'incorrect',
-        reviewCount: currentReviewCount + 1 // Increment review count
+        lastReviewedAt: now.toISOString(), nextReviewDate: nextReviewDate.toISOString(),
+        reviewInterval: intervalDays, difficulty: difficulty,
+        lastResult: isCorrect ? 'correct' : 'incorrect', reviewCount: currentReviewCount + 1
       };
-
       transaction.set(userDocRef, data, { merge: true });
     });
-
-    console.log(`Spaced repetition data updated for question ${questionId}`);
-    // Optionally update the review queue display immediately
-     if(typeof updateReviewQueue === 'function') updateReviewQueue();
-
-  } catch (error) {
-    console.error("Error updating spaced repetition data:", error);
-  }
+    console.log(`SR data updated for Q ${questionId}`);
+    if(typeof updateReviewQueue === 'function') updateReviewQueue(); // Refresh queue display
+  } catch (error) { console.error("Error updating SR data:", error); }
 }
+window.updateSpacedRepetitionData = updateSpacedRepetitionData; // Ensure global access if needed
 
-// Make the function available globally if not already (or rely on script scope)
-// window.updateSpacedRepetitionData = updateSpacedRepetitionData;
 
-// Function to fetch user's spaced repetition data
+// Fetch Spaced Repetition Data
 async function fetchSpacedRepetitionData() {
-  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) {
-    console.log("System not ready for fetchSpacedRepetitionData");
-    return {}; // Return empty object instead of null
-  }
-
+  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) { console.warn("System not ready for fetchSRData."); return {}; }
   try {
     const uid = window.auth.currentUser.uid;
     const userDocRef = window.doc(window.db, 'users', uid);
     const userDocSnap = await window.getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      const data = userDocSnap.data();
-      return data.spacedRepetition || {}; // Return empty object if field doesn't exist
-    }
-  } catch (error) {
-    console.error("Error fetching spaced repetition data:", error);
-  }
-  return {}; // Return empty object on error or if doc doesn't exist
+    return userDocSnap.exists() ? (userDocSnap.data().spacedRepetition || {}) : {};
+  } catch (error) { console.error("Error fetching SR data:", error); return {}; }
 }
-
-// Make the function available globally if not already (or rely on script scope)
-// window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
+window.fetchSpacedRepetitionData = fetchSpacedRepetitionData; // Ensure global access
 
 
 // ==============================================================
-// == NEW FUNCTIONS ADDED FOR DASHBOARD INITIALIZATION/EVENTS ==
+// == DASHBOARD INITIALIZATION & EVENT SETUP (DEFINITIONS) ==
 // ==============================================================
 
-// Dashboard initialization and functionality
+// Dashboard initialization
 async function initializeDashboard() {
     const mainOptions = document.getElementById("mainOptions");
-    // Ensure dashboard element exists and is visible before proceeding
     if (!mainOptions || mainOptions.style.display === 'none') {
-        console.log("Dashboard not visible or not found, skipping initialization.");
+        // console.log("Dashboard not visible, skipping initialization."); // Can be noisy
+        return;
+    }
+    console.log("Initializing dashboard UI...");
+
+    if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc || typeof calculateLevelProgress !== 'function' || typeof getLevelInfo !== 'function' || typeof fixStreakCalendar !== 'function' || typeof loadLeaderboardPreview !== 'function' || typeof updateReviewQueue !== 'function') {
+        console.error("Dashboard initialization failed: Missing dependencies (Auth/DB or helper functions).");
+        // Optionally display an error state on the dashboard
+        const dashboardContainer = document.querySelector(".dashboard-container");
+        if(dashboardContainer) dashboardContainer.innerHTML = "<p style='color:red; text-align:center;'>Error loading dashboard data.</p>";
         return;
     }
 
-    console.log("Initializing dashboard..."); // Log start
-
-    // Check essential Firebase/Auth objects
-    if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) {
-        console.error("System not ready for dashboard initialization (Auth/DB missing).");
-        // Optionally display an error message to the user on the dashboard element
-        return;
-    }
-
-    try {
-        const uid = window.auth.currentUser.uid;
-        const userDocRef = window.doc(window.db, 'users', uid);
-        const userDocSnap = await window.getDoc(userDocRef);
-
-        if (userDocSnap.exists()) {
-            const data = userDocSnap.data();
-            const stats = data.stats || {};
-            const streaks = data.streaks || { currentStreak: 0 };
-
-            // --- Update Level & XP Card ---
-            const xp = stats.xp || 0;
-            const level = stats.level || 1;
-            const progress = typeof calculateLevelProgress === 'function' ? calculateLevelProgress(xp) : 0;
-
-            const dashboardLevel = document.getElementById("dashboardLevel");
-            if (dashboardLevel) dashboardLevel.textContent = level;
-
-            const dashboardXP = document.getElementById("dashboardXP");
-            if (dashboardXP) dashboardXP.textContent = `${xp} XP`;
-
-            const dashboardNextLevel = document.getElementById("dashboardNextLevel");
-            if (dashboardNextLevel) {
-                const levelInfo = typeof getLevelInfo === 'function' ? getLevelInfo(level) : { nextLevelXp: null };
-                if (levelInfo.nextLevelXp !== null) {
-                    const xpNeeded = levelInfo.nextLevelXp - xp;
-                    dashboardNextLevel.textContent = xpNeeded > 0 ? `${xpNeeded} XP to Level ${level + 1}` : `Level ${level+1} unlocked!`;
-                } else {
-                    dashboardNextLevel.textContent = 'Max Level Reached!';
-                }
-            }
-
-            const dashboardLevelProgress = document.getElementById("dashboardLevelProgress");
-            if (dashboardLevelProgress) dashboardLevelProgress.style.setProperty('--progress', `${progress}%`);
-
-
-            // --- Update Quick Stats Card ---
-            const totalAnswered = stats.totalAnswered || 0;
-            const totalCorrect = stats.totalCorrect || 0;
-            const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-
-            const dashboardAnswered = document.getElementById("dashboardAnswered");
-            if (dashboardAnswered) dashboardAnswered.textContent = totalAnswered;
-
-            const dashboardAccuracy = document.getElementById("dashboardAccuracy");
-            if (dashboardAccuracy) dashboardAccuracy.textContent = `${accuracy}%`;
-
-
-            // --- Update Streak Card ---
-            const currentStreakElement = document.getElementById("currentStreak");
-            if (currentStreakElement) {
-                currentStreakElement.textContent = streaks.currentStreak || 0;
-            }
-            // Update the calendar visual
-            if (typeof fixStreakCalendar === 'function') fixStreakCalendar(streaks);
-
-
-            // --- Load Leaderboard Preview ---
-            if (typeof loadLeaderboardPreview === 'function') {
-                 loadLeaderboardPreview();
-            } else {
-                 console.warn("loadLeaderboardPreview function not found");
-            }
-
-
-            // --- Load Review Queue Data ---
-            if (typeof updateReviewQueue === 'function') {
-                updateReviewQueue();
-            } else {
-                console.warn("updateReviewQueue function not found");
-            }
-
-
-            console.log("Dashboard initialized successfully."); // Log success
-
-        } else {
-             console.warn("User document does not exist for dashboard init.");
-             // Handle case where user doc might be missing (e.g., set defaults in UI)
-             // Example: document.getElementById("dashboardLevel").textContent = '1';
-        }
-    } catch (error) {
-        console.error("Error loading dashboard data:", error);
-        // Optionally display an error message on the dashboard
-    }
-}
-
-// Set up event listeners for dashboard cards and modals
-function setupDashboardEvents() {
-    console.log("Setting up dashboard event listeners..."); // Log start
-
-    // Helper to prevent duplicate listeners
-    const addClickListenerOnce = (elementId, handler) => {
-        const element = document.getElementById(elementId);
-        if (element) {
-           // Remove existing listener before adding, just to be safe
-           // Note: This requires the handler function to be defined outside or consistently referenced
-           // A simpler approach is the flag method used before:
-            if (!element._hasClickListener) {
-                element.addEventListener('click', handler);
-                element._hasClickListener = true; // Mark as attached
-                console.log(`Event listener attached to #${elementId}`);
-            } else {
-                // console.log(`Event listener already attached to #${elementId}`); // Can be noisy
-            }
-        } else {
-            console.warn(`Element #${elementId} not found for event listener.`);
-        }
-    };
-
-    // --- Dashboard Buttons ---
-    addClickListenerOnce("startQuizBtn", function() {
-        const quizSetupModal = document.getElementById("quizSetupModal");
-        if(quizSetupModal) quizSetupModal.style.display = "block";
-    });
-
-    // --- Quiz Setup Modal Buttons ---
-    // Note: These listeners might be better placed where the modal is created/managed
-    // if the modal isn't always in the initial DOM. But if it is, this is okay.
-    addClickListenerOnce("modalStartQuiz", function() {
-        const category = document.getElementById("modalCategorySelect")?.value || "";
-        const numQuestions = parseInt(document.getElementById("modalNumQuestions")?.value) || 10;
-        const includeAnswered = document.getElementById("modalIncludeAnswered")?.checked || false;
-        const useSpacedRepetition = document.getElementById("modalSpacedRepetition")?.checked || false;
-
-        const quizSetupModal = document.getElementById("quizSetupModal");
-        if(quizSetupModal) quizSetupModal.style.display = "none";
-
-        if(typeof loadQuestions === 'function'){
-            loadQuestions({
-                type: category ? 'custom' : 'random',
-                category: category,
-                num: numQuestions,
-                includeAnswered: includeAnswered,
-                spacedRepetition: useSpacedRepetition
-            });
-        } else {
-            console.error("loadQuestions function not found");
-        }
-    });
-
-    addClickListenerOnce("modalCancelQuiz", function() {
-        const quizSetupModal = document.getElementById("quizSetupModal");
-        if(quizSetupModal) quizSetupModal.style.display = "none";
-    });
-
-    // --- Dashboard Card Clicks ---
-    addClickListenerOnce("userProgressCard", function() {
-        if(typeof displayPerformance === 'function') displayPerformance();
-        else console.error("displayPerformance function not defined");
-    });
-
-    addClickListenerOnce("quickStatsCard", function() {
-         if(typeof displayPerformance === 'function') displayPerformance();
-         else console.error("displayPerformance function not defined");
-    });
-
-    addClickListenerOnce("leaderboardPreviewCard", function() {
-        if(typeof showLeaderboard === 'function') showLeaderboard();
-        else console.error("showLeaderboard function not defined");
-    });
-
-    addClickListenerOnce("reviewQueueCard", async function() {
-        // Check for required functions before proceeding
-        if(typeof countDueReviews !== 'function' || typeof getDueQuestionIds !== 'function' || typeof loadSpecificQuestions !== 'function') {
-            console.error("Required review functions not found for reviewQueueCard click.");
-            alert("Cannot start review session at this time.");
-            return;
-        }
-
+    // Wrap core logic in requestAnimationFrame to ensure DOM is ready after display change
+    requestAnimationFrame(async () => {
         try {
-            const { dueCount } = await countDueReviews();
-            if (dueCount === 0) {
-                alert("You have no questions due for review today. Good job!");
-                return;
-            }
+            const uid = window.auth.currentUser.uid;
+            const userDocRef = window.doc(window.db, 'users', uid);
+            const userDocSnap = await window.getDoc(userDocRef);
 
-            const dueQuestionIds = await getDueQuestionIds();
-            if (dueQuestionIds.length === 0) {
-                alert("No questions found for review. This might happen if review data is inconsistent.");
-                return;
+            if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                const stats = data.stats || {};
+                const streaks = data.streaks || { currentStreak: 0 };
+
+                // --- Update Level & XP Card ---
+                const xp = stats.xp || 0; const level = stats.level || 1;
+                const progress = calculateLevelProgress(xp);
+                const levelInfo = getLevelInfo(level);
+                const nextLevelText = (levelInfo.nextLevelXp !== null) ? `${levelInfo.nextLevelXp - xp} XP to Level ${level + 1}` : 'Max Level!';
+
+                document.getElementById("dashboardLevel")?.textContent = level;
+                document.getElementById("dashboardXP")?.textContent = `${xp} XP`;
+                document.getElementById("dashboardNextLevel")?.textContent = nextLevelText;
+                document.getElementById("dashboardLevelProgress")?.style.setProperty('--progress', `${progress}%`);
+
+                // --- Update Quick Stats Card ---
+                const totalAnswered = stats.totalAnswered || 0; const totalCorrect = stats.totalCorrect || 0;
+                const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+                document.getElementById("dashboardAnswered")?.textContent = totalAnswered;
+                document.getElementById("dashboardAccuracy")?.textContent = `${accuracy}%`;
+
+                // --- Update Streak Card ---
+                document.getElementById("currentStreak")?.textContent = streaks.currentStreak || 0;
+                fixStreakCalendar(streaks); // Update calendar visual
+
+                // --- Load Previews ---
+                loadLeaderboardPreview(); // Assumes function handles its own errors/loading state
+                updateReviewQueue();      // Assumes function handles its own errors/loading state
+
+                console.log("Dashboard UI updated successfully.");
+
+            } else {
+                 console.warn(`User document (${uid}) does not exist during dashboard init.`);
+                 // Set UI to default state for a new user
+                 document.getElementById("dashboardLevel")?.textContent = 1;
+                 document.getElementById("dashboardXP")?.textContent = `0 XP`;
+                 document.getElementById("dashboardNextLevel")?.textContent = `${getLevelInfo(1).nextLevelXp} XP to Level 2`;
+                 document.getElementById("dashboardLevelProgress")?.style.setProperty('--progress', `0%`);
+                 document.getElementById("dashboardAnswered")?.textContent = 0;
+                 document.getElementById("dashboardAccuracy")?.textContent = `0%`;
+                 document.getElementById("currentStreak")?.textContent = 0;
+                 fixStreakCalendar({}); // Empty streak data
+                 loadLeaderboardPreview(); // Still try to load leaderboard (might show them at bottom)
+                 updateReviewQueue();      // Will show empty state
             }
-            loadSpecificQuestions(dueQuestionIds);
         } catch (error) {
-             console.error("Error handling reviewQueueCard click:", error);
-             alert("An error occurred while trying to start the review session.");
+            console.error("Error during dashboard data fetch/update:", error);
+            const dashboardContainer = document.querySelector(".dashboard-container");
+            if(dashboardContainer) dashboardContainer.innerHTML = "<p style='color:red; text-align:center;'>Failed to load dashboard. Please refresh.</p>";
         }
-    });
-
-     console.log("Dashboard event listeners setup potentially completed."); // Log end
+    }); // End requestAnimationFrame
 }
 
+
+// Set up event listeners for dashboard
+function setupDashboardEvents() {
+    // Ensure this runs only once after the dashboard is potentially visible
+    // requestAnimationFrame helps ensure the elements are likely available
+    requestAnimationFrame(() => {
+        console.log("Setting up dashboard event listeners...");
+
+        // --- Helper ---
+        const addClickListenerOnce = (id, handler) => {
+            const element = document.getElementById(id);
+            if (element) {
+                if (!element._dashboardListenerAttached) { // Use a specific flag
+                    element.addEventListener('click', handler);
+                    element._dashboardListenerAttached = true;
+                     // console.log(`Dashboard listener attached to #${id}`); // Less noise
+                }
+            } else {
+                console.warn(`Dashboard element #${id} not found for listener.`);
+            }
+        };
+
+        // --- Attach Listeners ---
+        addClickListenerOnce("startQuizBtn", () => {
+            document.getElementById("quizSetupModal")?.style.display = "block";
+        });
+        addClickListenerOnce("modalStartQuiz", () => {
+            const category = document.getElementById("modalCategorySelect")?.value || "";
+            const numQ = parseInt(document.getElementById("modalNumQuestions")?.value) || 10;
+            const includeAns = document.getElementById("modalIncludeAnswered")?.checked || false;
+            const useSR = document.getElementById("modalSpacedRepetition")?.checked || false;
+            document.getElementById("quizSetupModal")?.style.display = "none";
+            if (typeof loadQuestions === 'function') loadQuestions({ type: category ? 'custom' : 'random', category, num: numQ, includeAnswered: includeAns, spacedRepetition: useSR });
+            else console.error("loadQuestions function missing!");
+        });
+        addClickListenerOnce("modalCancelQuiz", () => {
+            document.getElementById("quizSetupModal")?.style.display = "none";
+        });
+        addClickListenerOnce("userProgressCard", () => {
+            if (typeof displayPerformance === 'function') displayPerformance(); else console.error("displayPerformance missing!");
+        });
+        addClickListenerOnce("quickStatsCard", () => {
+            if (typeof displayPerformance === 'function') displayPerformance(); else console.error("displayPerformance missing!");
+        });
+        addClickListenerOnce("leaderboardPreviewCard", () => {
+            if (typeof showLeaderboard === 'function') showLeaderboard(); else console.error("showLeaderboard missing!");
+        });
+        addClickListenerOnce("reviewQueueCard", async () => {
+            if(typeof countDueReviews !== 'function' || typeof getDueQuestionIds !== 'function' || typeof loadSpecificQuestions !== 'function') { console.error("Review functions missing!"); return; }
+            try {
+                const { dueCount } = await countDueReviews();
+                if (dueCount === 0) { alert("No questions due for review today!"); return; }
+                const ids = await getDueQuestionIds();
+                if (ids.length === 0) { alert("Could not retrieve review questions."); return; }
+                loadSpecificQuestions(ids);
+            } catch (error) { console.error("Error starting review session:", error); alert("Error starting review."); }
+        });
+
+         console.log("Dashboard listeners setup complete.");
+    }); // End requestAnimationFrame
+}
 
 // Function to load leaderboard preview data
 async function loadLeaderboardPreview() {
   const leaderboardPreview = document.getElementById("leaderboardPreview");
   if (!leaderboardPreview) return;
 
+   // Ensure dependencies are available
   if (!window.auth || !window.auth.currentUser || !window.db || !window.getDocs || !window.collection) {
-    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">System not ready</div>';
+    console.warn("Leaderboard preview cannot load: System not ready.");
+    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading...</div>'; // Show loading
     return;
   }
 
-  leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading...</div>'; // Show loading state
+  leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading...</div>';
 
   try {
     const currentUid = window.auth.currentUser.uid;
+    // Fetch users collection ordered by XP descending, limit for performance if needed
+    // Note: Firestore requires an index for composite queries (e.g., order by stats.xp)
+    // If you haven't created one, this might be slow or error.
+    // For simplicity here, we fetch all and sort client-side.
     const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
     let leaderboardEntries = [];
 
     querySnapshot.forEach(docSnap => {
       const data = docSnap.data();
-      // Ensure stats and xp exist before adding
-      if (data.stats && typeof data.stats.xp === 'number') {
+      // Basic check for stats and xp existence
+      if (data && data.stats && typeof data.stats.xp === 'number') {
         leaderboardEntries.push({
           uid: docSnap.id,
-          username: data.username || "Anonymous",
+          username: data.username || "Anonymous", // Handle missing username
           xp: data.stats.xp
         });
       }
     });
 
-    // Sort by XP (descending)
+    // Sort client-side
     leaderboardEntries.sort((a, b) => b.xp - a.xp);
 
-    // Get top 3
     let top3 = leaderboardEntries.slice(0, 3);
-
-    // Find current user's position
     let currentUserRank = -1;
     let currentUserEntry = null;
-    for(let i=0; i < leaderboardEntries.length; i++){
-        if(leaderboardEntries[i].uid === currentUid){
+
+    // Find current user's rank and entry efficiently
+    for(let i = 0; i < leaderboardEntries.length; i++) {
+        if(leaderboardEntries[i].uid === currentUid) {
             currentUserRank = i + 1;
             currentUserEntry = leaderboardEntries[i];
-            break;
+            break; // Stop searching once found
         }
     }
-    // Determine if current user should be shown separately (not in top 3 but exists)
     let showCurrentUserSeparately = currentUserRank > 3 && currentUserEntry;
 
-    // Create HTML for the preview
+    // Build HTML
     let html = '';
-
     if (top3.length === 0) {
-      html = '<div class="leaderboard-loading">No leaderboard data yet</div>';
+      html = '<div class="leaderboard-loading">Leaderboard is empty!</div>';
     } else {
       top3.forEach((entry, index) => {
         const isCurrentUser = entry.uid === currentUid;
         const rank = index + 1;
-        // Add '(You)' tag directly if user is in top 3
         const usernameDisplay = `${entry.username}${isCurrentUser ? ' (You)' : ''}`;
         html += `
           <div class="leaderboard-preview-entry ${isCurrentUser ? 'current-user-entry' : ''}">
             <div class="leaderboard-rank leaderboard-rank-${rank}">${rank}</div>
-            <div class="leaderboard-user-info">
-              <div class="leaderboard-username">${usernameDisplay}</div>
-              <div class="leaderboard-user-xp">${entry.xp} XP</div>
-            </div>
-          </div>
-        `;
+            <div class="leaderboard-user-info"><div class="leaderboard-username">${usernameDisplay}</div><div class="leaderboard-user-xp">${entry.xp} XP</div></div>
+          </div>`;
       });
-
-      // Add current user's entry if they exist and are ranked *outside* the top 3
       if (showCurrentUserSeparately) {
         html += `
           <div class="leaderboard-preview-entry current-user-entry">
             <div class="leaderboard-rank">${currentUserRank}</div>
-            <div class="leaderboard-user-info">
-              <div class="leaderboard-username">${currentUserEntry.username} (You)</div>
-              <div class="leaderboard-user-xp">${currentUserEntry.xp} XP</div>
-            </div>
-          </div>
-        `;
+            <div class="leaderboard-user-info"><div class="leaderboard-username">${currentUserEntry.username} (You)</div><div class="leaderboard-user-xp">${currentUserEntry.xp} XP</div></div>
+          </div>`;
       }
     }
     leaderboardPreview.innerHTML = html;
 
   } catch (error) {
     console.error("Error loading leaderboard preview:", error);
-    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Error loading leaderboard</div>';
+    leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color: red;">Error loading</div>';
   }
 }
 
@@ -1152,89 +851,61 @@ async function updateReviewQueue() {
   const reviewQueueContent = document.getElementById("reviewQueueContent");
   const reviewProgressBar = document.getElementById("reviewProgressBar");
 
-  // Ensure all elements exist before proceeding
   if (!reviewCountElement || !reviewQueueContent || !reviewProgressBar) {
-     console.warn("Review queue UI elements not found.");
-     return;
+     console.warn("Review queue UI elements not found."); return;
   }
-   // Ensure necessary functions exist
   if (typeof countDueReviews !== 'function') {
-     console.error("countDueReviews function not found");
-     return;
+     console.error("countDueReviews function not found for updateReviewQueue."); return;
   }
 
+  // Set loading state? (Optional)
+  // reviewCountElement.textContent = '...';
 
   try {
       const { dueCount, nextReviewDate } = await countDueReviews();
 
-      reviewCountElement.textContent = dueCount;
+      reviewCountElement.textContent = dueCount; // Update count
 
-      // Get pointers to the specific divs inside the content area
       const reviewStatsDiv = reviewQueueContent.querySelector(".review-stats");
-      const emptyStateDiv = reviewQueueContent.querySelector(".review-empty-state");
       const progressContainer = reviewQueueContent.querySelector(".review-progress-container");
-
-      // Check if these inner elements exist before manipulating them
-      if (!reviewStatsDiv || !progressContainer ) {
-         console.warn("Inner review queue elements (stats, progress) not found.");
-         // We might still be able to update the empty state
-      }
+      let emptyStateDiv = reviewQueueContent.querySelector(".review-empty-state"); // Use let
 
       if (dueCount > 0) {
-          // Show stats and progress bar
-          if (reviewStatsDiv) reviewStatsDiv.style.display = 'block'; // Or 'flex' depending on CSS
-          if (progressContainer) progressContainer.style.display = 'block'; // Or 'flex'
-          if (emptyStateDiv) emptyStateDiv.style.display = 'none'; // Hide empty state
+          // Show stats/progress, hide empty state
+          if (reviewStatsDiv) reviewStatsDiv.style.display = ''; // Reset display potentially set by empty state
+          if (progressContainer) progressContainer.style.display = '';
+          if (emptyStateDiv) emptyStateDiv.style.display = 'none';
 
-          // Calculate and set progress bar width
-          const progressPercent = Math.min(100, (dueCount / 20) * 100); // Example target: 20 reviews = 100%
+          const progressPercent = Math.min(100, (dueCount / 20) * 100);
           reviewProgressBar.style.width = `${progressPercent}%`;
 
       } else {
-          // Hide stats and progress bar
+          // Hide stats/progress, show empty state
           if (reviewStatsDiv) reviewStatsDiv.style.display = 'none';
           if (progressContainer) progressContainer.style.display = 'none';
 
-          // Prepare empty state message
-          let emptyStateMessage = "";
+          let emptyStateMessage = "No reviews scheduled. Keep learning!";
           if (nextReviewDate) {
-              // Format date nicely, e.g., "Oct 23" or "Tomorrow"
               const today = new Date(); today.setHours(0,0,0,0);
               const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-              let formattedDate;
-              if (nextReviewDate.getTime() === tomorrow.getTime()) {
-                 formattedDate = "Tomorrow";
-              } else {
-                 formattedDate = nextReviewDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-              }
-              emptyStateMessage = `No reviews due today.<br>Next review: <span class="next-review-date">${formattedDate}</span>`;
-          } else {
-              emptyStateMessage = "No reviews scheduled. Complete quizzes to add reviews.";
+              let formattedDate = (nextReviewDate.getTime() === tomorrow.getTime()) ? "Tomorrow"
+                                 : nextReviewDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              emptyStateMessage = `Nothing due today!<br>Next review: <span class="next-review-date">${formattedDate}</span>`;
           }
 
-          // Update or create the empty state element
-          let currentEmptyStateDiv = reviewQueueContent.querySelector(".review-empty-state");
-          if (currentEmptyStateDiv) {
-             currentEmptyStateDiv.innerHTML = emptyStateMessage;
-             currentEmptyStateDiv.style.display = 'block'; // Ensure it's visible
-          } else {
-             // Create if it doesn't exist
-             const newEmptyStateDiv = document.createElement("div");
-             newEmptyStateDiv.className = "review-empty-state";
-             newEmptyStateDiv.style.textAlign = 'center'; // Add basic styling
-             newEmptyStateDiv.style.color = '#666';
-             newEmptyStateDiv.style.fontSize = '0.9rem';
-             newEmptyStateDiv.style.padding = '10px 0';
-             newEmptyStateDiv.innerHTML = emptyStateMessage;
-             // Append it logically within the card content
-             reviewQueueContent.appendChild(newEmptyStateDiv);
+          if (!emptyStateDiv) { // Create empty state div if it doesn't exist
+             emptyStateDiv = document.createElement("div");
+             emptyStateDiv.className = "review-empty-state";
+             Object.assign(emptyStateDiv.style, { textAlign: 'center', color: '#666', fontSize: '0.9rem', padding: '10px 0', lineHeight: '1.4'});
+             reviewQueueContent.appendChild(emptyStateDiv);
           }
+           emptyStateDiv.innerHTML = emptyStateMessage;
+           emptyStateDiv.style.display = 'block'; // Ensure it's visible
       }
   } catch (error) {
        console.error("Error updating review queue UI:", error);
-       // Optionally display an error message in the card
-       reviewCountElement.textContent = 'Err';
-       // Could update empty state div with error message too
+       reviewCountElement.textContent = 'N/A'; // Show error indicator
+       // Optionally display error in the card content
   }
 }
 
@@ -1242,60 +913,43 @@ async function updateReviewQueue() {
 // Function to fix streak calendar alignment
 function fixStreakCalendar(streaksData) {
     const streakCalendar = document.getElementById("streakCalendar");
-    if (!streakCalendar) {
-        console.warn("Streak calendar element not found.");
-        return;
-    }
+    if (!streakCalendar) { console.warn("Streak calendar element not found."); return; }
 
     streakCalendar.innerHTML = ''; // Clear existing
 
-    const today = new Date(); today.setHours(0, 0, 0, 0); // Normalize today to start of day
-    let todayDayIndex = today.getDay() - 1; // 0=Mon, 6=Sun
-    if (todayDayIndex < 0) todayDayIndex = 6;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    let todayDayIndex = today.getDay() - 1; if (todayDayIndex < 0) todayDayIndex = 6; // 0=Mon, 6=Sun
 
     const currentStreak = streaksData?.currentStreak || 0;
-    const lastAnsweredDateStr = streaksData?.lastAnsweredDate;
     let lastAnsweredDate = null;
-
-    // Try to parse lastAnsweredDate, normalize it
-    if(lastAnsweredDateStr) {
+    if (streaksData?.lastAnsweredDate) {
        try {
-          const parsedDate = new Date(lastAnsweredDateStr);
-          if (!isNaN(parsedDate.getTime())) {
-              lastAnsweredDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
-          } else {
-              console.warn("Invalid lastAnsweredDate string:", lastAnsweredDateStr);
-          }
-       } catch(e) { console.error("Error parsing lastAnsweredDate:", e); }
+          const parsed = new Date(streaksData.lastAnsweredDate);
+          if (!isNaN(parsed.getTime())) { lastAnsweredDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()); }
+       } catch(e) { console.error("Error parsing lastAnsweredDate in fixStreakCalendar:", e); }
     }
 
-    // Calculate the start date of the *current* visual week (past Monday)
     const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - todayDayIndex); // Go back to Monday
+    startOfWeek.setDate(today.getDate() - todayDayIndex); // Find the Monday of the current week
 
-    for (let i = 0; i < 7; i++) {
-        // Calculate the date for the current position in the week display
+    for (let i = 0; i < 7; i++) { // Iterate Monday to Sunday
         const date = new Date(startOfWeek);
         date.setDate(startOfWeek.getDate() + i);
 
         const dayCircle = document.createElement("div");
         dayCircle.className = "day-circle";
-        dayCircle.textContent = date.getDate(); // Display the day of the month
+        dayCircle.textContent = date.getDate();
 
-        // Check if this is today
         if (date.getTime() === today.getTime()) {
             dayCircle.classList.add("today");
         }
 
-        // Check if this day should be marked as active based on the streak *ending on the last answered date*
+        // Determine if day is active based on streak ending on *lastAnsweredDate*
         if (currentStreak > 0 && lastAnsweredDate) {
-            // Calculate the difference in days between the calendar date and the last answered date
-            const diffDays = Math.round((lastAnsweredDate - date) / (1000 * 60 * 60 * 24));
-
-            // Mark as active if:
-            // 1. The date is on or before the last answered date (diffDays >= 0)
-            // 2. The date is within the range of the current streak length from the last answered date (diffDays < currentStreak)
-            // 3. The date is not in the future relative to today
+             // Calculate difference between the day being rendered and the last answered day
+             const diffDays = Math.round((lastAnsweredDate - date) / (1000 * 60 * 60 * 24));
+             // Day is active if it's within the streak range *before or on* the last answered day,
+             // and not in the future relative to today.
              if (diffDays >= 0 && diffDays < currentStreak && date <= today) {
                  dayCircle.classList.add("active");
              }
@@ -1307,119 +961,58 @@ function fixStreakCalendar(streaksData) {
 
 // Function to get IDs of questions due for review
 async function getDueQuestionIds() {
-  // Ensure necessary Firebase objects are available
-  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) {
-    console.warn("System not ready for getDueQuestionIds.");
-    return [];
-  }
-
+  if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.getDoc) { console.warn("System not ready for getDueQuestionIds."); return []; }
   try {
     const uid = window.auth.currentUser.uid;
     const userDocRef = window.doc(window.db, 'users', uid);
     const userDocSnap = await window.getDoc(userDocRef);
-
-    if (!userDocSnap.exists()) return []; // No user document, no reviews
-
+    if (!userDocSnap.exists()) return [];
     const data = userDocSnap.data();
     const spacedRepetitionData = data.spacedRepetition || {};
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
+    const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let dueQuestionIds = [];
-
     for (const questionId in spacedRepetitionData) {
       const reviewData = spacedRepetitionData[questionId];
-      if (!reviewData || !reviewData.nextReviewDate) continue; // Skip if no next review date
-
+      if (!reviewData || !reviewData.nextReviewDate) continue;
       try {
         const reviewDate = new Date(reviewData.nextReviewDate);
-        if (isNaN(reviewDate.getTime())) {
-            console.warn(`Invalid nextReviewDate for Q ${questionId}: ${reviewData.nextReviewDate}`);
-            continue; // Skip invalid date
-        }
-
-        // Normalize review date to the start of its day
+        if (isNaN(reviewDate.getTime())) continue;
         const reviewDateOnly = new Date(reviewDate.getFullYear(), reviewDate.getMonth(), reviewDate.getDate());
-
-        // Check if the review date is today or in the past
-        if (reviewDateOnly <= today) {
-          dueQuestionIds.push(questionId);
-        }
-      } catch (e) {
-         console.warn(`Error processing date for Q ${questionId}:`, reviewData.nextReviewDate, e);
-      }
+        if (reviewDateOnly <= today) dueQuestionIds.push(questionId);
+      } catch (e) { console.warn(`Error processing date for Q ${questionId} in getDueQuestionIds:`, e); }
     }
-    console.log(`Found ${dueQuestionIds.length} questions due for review.`);
+    // console.log(`Found ${dueQuestionIds.length} questions due for review.`); // Less noise
     return dueQuestionIds;
-  } catch (error) {
-    console.error("Error getting due question IDs:", error);
-    return [];
-  }
+  } catch (error) { console.error("Error getting due question IDs:", error); return []; }
 }
 
 // Function to load only specific questions by ID for review session
 async function loadSpecificQuestions(questionIds) {
-  if (!questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
-    alert("No questions selected for review.");
-    return;
-  }
-
+  if (!questionIds || !Array.isArray(questionIds) || questionIds.length === 0) { alert("No questions selected for review."); return; }
   console.log(`Starting review session with ${questionIds.length} specific questions.`);
-
-  // Ensure PapaParse, csvUrl, shuffleArray, and initializeQuiz are available
   if (typeof Papa === 'undefined' || typeof csvUrl === 'undefined' || typeof shuffleArray !== 'function' || typeof initializeQuiz !== 'function') {
-     console.error("Missing required dependencies for loadSpecificQuestions (PapaParse, csvUrl, shuffleArray, initializeQuiz).");
-     alert("Error preparing review session. Please try again.");
-     return;
+     console.error("Missing dependencies for loadSpecificQuestions."); alert("Error preparing review session."); return;
   }
-
   try {
     Papa.parse(csvUrl, {
-      download: true,
-      header: true,
+      download: true, header: true, skipEmptyLines: true, // Added skip empty lines
       complete: function(results) {
         if (!results || !results.data || results.errors.length > 0) {
-           console.error("Failed to parse or download CSV data:", results?.errors);
-           alert("Error loading question data. Please check your connection and try again.");
-           return;
+           console.error("CSV parsing failed:", results?.errors); alert("Error loading question data."); return;
         }
-        console.log("Base question bank loaded:", results.data.length);
-
-        // Filter the full bank to get only the questions matching the provided IDs
-        // Ensure 'Question' field exists and handle potential leading/trailing whitespace
-        const reviewQuestions = results.data.filter(q =>
-          q && q["Question"] && questionIds.includes(q["Question"].trim())
-        );
-
-        console.log("Filtered review questions matching IDs:", reviewQuestions.length);
-
+        const allQuestions = results.data;
+        const reviewQuestions = allQuestions.filter(q => q && q["Question"] && questionIds.includes(q["Question"].trim()));
+        console.log(`Found ${reviewQuestions.length} matching questions in bank.`);
         if (reviewQuestions.length === 0) {
-          alert("Could not find the questions scheduled for review. They might have been updated or removed from the main question bank.");
-          // Navigate back or show dashboard?
-          const mainOptions = document.getElementById("mainOptions");
-          if(mainOptions) mainOptions.style.display = 'flex';
-          return;
+          alert("Could not find the scheduled review questions in the current question bank.");
+          const mainOptions = document.getElementById("mainOptions"); if(mainOptions) mainOptions.style.display = 'flex'; return;
         }
-        if (reviewQuestions.length < questionIds.length) {
-             console.warn(`Could only find ${reviewQuestions.length} out of ${questionIds.length} scheduled review questions.`);
-             // Proceed with the ones found
-        }
-
-        // Shuffle the selected review questions
         const shuffledReviewQuestions = shuffleArray([...reviewQuestions]);
-
-        // Initialize the quiz interface with these specific questions
-        initializeQuiz(shuffledReviewQuestions);
+        initializeQuiz(shuffledReviewQuestions); // Initialize quiz with these questions
       },
-      error: function(error) {
-        console.error("Network or parsing error loading question bank:", error);
-        alert("Error loading questions. Please check your internet connection and try again.");
-      }
+      error: function(error) { console.error("Network/parsing error loading question bank:", error); alert("Error loading questions. Check connection."); }
     });
-  } catch (e) {
-      console.error("Unexpected error in loadSpecificQuestions:", e);
-      alert("An unexpected error occurred while preparing the review session.");
-  }
+  } catch (e) { console.error("Unexpected error in loadSpecificQuestions:", e); alert("An unexpected error occurred starting the review."); }
 }
 
 
