@@ -216,6 +216,7 @@ function showRegisterForm() {
         <small>Password must be at least 6 characters</small>
       </div>
       <div class="form-group terms-container">
+  <div class="form-group terms-container">
   <div class="terms-checkbox">
     <input type="checkbox" id="agreeTerms" required>
     <label for="agreeTerms">
