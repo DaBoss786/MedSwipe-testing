@@ -1,138 +1,96 @@
-// --- START OF FILE app.js ---
-
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
   const welcomeScreen = document.getElementById('welcomeScreen');
   const mainOptions = document.getElementById('mainOptions');
-
+  
   // Immediately hide the dashboard to prevent it from being visible at any point
   if (mainOptions) {
     mainOptions.style.display = 'none';
   }
-
+  
   // Ensure welcome screen is ready but hidden
   if (welcomeScreen) {
     welcomeScreen.style.display = 'flex';
     welcomeScreen.style.opacity = '0';
   }
-
+  
   // Listen for authentication state changes
   window.addEventListener('authStateChanged', function(event) {
     console.log('Auth state changed in app.js:', event.detail);
-
+    
     // Once authentication is initialized and not loading
     if (!event.detail.isLoading) {
       // Hide splash screen after 2 seconds
       setTimeout(function() {
         if (splashScreen) {
           splashScreen.classList.add('fade-out');
-
+          
           // After splash fades out, decide where to go based on auth state
           setTimeout(function() {
-            if (splashScreen) splashScreen.style.display = 'none'; // Ensure splash is hidden
-
+            splashScreen.style.display = 'none';
+            
             if (event.detail.isRegistered) {
               // Registered user - go straight to dashboard
               console.log('User is registered, showing dashboard');
               if (mainOptions) {
                 mainOptions.style.display = 'flex';
-
-                // ***** CORRECTED PART: Initialize and set up dashboard HERE *****
-                // Check function existence before calling
-                if (typeof initializeDashboard === 'function') {
-                  initializeDashboard(); // Load dashboard data
-                } else {
-                  console.error("initializeDashboard function not found!");
-                }
-                if (typeof setupDashboardEvents === 'function') {
-                  setupDashboardEvents(); // Attach dashboard event listeners
-                } else {
-                  console.error("setupDashboardEvents function not found!");
-                }
-                // ***** END OF CORRECTION *****
-
-              } else {
-                 console.error("Main options element (#mainOptions) not found!");
+                ensureEventListenersAttached();
               }
             } else {
               // Guest user - show welcome screen
               console.log('User is guest, showing welcome screen');
               if (welcomeScreen) {
                 welcomeScreen.style.opacity = '1';
-              } else {
-                 console.error("Welcome screen element (#welcomeScreen) not found!");
               }
             }
           }, 500); // Matches the transition duration in CSS
-        } else {
-            console.error("Splash screen element (#splashScreen) not found!");
         }
-      }, 2000); // Splash screen duration
+      }, 2000);
     }
   });
-
+  
   // Handle welcome screen buttons
   const startLearningBtn = document.getElementById('startLearningBtn');
   const existingAccountBtn = document.getElementById('existingAccountBtn');
 
   if (startLearningBtn) {
     startLearningBtn.addEventListener('click', function() {
-      if (welcomeScreen) {
-        welcomeScreen.style.opacity = '0';
-        setTimeout(function() {
-          welcomeScreen.style.display = 'none';
-          if (mainOptions) {
-            mainOptions.style.display = 'flex';
-            // Initialize and setup dashboard when coming from welcome screen too
-            if (typeof initializeDashboard === 'function') {
-              initializeDashboard();
-            } else {
-               console.error("initializeDashboard function not found!");
-            }
-            if (typeof setupDashboardEvents === 'function') {
-              setupDashboardEvents();
-            } else {
-               console.error("setupDashboardEvents function not found!");
-            }
-          } else {
-            console.error("Main options element (#mainOptions) not found!");
-          }
-        }, 500); // Matches transition duration
-      }
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        mainOptions.style.display = 'flex';
+      }, 500);
     });
   }
 
   if (existingAccountBtn) {
     existingAccountBtn.addEventListener('click', function() {
-       if (welcomeScreen) {
-         welcomeScreen.style.opacity = '0';
-         setTimeout(function() {
-           welcomeScreen.style.display = 'none';
-           // Show the new login screen (preferred) or fallback modal
-           if (typeof window.showLoginScreen === 'function') {
-             window.showLoginScreen();
-           } else if (typeof showLoginForm === 'function') {
-             showLoginForm(); // Fallback
-           } else {
-              console.error("No login screen function available (showLoginScreen or showLoginForm)");
-           }
-         }, 500); // Matches transition duration
-       }
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        // Show the new login screen instead of the old modal
+        if (typeof window.showLoginScreen === 'function') {
+          window.showLoginScreen();
+        } else {
+          // Fallback to the old login form if the new one isn't available
+          showLoginForm();
+        }
+      }, 500);
     });
   }
 });
 
-// Function to show the login form modal (Old fallback, prefer login-screen.js)
+// Function to show the login form modal
 function showLoginForm() {
   // Create login modal if it doesn't exist
   let loginModal = document.getElementById('loginModal');
-
+  
   if (!loginModal) {
     loginModal = document.createElement('div');
     loginModal.id = 'loginModal';
     loginModal.className = 'auth-modal';
-
+    
     loginModal.innerHTML = `
   <div class="auth-modal-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
@@ -149,83 +107,60 @@ function showLoginForm() {
       </div>
       <div class="auth-buttons">
         <button type="submit" class="auth-primary-btn">Log In</button>
-        <button type="button" id="createAccountBtnLoginModal" class="auth-secondary-btn">Create Account</button>
+        <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
       </div>
     </form>
     <button id="closeLoginBtn" class="auth-close-btn">×</button>
   </div>
 `;
-
+    
     document.body.appendChild(loginModal);
-
-    // --- Event Listeners for Fallback Login Modal ---
-    const loginForm = document.getElementById('loginForm');
-    const createAccountBtn = document.getElementById('createAccountBtnLoginModal');
-    const closeLoginBtn = document.getElementById('closeLoginBtn');
-
-    if (loginForm) {
-      loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const emailInput = document.getElementById('loginEmail');
-        const passwordInput = document.getElementById('loginPassword');
-        const errorElement = document.getElementById('loginError');
-        if (!emailInput || !passwordInput || !errorElement || !window.authFunctions) return; // Guard clauses
-
-        const email = emailInput.value;
-        const password = passwordInput.value;
-
-        try {
-          errorElement.textContent = '';
-          await window.authFunctions.loginUser(email, password);
-          // Success
-          loginModal.style.display = 'none';
-          const mainOptions = document.getElementById('mainOptions');
-          if (mainOptions) mainOptions.style.display = 'flex';
-          // Initialize and setup dashboard after successful login
-          if (typeof initializeDashboard === 'function') initializeDashboard();
-          if (typeof setupDashboardEvents === 'function') setupDashboardEvents();
-        } catch (error) {
-          errorElement.textContent = getAuthErrorMessage(error);
-        }
-      });
-    }
-
-    if (createAccountBtn) {
-      createAccountBtn.addEventListener('click', function() {
+    
+    // Add event listeners
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const errorElement = document.getElementById('loginError');
+      
+      try {
+        errorElement.textContent = '';
+        await window.authFunctions.loginUser(email, password);
+        // Success - close modal and show dashboard
         loginModal.style.display = 'none';
-        if (typeof showRegisterForm === 'function') showRegisterForm(); // Call fallback register
-        else console.error("showRegisterForm function not found");
-      });
-    }
-
-    if (closeLoginBtn) {
-      closeLoginBtn.addEventListener('click', function() {
-        loginModal.style.display = 'none';
-        // Ensure dashboard is shown if user closes login without logging in
-        const mainOptions = document.getElementById('mainOptions');
-        if (mainOptions && mainOptions.style.display === 'none') {
-           mainOptions.style.display = 'flex';
-           if (typeof initializeDashboard === 'function') initializeDashboard();
-           if (typeof setupDashboardEvents === 'function') setupDashboardEvents();
-        }
-      });
-    }
+        document.getElementById('mainOptions').style.display = 'flex';
+      } catch (error) {
+        // Show error message
+        errorElement.textContent = getAuthErrorMessage(error);
+      }
+    });
+    
+    document.getElementById('createAccountBtn').addEventListener('click', function() {
+      loginModal.style.display = 'none';
+      showRegisterForm();
+    });
+    
+    document.getElementById('closeLoginBtn').addEventListener('click', function() {
+      loginModal.style.display = 'none';
+      document.getElementById('mainOptions').style.display = 'flex';
+    });
   }
-
+  
   // Show the modal
   loginModal.style.display = 'flex';
 }
 
-// Function to show the registration form modal (Old fallback)
+// Function to show the registration form modal
 function showRegisterForm() {
   // Create registration modal if it doesn't exist
   let registerModal = document.getElementById('registerModal');
-
+  
   if (!registerModal) {
     registerModal = document.createElement('div');
     registerModal.id = 'registerModal';
     registerModal.className = 'auth-modal';
-
+    
     registerModal.innerHTML = `
   <div class="auth-modal-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
@@ -265,434 +200,1252 @@ function showRegisterForm() {
     <button id="closeRegisterBtn" class="auth-close-btn">×</button>
   </div>
 `;
-
+    
     document.body.appendChild(registerModal);
-
-    // --- Event Listeners for Fallback Register Modal ---
-    const registerForm = document.getElementById('registerForm');
-    const goToLoginBtn = document.getElementById('goToLoginBtn');
-    const closeRegisterBtn = document.getElementById('closeRegisterBtn');
-
-    if(registerForm) {
-      registerForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const usernameInput = document.getElementById('registerUsername');
-        const emailInput = document.getElementById('registerEmail');
-        const passwordInput = document.getElementById('registerPassword');
-        const experienceInput = document.getElementById('registerExperience');
-        const errorElement = document.getElementById('registerError');
-        if (!usernameInput || !emailInput || !passwordInput || !experienceInput || !errorElement || !window.authFunctions || !window.authState) return; // Guard clauses
-
-        const username = usernameInput.value;
-        const email = emailInput.value;
-        const password = passwordInput.value;
-        const experience = experienceInput.value;
-
-        try {
-          errorElement.textContent = '';
-
-          if (window.authState.user && window.authState.user.isAnonymous) {
-            await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
-          } else {
-            await window.authFunctions.registerUser(email, password, username, experience);
-          }
-
-          // Success
-          registerModal.style.display = 'none';
-          const mainOptions = document.getElementById('mainOptions');
-          if (mainOptions) mainOptions.style.display = 'flex';
-          // Initialize and setup dashboard after successful registration/upgrade
-          if (typeof initializeDashboard === 'function') initializeDashboard();
-          if (typeof setupDashboardEvents === 'function') setupDashboardEvents();
-        } catch (error) {
-          errorElement.textContent = getAuthErrorMessage(error);
+    
+    // Add event listeners
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('registerUsername').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const experience = document.getElementById('registerExperience').value;
+      const errorElement = document.getElementById('registerError');
+      
+      try {
+        errorElement.textContent = '';
+        
+        if (window.authState.user && window.authState.user.isAnonymous) {
+          // Upgrade anonymous user
+          await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
+        } else {
+          // Create new user
+          await window.authFunctions.registerUser(email, password, username, experience);
         }
-      });
-    }
-
-    if (goToLoginBtn) {
-      goToLoginBtn.addEventListener('click', function() {
+        
+        // Success - close modal and show dashboard
         registerModal.style.display = 'none';
-        // Prefer new login screen, fallback to modal
-        if (typeof window.showLoginScreen === 'function') window.showLoginScreen();
-        else if (typeof showLoginForm === 'function') showLoginForm();
-        else console.error("No login screen function available");
-      });
-    }
-
-    if (closeRegisterBtn) {
-      closeRegisterBtn.addEventListener('click', function() {
-        registerModal.style.display = 'none';
-        // Ensure dashboard is shown if user closes register without registering
-         const mainOptions = document.getElementById('mainOptions');
-         if (mainOptions && mainOptions.style.display === 'none') {
-            mainOptions.style.display = 'flex';
-            if (typeof initializeDashboard === 'function') initializeDashboard();
-            if (typeof setupDashboardEvents === 'function') setupDashboardEvents();
-         }
-      });
-    }
+        document.getElementById('mainOptions').style.display = 'flex';
+      } catch (error) {
+        // Show error message
+        errorElement.textContent = getAuthErrorMessage(error);
+      }
+    });
+    
+    document.getElementById('goToLoginBtn').addEventListener('click', function() {
+      registerModal.style.display = 'none';
+      showLoginForm();
+    });
+    
+    document.getElementById('closeRegisterBtn').addEventListener('click', function() {
+      registerModal.style.display = 'none';
+      document.getElementById('mainOptions').style.display = 'flex';
+    });
   }
-
+  
   // Show the modal
   registerModal.style.display = 'flex';
 }
 
 // Helper function to get user-friendly error messages
 function getAuthErrorMessage(error) {
-  // Check if error or error.code is undefined
-  const errorCode = error?.code;
-
+  const errorCode = error.code;
+  
   switch (errorCode) {
-    case 'auth/invalid-email': return 'Invalid email address format';
-    case 'auth/user-disabled': return 'This account has been disabled';
-    case 'auth/user-not-found': return 'No account found with this email';
-    case 'auth/wrong-password': return 'Incorrect password';
-    case 'auth/email-already-in-use': return 'An account with this email already exists';
-    case 'auth/weak-password': return 'Password is too weak (min. 6 characters)'; // Added minimum length hint
-    case 'auth/network-request-failed': return 'Network error - please check your connection';
-    case 'auth/too-many-requests': return 'Too many attempts. Please try again later.';
-    case 'auth/operation-not-allowed': return 'Email/password accounts are not enabled.'; // Useful for debugging Firebase settings
-    case 'auth/requires-recent-login': return 'Please log in again to perform this action.';
-    // Add more specific Firebase Auth error codes as needed
+    case 'auth/invalid-email':
+      return 'Invalid email address format';
+    case 'auth/user-disabled':
+      return 'This account has been disabled';
+    case 'auth/user-not-found':
+      return 'No account found with this email';
+    case 'auth/wrong-password':
+      return 'Incorrect password';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists';
+    case 'auth/weak-password':
+      return 'Password is too weak';
+    case 'auth/network-request-failed':
+      return 'Network error - please check your connection';
     default:
-      // Log the original error for debugging but show generic message to user
-      console.error("Unhandled Auth Error:", error);
-      return error?.message || 'An unknown authentication error occurred. Please try again.';
+      return error.message || 'An unknown error occurred';
   }
 }
 
-// --- General UI event listeners - Attached ONCE on Load ---
+// Main app initialization
 window.addEventListener('load', function() {
-  console.log("Attaching general UI event listeners on page load.");
-
-  // Helper to safely attach listener if element exists
-  const safelyAttachListener = (id, event, handler, checkFlag = false) => {
-     const element = document.getElementById(id);
-     if (element) {
-        // Optional flag check to prevent duplicates if needed elsewhere
-        if (!checkFlag || !element._generalListenerAttached) {
-          element.addEventListener(event, handler);
-          if (checkFlag) element._generalListenerAttached = true;
-        }
-     } else {
-        // console.warn(`Element #${id} not found for general listener.`); // Can be noisy
-     }
+  // Ensure functions are globally available
+  window.updateUserXP = updateUserXP || function() {
+    console.log("updateUserXP not loaded yet");
   };
-
-  // Top Bar Interactions
-  safelyAttachListener("scoreCircle", "click", function() { // User Level Circle
+  
+  window.updateUserMenu = updateUserMenu || function() {
+    console.log("updateUserMenu not loaded yet");
+  };
+  
+  // Initialize user menu with username
+  const checkAuthAndInit = function() {
+    if (window.auth && window.auth.currentUser) {
+      // Initialize user menu with username
+      window.updateUserMenu();
+    } else {
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndInit, 1000);
+    }
+  };
+  
+  // Start checking for auth
+  checkAuthAndInit();
+  
+  // Score circle click => open user menu
+  const scoreCircle = document.getElementById("scoreCircle");
+  if (scoreCircle) {
+    scoreCircle.addEventListener("click", function() {
       const userMenu = document.getElementById("userMenu");
       const menuOverlay = document.getElementById("menuOverlay");
-      if (userMenu) userMenu.classList.add("open");
-      if (menuOverlay) menuOverlay.classList.add("show");
-  });
-  safelyAttachListener("menuToggle", "click", function() { // Main Menu Burger
-      const sideMenu = document.getElementById("sideMenu");
-      const menuOverlay = document.getElementById("menuOverlay");
-      if (sideMenu) sideMenu.classList.add("open");
-      if (menuOverlay) menuOverlay.classList.add("show");
-  });
-   safelyAttachListener("logoClick", "click", function() { // Logo Click -> Dashboard
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      if (typeof closeUserMenu === 'function') closeUserMenu();
-      // Hide all other views
-      ['aboutView', 'faqView', 'performanceView', 'leaderboardView', 'contactModal', 'quizSetupModal', 'randomQuizForm', 'customQuizForm'].forEach(id => {
-         const el = document.getElementById(id);
-         if (el) el.style.display = 'none';
-      });
-      const swiper = document.querySelector(".swiper"); if (swiper) swiper.style.display = 'none';
-      const bottomToolbar = document.getElementById("bottomToolbar"); if (bottomToolbar) bottomToolbar.style.display = 'none';
-      const iconBar = document.getElementById("iconBar"); if (iconBar) iconBar.style.display = 'none';
-
-      // Show dashboard and initialize
-      const mainOptions = document.getElementById("mainOptions");
-      if (mainOptions) mainOptions.style.display = "flex";
-      if (typeof initializeDashboard === 'function') initializeDashboard();
-      if (typeof setupDashboardEvents === 'function') setupDashboardEvents();
-  });
-
-  // Overlay Click (closes both menus)
-   safelyAttachListener("menuOverlay", "click", function() {
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      if (typeof closeUserMenu === 'function') closeUserMenu();
-  });
-
-  // --- Side Menu (Left) ---
-  safelyAttachListener("menuClose", "click", closeSideMenu);
-  safelyAttachListener("startNewQuiz", "click", function() { // -> Dashboard
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      window.filterMode = "all"; // Reset filter mode if applicable
-      // Use logoClick's logic to navigate to dashboard
-      const logo = document.getElementById("logoClick");
-      if (logo) logo.click(); // Simulate logo click
-  });
-   safelyAttachListener("customQuizBtn", "click", function() { // Show Custom Quiz Modal
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      const customQuizForm = document.getElementById("customQuizForm");
-      if (customQuizForm) customQuizForm.style.display = "block";
-      // Optionally hide other views
-      const randomQuizForm = document.getElementById("randomQuizForm"); if(randomQuizForm) randomQuizForm.style.display="none";
-  });
-  safelyAttachListener("randomQuizBtn", "click", function() { // Show Random Quiz Modal
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      const randomQuizForm = document.getElementById("randomQuizForm");
-      if (randomQuizForm) randomQuizForm.style.display = "block";
-       // Optionally hide other views
-      const customQuizForm = document.getElementById("customQuizForm"); if(customQuizForm) customQuizForm.style.display="none";
-  });
-   safelyAttachListener("bookmarksFilter", "click", function(e) { // Show Bookmarks Quiz (now in User Menu)
-      e.preventDefault();
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      // Logic moved to User Menu's bookmarksFilterUser listener
-      console.log("Bookmarks filter in side menu clicked - action moved to user menu.");
-  });
-   safelyAttachListener("leaderboardItem", "click", function() { // Show Leaderboard View
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      if (typeof showLeaderboard === 'function') showLeaderboard();
-      else console.error("showLeaderboard function not found");
-  });
-   safelyAttachListener("faqItem", "click", function() { // Show FAQ View
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      if (typeof showFAQ === 'function') showFAQ();
-      else console.error("showFAQ function not found");
-  });
-   safelyAttachListener("aboutItem", "click", function() { // Show About View
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-      if (typeof showAbout === 'function') showAbout();
-      else console.error("showAbout function not found");
-  });
-   safelyAttachListener("contactItem", "click", function() { // Show Contact Modal
-      if (typeof closeSideMenu === 'function') closeSideMenu();
-       // Hide other views first
-      ['mainOptions', 'aboutView', 'faqView', 'performanceView', 'leaderboardView'].forEach(id => {
-         const el = document.getElementById(id); if(el) el.style.display = 'none';
-      });
-       const swiper = document.querySelector(".swiper"); if(swiper) swiper.style.display = 'none';
-       const bottomToolbar = document.getElementById("bottomToolbar"); if(bottomToolbar) bottomToolbar.style.display = 'none';
-       const iconBar = document.getElementById("iconBar"); if(iconBar) iconBar.style.display = 'none';
-       // Show contact modal
-      if (typeof showContactModal === 'function') showContactModal();
-      else console.error("showContactModal function not found");
-  });
-
-
-  // --- User Menu (Right) ---
-  safelyAttachListener("userMenuClose", "click", closeUserMenu);
-  safelyAttachListener("userScoreCircle", "click", function() { // -> Go to FAQ
-      if (typeof closeUserMenu === 'function') closeUserMenu();
-      if (typeof showFAQ === 'function') showFAQ();
-      else console.error("showFAQ function not found");
-  });
-   safelyAttachListener("performanceItemUser", "click", function() { // Show Performance View
-      if (typeof closeUserMenu === 'function') closeUserMenu();
-      if (typeof displayPerformance === 'function') displayPerformance();
-      else console.error("displayPerformance function not found");
-  });
-   safelyAttachListener("bookmarksFilterUser", "click", function(e) { // Start Bookmarks Quiz
-      e.preventDefault();
-      if (typeof closeUserMenu === 'function') closeUserMenu();
-      if (typeof loadQuestions === 'function') {
-        loadQuestions({ bookmarksOnly: true, num: 50 }); // Load all bookmarks
-      } else {
-         console.error("loadQuestions function not found");
+      if (userMenu && menuOverlay) {
+        userMenu.classList.add("open");
+        menuOverlay.classList.add("show");
       }
-  });
-   safelyAttachListener("resetProgressUser", "click", async function(e) { // Reset User Progress
+    });
+  }
+  
+  // User menu score circle click => go to FAQ
+  const userScoreCircle = document.getElementById("userScoreCircle");
+  if (userScoreCircle) {
+    userScoreCircle.addEventListener("click", function() {
+      closeUserMenu();
+      showFAQ();
+    });
+  }
+  
+  // User menu close button
+  const userMenuClose = document.getElementById("userMenuClose");
+  if (userMenuClose) {
+    userMenuClose.addEventListener("click", function() {
+      closeUserMenu();
+    });
+  }
+  
+  // Performance from user menu
+  const performanceItemUser = document.getElementById("performanceItemUser");
+  if (performanceItemUser) {
+    performanceItemUser.addEventListener("click", function() {
+      closeUserMenu();
+      displayPerformance();
+    });
+  }
+  
+  // Bookmarks from user menu - start a bookmarks-only quiz
+  const bookmarksFilterUser = document.getElementById("bookmarksFilterUser");
+  if (bookmarksFilterUser) {
+    bookmarksFilterUser.addEventListener("click", function(e) {
       e.preventDefault();
-      if (!confirm("Are you sure you want to reset ALL progress? This includes XP, level, streaks, answered questions, and review schedules. This cannot be undone.")) return;
-
-      if (!window.auth || !window.auth.currentUser || !window.db || !window.doc || !window.runTransaction) {
-        alert("System not ready. Please try again later."); return;
+      closeUserMenu();
+      
+      // Start a quiz with only bookmarked questions
+      loadQuestions({
+        bookmarksOnly: true,
+        num: 50 // Large number to include all bookmarks
+      });
+    });
+  }
+  
+  // Reset progress from user menu
+  const resetProgressUser = document.getElementById("resetProgressUser");
+  if (resetProgressUser) {
+    resetProgressUser.addEventListener("click", async function(e) {
+      e.preventDefault();
+      const confirmReset = confirm("Are you sure you want to reset all progress?");
+      if (!confirmReset) return;
+      
+      if (!window.auth || !window.auth.currentUser) {
+        alert("User not authenticated. Please try again later.");
+        return;
       }
+      
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
       try {
         await window.runTransaction(window.db, async (transaction) => {
-          transaction.set(userDocRef, { // Overwrite with default structure
-             username: (await getOrGenerateUsername()), // Keep/regenerate username
-             isRegistered: window.authState.isRegistered, // Keep registration status
-             createdAt: window.authState.user?.metadata?.creationTime || serverTimestamp(), // Keep original creation if poss.
-             updatedAt: serverTimestamp(),
-             // --- RESET THESE ---
-             answeredQuestions: {},
-             stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
-             streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
-             spacedRepetition: {},
-             bookmarks: [] // Also reset bookmarks? Or keep them? Decide and adjust. Assuming reset here.
-           }, { merge: false }); // Use set without merge to ensure full reset
+          const userDoc = await transaction.get(userDocRef);
+          if (userDoc.exists()) {
+            let data = userDoc.data();
+            data.answeredQuestions = {};
+            data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
+            data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+            transaction.set(userDocRef, data, { merge: true });
+          }
         });
         alert("Progress has been reset!");
-        // Refresh UI
-        if (typeof window.updateUserXP === 'function') window.updateUserXP();
-        if (typeof window.updateUserMenu === 'function') window.updateUserMenu();
-        if (typeof initializeDashboard === 'function') initializeDashboard();
+        if (typeof updateUserCompositeScore === 'function') {
+          updateUserCompositeScore();
+        }
+        window.updateUserMenu();
       } catch (error) {
         console.error("Error resetting progress:", error);
         alert("There was an error resetting your progress.");
       }
-      if (typeof closeUserMenu === 'function') closeUserMenu();
-  });
-   // Add Logout Listener dynamically in user-profile.js or auth.js when user state is known
-
-
-  // --- Quiz Setup Modals (Random & Custom) ---
-  // Moved START logic to setupDashboardEvents as modals are related to dashboard start button
-  // CANCEL buttons:
-  safelyAttachListener("cancelCustomQuiz", "click", function() {
+      closeUserMenu();
+    });
+  }
+  
+  // CUSTOM QUIZ BUTTON => show modal
+  const customQuizBtn = document.getElementById("customQuizBtn");
+  if (customQuizBtn) {
+    customQuizBtn.addEventListener("click", function() {
+      window.filterMode = "all";
+      closeSideMenu();
+      document.getElementById("aboutView").style.display = "none";
+      document.getElementById("faqView").style.display = "none";
+      document.getElementById("customQuizForm").style.display = "block";
+    });
+  }
+  
+  // RANDOM QUIZ BUTTON => show modal
+  const randomQuizBtn = document.getElementById("randomQuizBtn");
+  if (randomQuizBtn) {
+    randomQuizBtn.addEventListener("click", function() {
+      window.filterMode = "all";
+      closeSideMenu();
+      document.getElementById("aboutView").style.display = "none";
+      document.getElementById("faqView").style.display = "none";
+      document.getElementById("randomQuizForm").style.display = "block";
+    });
+  }
+  
+  // START QUIZ (Custom) => hide modal, load quiz
+  const startCustomQuiz = document.getElementById("startCustomQuiz");
+  if (startCustomQuiz) {
+    startCustomQuiz.addEventListener("click", function() {
+      const categorySelect = document.getElementById("categorySelect");
+      const customNumQuestions = document.getElementById("customNumQuestions");
+      const includeAnsweredCheckbox = document.getElementById("includeAnsweredCheckbox");
+      
+      let category = categorySelect ? categorySelect.value : "";
+      let numQuestions = customNumQuestions ? parseInt(customNumQuestions.value) || 10 : 10;
+      let includeAnswered = includeAnsweredCheckbox ? includeAnsweredCheckbox.checked : false;
+      
       const customQuizForm = document.getElementById("customQuizForm");
-      if (customQuizForm) customQuizForm.style.display = "none";
-  });
-  safelyAttachListener("cancelRandomQuiz", "click", function() {
+      if (customQuizForm) {
+        customQuizForm.style.display = "none";
+      }
+      
+      loadQuestions({
+        type: 'custom',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
+    });
+  }
+  
+  // CANCEL QUIZ (Custom)
+  const cancelCustomQuiz = document.getElementById("cancelCustomQuiz");
+  if (cancelCustomQuiz) {
+    cancelCustomQuiz.addEventListener("click", function() {
+      const customQuizForm = document.getElementById("customQuizForm");
+      if (customQuizForm) {
+        customQuizForm.style.display = "none";
+      }
+    });
+  }
+  
+  // START QUIZ (Random) => hide modal, load quiz
+  const startRandomQuiz = document.getElementById("startRandomQuiz");
+  if (startRandomQuiz) {
+    startRandomQuiz.addEventListener("click", function() {
+      const randomNumQuestions = document.getElementById("randomNumQuestions");
+      const includeAnsweredRandomCheckbox = document.getElementById("includeAnsweredRandomCheckbox");
+      
+      let numQuestions = randomNumQuestions ? parseInt(randomNumQuestions.value) || 10 : 10;
+      let includeAnswered = includeAnsweredRandomCheckbox ? includeAnsweredRandomCheckbox.checked : false;
+      
       const randomQuizForm = document.getElementById("randomQuizForm");
-      if (randomQuizForm) randomQuizForm.style.display = "none";
-  });
-
-  // --- In-Quiz Buttons (Icon Bar) ---
-  safelyAttachListener("feedbackButton", "click", function() { // Show Feedback Modal
-      const questionId = typeof getCurrentQuestionId === 'function' ? getCurrentQuestionId() : null;
+      if (randomQuizForm) {
+        randomQuizForm.style.display = "none";
+      }
+      
+      loadQuestions({
+        type: 'random',
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
+    });
+  }
+  
+  // CANCEL QUIZ (Random)
+  const cancelRandomQuiz = document.getElementById("cancelRandomQuiz");
+  if (cancelRandomQuiz) {
+    cancelRandomQuiz.addEventListener("click", function() {
+      const randomQuizForm = document.getElementById("randomQuizForm");
+      if (randomQuizForm) {
+        randomQuizForm.style.display = "none";
+      }
+    });
+  }
+  
+  // BOOKMARKS => now simply close the menu
+  const bookmarksFilter = document.getElementById("bookmarksFilter");
+  if (bookmarksFilter) {
+    bookmarksFilter.addEventListener("click", function(e) {
+      e.preventDefault();
+      closeSideMenu();
+    });
+  }
+  
+  // START NEW QUIZ from side menu
+  const startNewQuiz = document.getElementById("startNewQuiz");
+  if (startNewQuiz) {
+    startNewQuiz.addEventListener("click", function() {
+      closeSideMenu();
+      window.filterMode = "all";
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "flex";
+    });
+  }
+  
+  // LEADERBOARD
+  const leaderboardItem = document.getElementById("leaderboardItem");
+  if (leaderboardItem) {
+    leaderboardItem.addEventListener("click", function() {
+      closeSideMenu();
+      showLeaderboard();
+    });
+  }
+  
+  // FAQ
+  const faqItem = document.getElementById("faqItem");
+  if (faqItem) {
+    faqItem.addEventListener("click", function() {
+      closeSideMenu();
+      showFAQ();
+    });
+  }
+  
+  // ABOUT US
+  const aboutItem = document.getElementById("aboutItem");
+  if (aboutItem) {
+    aboutItem.addEventListener("click", function() {
+      closeSideMenu();
+      showAbout();
+    });
+  }
+  
+  // CONTACT US
+  const contactItem = document.getElementById("contactItem");
+  if (contactItem) {
+    contactItem.addEventListener("click", function() {
+      closeSideMenu();
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "none";
+      
+      showContactModal();
+    });
+  }
+  
+  // Side menu toggling - this is the crucial part that was causing the issue
+  const menuToggle = document.getElementById("menuToggle");
+  if (menuToggle) {
+    menuToggle.addEventListener("click", function() {
+      const sideMenu = document.getElementById("sideMenu");
+      const menuOverlay = document.getElementById("menuOverlay");
+      
+      if (sideMenu) sideMenu.classList.add("open");
+      if (menuOverlay) menuOverlay.classList.add("show");
+    });
+  }
+  
+  const menuClose = document.getElementById("menuClose");
+  if (menuClose) {
+    menuClose.addEventListener("click", function() {
+      closeSideMenu();
+    });
+  }
+  
+  const menuOverlay = document.getElementById("menuOverlay");
+  if (menuOverlay) {
+    menuOverlay.addEventListener("click", function() {
+      closeSideMenu();
+      closeUserMenu();
+    });
+  }
+  
+  // Logo click => go to main menu
+  const logoClick = document.getElementById("logoClick");
+  if (logoClick) {
+    logoClick.addEventListener("click", function() {
+      closeSideMenu();
+      closeUserMenu();
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "flex";
+    });
+  }
+  
+  // FEEDBACK button
+  const feedbackButton = document.getElementById("feedbackButton");
+  if (feedbackButton) {
+    feedbackButton.addEventListener("click", function() {
+      const questionId = getCurrentQuestionId();
+      const questionSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
       let questionText = "";
-      if (questionId){
-        const questionSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
-        if (questionSlide) {
-          const questionElem = questionSlide.querySelector(".question");
-          if (questionElem) questionText = questionElem.textContent.trim();
+      if (questionSlide) {
+        const questionElem = questionSlide.querySelector(".question");
+        if (questionElem) {
+          questionText = questionElem.textContent.trim();
         }
       }
-      window.currentFeedbackQuestionId = questionId || ""; // Use window scope if needed globally
-      window.currentFeedbackQuestionText = questionText || "";
-
+      currentFeedbackQuestionId = questionId || "";
+      currentFeedbackQuestionText = questionText || "";
+      
       const feedbackQuestionInfo = document.getElementById("feedbackQuestionInfo");
-      if (feedbackQuestionInfo) feedbackQuestionInfo.textContent = `Feedback for Q: ${window.currentFeedbackQuestionText}`;
-      const feedbackModal = document.getElementById("feedbackModal");
-      if (feedbackModal) feedbackModal.style.display = "flex";
-  });
-  safelyAttachListener("favoriteButton", "click", async function() { // Toggle Bookmark
-      const questionId = typeof getCurrentQuestionId === 'function' ? getCurrentQuestionId() : null;
-      if (!questionId) return;
-      if (typeof toggleBookmark !== 'function') { console.error("toggleBookmark function not found"); return; }
-
-      const isNowBookmarked = await toggleBookmark(questionId.trim());
-      const favButton = document.getElementById("favoriteButton"); // Re-get element just in case
-      if(favButton){
-          favButton.innerText = isNowBookmarked ? "★" : "☆";
-          favButton.style.color = isNowBookmarked ? "#007BFF" : "";
+      if (feedbackQuestionInfo) {
+        feedbackQuestionInfo.textContent = `Feedback for Q: ${currentFeedbackQuestionText}`;
       }
-  });
-
-  // --- Feedback Modal ---
-  safelyAttachListener("closeFeedbackModal", "click", function() {
+      
       const feedbackModal = document.getElementById("feedbackModal");
-      if (feedbackModal) feedbackModal.style.display = "none";
-  });
-   safelyAttachListener("submitFeedback", "click", async function() { // Submit Feedback
-      const feedbackTextElement = document.getElementById("feedbackText");
-      const feedbackText = feedbackTextElement ? feedbackTextElement.value.trim() : "";
-      if (!feedbackText) { alert("Please enter your feedback."); return; }
-      if (!window.db || !window.addDoc || !window.collection || !window.serverTimestamp) { alert("System not ready."); return; }
-
+      if (feedbackModal) {
+        feedbackModal.style.display = "flex";
+      }
+    });
+  }
+  
+  // FEEDBACK modal close
+  const closeFeedbackModal = document.getElementById("closeFeedbackModal");
+  if (closeFeedbackModal) {
+    closeFeedbackModal.addEventListener("click", function() {
+      const feedbackModal = document.getElementById("feedbackModal");
+      if (feedbackModal) {
+        feedbackModal.style.display = "none";
+      }
+    });
+  }
+  
+  // FEEDBACK submit
+  const submitFeedback = document.getElementById("submitFeedback");
+  if (submitFeedback) {
+    submitFeedback.addEventListener("click", async function() {
+      const feedbackText = document.getElementById("feedbackText");
+      if (!feedbackText || !feedbackText.value.trim()) {
+        alert("Please enter your feedback.");
+        return;
+      }
+      
       try {
         await window.addDoc(window.collection(window.db, "feedback"), {
-          questionId: window.currentFeedbackQuestionId || "",
-          questionText: window.currentFeedbackQuestionText || "",
-          feedback: feedbackText,
-          timestamp: window.serverTimestamp(),
-          userId: window.auth?.currentUser?.uid || "unknown" // Add user ID if possible
+          questionId: currentFeedbackQuestionId,
+          questionText: currentFeedbackQuestionText,
+          feedback: feedbackText.value.trim(),
+          timestamp: window.serverTimestamp()
         });
         alert("Thank you for your feedback!");
-        if (feedbackTextElement) feedbackTextElement.value = "";
+        
+        if (feedbackText) {
+          feedbackText.value = "";
+        }
+        
         const feedbackModal = document.getElementById("feedbackModal");
-        if (feedbackModal) feedbackModal.style.display = "none";
+        if (feedbackModal) {
+          feedbackModal.style.display = "none";
+        }
       } catch (error) {
         console.error("Error submitting feedback:", error);
-        alert("There was an error submitting your feedback.");
+        alert("There was an error submitting your feedback. Please try again later.");
       }
-  });
-
-  // --- Contact Modal ---
-  safelyAttachListener("closeContactModal", "click", function() {
-      const contactModal = document.getElementById("contactModal");
-      if (contactModal) contactModal.style.display = "none";
-  });
-   safelyAttachListener("submitContact", "click", async function() { // Submit Contact Form
-      const contactEmailElement = document.getElementById("contactEmail");
-      const contactMessageElement = document.getElementById("contactMessage");
-      const email = contactEmailElement ? contactEmailElement.value.trim() : "";
-      const message = contactMessageElement ? contactMessageElement.value.trim() : "";
-      if (!message) { alert("Please enter your message."); return; }
-      if (!window.auth || !window.auth.currentUser || !window.db || !window.addDoc || !window.collection || !window.serverTimestamp) { alert("System not ready."); return; }
-
+    });
+  }
+  
+  // FAVORITE button (bookmark functionality)
+  const favoriteButton = document.getElementById("favoriteButton");
+  if (favoriteButton) {
+    favoriteButton.addEventListener("click", async function() {
+      let questionId = getCurrentQuestionId();
+      if (!questionId) return;
+      
+      const wasToggled = await toggleBookmark(questionId.trim());
+      if (wasToggled) {
+        favoriteButton.innerText = "★";
+        favoriteButton.style.color = "#007BFF"; // Blue
+      } else {
+        favoriteButton.innerText = "☆";
+        favoriteButton.style.color = "";
+      }
+    });
+  }
+  
+  // CONTACT modal buttons
+  const submitContact = document.getElementById("submitContact");
+  if (submitContact) {
+    submitContact.addEventListener("click", async function() {
+      const contactEmail = document.getElementById("contactEmail");
+      const contactMessage = document.getElementById("contactMessage");
+      
+      const email = contactEmail ? contactEmail.value.trim() : "";
+      const message = contactMessage ? contactMessage.value.trim() : "";
+      
+      if (!message) {
+        alert("Please enter your message.");
+        return;
+      }
+      
       try {
+        if (!window.auth || !window.auth.currentUser) {
+          alert("User not authenticated. Please try again later.");
+          return;
+        }
+        
         await window.addDoc(window.collection(window.db, "contact"), {
-          email: email, // Include email even if empty
+          email: email,
           message: message,
           timestamp: window.serverTimestamp(),
           userId: window.auth.currentUser.uid
         });
         alert("Thank you for contacting us!");
-        if (contactEmailElement) contactEmailElement.value = "";
-        if (contactMessageElement) contactMessageElement.value = "";
+        
+        if (contactEmail) contactEmail.value = "";
+        if (contactMessage) contactMessage.value = "";
+        
         const contactModal = document.getElementById("contactModal");
-        if (contactModal) contactModal.style.display = "none";
+        if (contactModal) {
+          contactModal.style.display = "none";
+        }
       } catch (error) {
         console.error("Error submitting contact:", error);
-        alert("There was an error submitting your message.");
+        alert("There was an error submitting your message. Please try again later.");
       }
-  });
-
-  // Clean up stray "LEVEL UP" text on load (just in case)
-  const textNodes = document.querySelectorAll('body > *:not(script):not(style):not(link):not(meta)'); // More specific selector
+    });
+  }
+  
+  const closeContactModal = document.getElementById("closeContactModal");
+  if (closeContactModal) {
+    closeContactModal.addEventListener("click", function() {
+      const contactModal = document.getElementById("contactModal");
+      if (contactModal) {
+        contactModal.style.display = "none";
+      }
+    });
+  }
+  
+  // Clean up any existing LEVEL UP text on page load
+  const textNodes = document.querySelectorAll('body > *:not([id])');
   textNodes.forEach(node => {
-    if (node.nodeType === Node.TEXT_NODE && node.textContent && node.textContent.includes('LEVEL UP')) {
-      console.warn("Removing stray 'LEVEL UP' text node on load.");
+    if (node.textContent && node.textContent.includes('LEVEL UP')) {
       node.remove();
-    } else if (node.nodeType === Node.ELEMENT_NODE && node.id === '' && node.textContent && node.textContent.includes('LEVEL UP')) {
-       console.warn("Removing stray element potentially related to 'LEVEL UP' on load.");
-       node.remove();
     }
   });
-
-  // Initial UI Update attempt after slight delay for auth state
-   setTimeout(() => {
-       if (typeof window.updateUserXP === 'function') window.updateUserXP();
-       if (typeof window.updateUserMenu === 'function') window.updateUserMenu();
-       // Check streak on load after auth is likely settled
-       if (typeof checkAndUpdateStreak === 'function') checkAndUpdateStreak();
-   }, 1000); // Delay to allow auth state listener to potentially run first
-
 });
 
 // Function to update the level progress circles and bar
 function updateLevelProgress(percent) {
-  const progressValue = `${percent}%`;
-  // Helper to set style property if element exists
-  const setProgress = (id, value) => {
-     const element = document.getElementById(id);
-     if (element) element.style.setProperty('--progress', value);
-  };
-  const setWidth = (id, value) => {
-     const element = document.getElementById(id);
-     if (element) element.style.width = value;
+  // Update the level progress circles
+  const levelCircleProgress = document.getElementById("levelCircleProgress");
+  const userLevelProgress = document.getElementById("userLevelProgress");
+  
+  if (levelCircleProgress) {
+    levelCircleProgress.style.setProperty('--progress', `${percent}%`);
   }
-
-  setProgress("levelCircleProgress", progressValue);    // Top bar circle fill
-  setProgress("userLevelProgress", progressValue);      // User menu circle fill
-  setProgress("dashboardLevelProgress", progressValue); // Dashboard card circle fill
-  setWidth("levelProgressBar", progressValue);        // User menu horizontal bar
-  setWidth("dashboardReviewProgressBar", progressValue); // Review Queue progress bar (assuming ID) - NOTE: This ID might need verification
+  
+  if (userLevelProgress) {
+    userLevelProgress.style.setProperty('--progress', `${percent}%`);
+  }
+  
+  // Update the horizontal progress bar
+  const levelProgressBar = document.getElementById("levelProgressBar");
+  if (levelProgressBar) {
+    levelProgressBar.style.width = `${percent}%`;
+  }
 }
 
-// --- Global Helper Functions (Ensure these are defined or imported if needed elsewhere) ---
-// Example: Assuming these are defined in utils.js or elsewhere and available globally
-// function closeSideMenu() { ... }
-// function closeUserMenu() { ... }
-// function getCurrentQuestionId() { ... }
-// function showLeaderboard() { ... }
-// function showFAQ() { ... }
-// function showAbout() { ... }
-// function showContactModal() { ... }
-// function displayPerformance() { ... }
-// function loadQuestions() { ... }
-// function toggleBookmark() { ... }
+// Update user XP display function call
+window.addEventListener('load', function() {
+  // Call after Firebase auth is initialized
+  setTimeout(() => {
+    if (window.auth && window.auth.currentUser) {
+      if (typeof updateUserXP === 'function') {
+        updateUserXP();
+      } else if (typeof window.updateUserXP === 'function') {
+        window.updateUserXP();
+      }
+    }
+  }, 2000);
+});
 
-// --- END OF FILE app.js ---
+// Function to check if a user's streak should be reset due to inactivity
+async function checkAndUpdateStreak() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated yet");
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    
+    await window.runTransaction(window.db, async (transaction) => {
+      const userDoc = await transaction.get(userDocRef);
+      if (!userDoc.exists()) return;
+      
+      const data = userDoc.data();
+      if (!data.streaks || !data.streaks.lastAnsweredDate) return;
+      
+      const currentDate = new Date();
+      const lastDate = new Date(data.streaks.lastAnsweredDate);
+      
+      // Normalize dates to remove time component
+      const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const normalizedCurrent = normalizeDate(currentDate);
+      const normalizedLast = normalizeDate(lastDate);
+      
+      // Calculate difference in days
+      const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
+      
+      // If more than 1 day has passed, reset the streak
+      if (diffDays > 1) {
+        console.log("Streak reset due to inactivity. Days since last activity:", diffDays);
+        data.streaks.currentStreak = 0;
+        transaction.set(userDocRef, data, { merge: true });
+        
+        // Update UI to show reset streak
+        const currentStreakElement = document.getElementById("currentStreak");
+        if (currentStreakElement) {
+          currentStreakElement.textContent = "0";
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error checking streak:", error);
+  }
+}
+
+// Function to load leaderboard preview data - fixed for desktop view
+async function loadLeaderboardPreview() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for leaderboard preview");
+    return;
+  }
+  
+  const leaderboardPreview = document.getElementById("leaderboardPreview");
+  if (!leaderboardPreview) return;
+  
+  try {
+    const currentUid = window.auth.currentUser.uid;
+    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    let leaderboardEntries = [];
+    
+    querySnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.stats) {
+        // Use total XP instead of weekly XP calculation
+        let xp = data.stats.xp || 0;
+        
+        // Add user to leaderboard entries with their total XP
+        leaderboardEntries.push({
+          uid: docSnap.id,
+          username: data.username || "Anonymous",
+          xp: xp
+        });
+      }
+    });
+    
+    // Sort by XP (descending)
+    leaderboardEntries.sort((a, b) => b.xp - a.xp);
+    
+    // Get top 3
+    let top3 = leaderboardEntries.slice(0, 3);
+    
+    // Find current user's position if not in top 3
+    let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
+    let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
+    let showCurrentUser = currentUserRank > 3 && currentUserEntry;
+    
+    // Create HTML for the preview with well-structured entries
+    let html = '';
+    
+    // Remove the weekly indicator header
+    
+    // Add top 3 entries
+    if (top3.length === 0) {
+      html = '<div class="leaderboard-loading">No leaderboard data yet</div>';
+    } else {
+      top3.forEach((entry, index) => {
+        const isCurrentUser = entry.uid === currentUid;
+        const rank = index + 1;
+        
+        html += `
+          <div class="leaderboard-preview-entry ${isCurrentUser ? 'current-user-entry' : ''}">
+            <div class="leaderboard-rank leaderboard-rank-${rank}">${rank}</div>
+            <div class="leaderboard-user-info">
+              <div class="leaderboard-username">${entry.username}</div>
+              <div class="leaderboard-user-xp">${entry.xp} XP</div>
+            </div>
+          </div>
+        `;
+      });
+      
+      // Add current user's entry if not in top 3
+      if (showCurrentUser) {
+        html += `
+          <div class="leaderboard-preview-entry current-user-entry">
+            <div class="leaderboard-rank">${currentUserRank}</div>
+            <div class="leaderboard-user-info">
+              <div class="leaderboard-username">${currentUserEntry.username} (You)</div>
+              <div class="leaderboard-user-xp">${currentUserEntry.xp} XP</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    leaderboardPreview.innerHTML = html;
+    
+  } catch (error) {
+    console.error("Error loading leaderboard preview:", error);
+    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Error loading leaderboard</div>';
+  }
+}
+
+// Dashboard initialization and functionality
+async function initializeDashboard() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for dashboard");
+    setTimeout(initializeDashboard, 1000);
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      const stats = data.stats || {};
+      const streaks = data.streaks || { currentStreak: 0 };
+      
+      // Update level and XP display
+      const xp = stats.xp || 0;
+      const level = stats.level || 1;
+      const progress = calculateLevelProgress(xp);
+      
+      // Set level number
+      const dashboardLevel = document.getElementById("dashboardLevel");
+      if (dashboardLevel) {
+        dashboardLevel.textContent = level;
+      }
+      
+      // Set XP display
+      const dashboardXP = document.getElementById("dashboardXP");
+      if (dashboardXP) {
+        dashboardXP.textContent = `${xp} XP`;
+      }
+      
+      // Set next level info
+      const dashboardNextLevel = document.getElementById("dashboardNextLevel");
+      if (dashboardNextLevel) {
+        const levelInfo = getLevelInfo(level);
+        if (levelInfo.nextLevelXp) {
+          const xpNeeded = levelInfo.nextLevelXp - xp;
+          dashboardNextLevel.textContent = `${xpNeeded} XP to Level ${level + 1}`;
+        } else {
+          dashboardNextLevel.textContent = 'Max Level Reached!';
+        }
+      }
+      
+      // Update progress circle
+      const dashboardLevelProgress = document.getElementById("dashboardLevelProgress");
+      if (dashboardLevelProgress) {
+        dashboardLevelProgress.style.setProperty('--progress', `${progress}%`);
+      }
+      
+      // Update quick stats
+      const totalAnswered = stats.totalAnswered || 0;
+      const totalCorrect = stats.totalCorrect || 0;
+      const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+      
+      const dashboardAnswered = document.getElementById("dashboardAnswered");
+      if (dashboardAnswered) {
+        dashboardAnswered.textContent = totalAnswered;
+      }
+      
+      const dashboardAccuracy = document.getElementById("dashboardAccuracy");
+      if (dashboardAccuracy) {
+        dashboardAccuracy.textContent = `${accuracy}%`;
+      }
+      
+      // Update streak display
+      const currentStreak = document.getElementById("currentStreak");
+      if (currentStreak) {
+        currentStreak.textContent = streaks.currentStreak || 0;
+      }
+      
+      // Generate streak calendar
+      fixStreakCalendar(data.streaks);
+      
+      // Also load leaderboard preview
+      loadLeaderboardPreview();
+
+      // Also load review queue data
+      updateReviewQueue();
+    }
+  } catch (error) {
+    console.error("Error loading dashboard data:", error);
+  }
+}
+
+// Function to count questions due for review today
+async function countDueReviews() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for counting reviews");
+    return { dueCount: 0, nextReviewDate: null };
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (!userDocSnap.exists()) {
+      return { dueCount: 0, nextReviewDate: null };
+    }
+    
+    const data = userDocSnap.data();
+    const spacedRepetitionData = data.spacedRepetition || {};
+    
+    // Get current date (just the date portion, no time)
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Create tomorrow's date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    let dueCount = 0;
+    let nextReviewDate = null;
+    
+    // Loop through all questions in spaced repetition data
+    for (const questionId in spacedRepetitionData) {
+      const reviewData = spacedRepetitionData[questionId];
+      if (!reviewData || !reviewData.nextReviewDate) continue;
+      
+      const reviewDate = new Date(reviewData.nextReviewDate);
+      
+      // Check if review date is today or earlier by comparing just the date portions
+      const reviewDateOnly = new Date(reviewDate.getFullYear(), reviewDate.getMonth(), reviewDate.getDate());
+      
+      if (reviewDateOnly <= today) {
+        dueCount++;
+      } 
+      // Only consider dates AFTER today for "next review date"
+      else if (reviewDateOnly >= tomorrow && (!nextReviewDate || reviewDateOnly < nextReviewDate)) {
+        nextReviewDate = reviewDateOnly;
+      }
+    }
+    
+    return { dueCount, nextReviewDate };
+  } catch (error) {
+    console.error("Error counting due reviews:", error);
+    return { dueCount: 0, nextReviewDate: null };
+  }
+}
+
+// Function to update the Review Queue card in the dashboard
+async function updateReviewQueue() {
+  const reviewCount = document.getElementById("reviewCount");
+  const reviewQueueContent = document.getElementById("reviewQueueContent");
+  const reviewProgressBar = document.getElementById("reviewProgressBar");
+  
+  if (!reviewCount || !reviewQueueContent || !reviewProgressBar) return;
+  
+  // Get count of due reviews
+  const { dueCount, nextReviewDate } = await countDueReviews();
+  
+  if (dueCount > 0) {
+    // Update the count and progress bar
+    reviewCount.textContent = dueCount;
+    
+    // Simple progress calculation - assuming most people won't have more than 20 reviews
+    const progressPercent = Math.min(100, (dueCount / 20) * 100);
+    reviewProgressBar.style.width = `${progressPercent}%`;
+    
+    // Clear any previous empty state message
+    const existingEmptyState = reviewQueueContent.querySelector(".review-empty-state");
+    if (existingEmptyState) {
+      existingEmptyState.remove();
+    }
+  } else {
+    // No reviews due - show empty state
+    reviewCount.textContent = "0";
+    reviewProgressBar.style.width = "0%";
+    
+    // Check if empty state message already exists
+    let emptyState = reviewQueueContent.querySelector(".review-empty-state");
+    
+    if (!emptyState) {
+      // Create empty state message
+      emptyState = document.createElement("div");
+      emptyState.className = "review-empty-state";
+      
+      if (nextReviewDate) {
+        const formattedDate = nextReviewDate.toLocaleDateString();
+        emptyState.innerHTML = `No reviews due today.<br>Next review: <span class="next-review-date">${formattedDate}</span>`;
+      } else {
+        emptyState.textContent = "No reviews scheduled. Complete more quizzes to add reviews.";
+      }
+      
+      // Insert after review stats
+      const reviewStats = reviewQueueContent.querySelector(".review-stats");
+      if (reviewStats) {
+        reviewStats.insertAdjacentElement('afterend', emptyState);
+      } else {
+        reviewQueueContent.appendChild(emptyState);
+      }
+    }
+  }
+}
+
+// Set up event listeners for dashboard
+function setupDashboardEvents() {
+  // Start Quiz button
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  if (startQuizBtn) {
+    startQuizBtn.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "block";
+    });
+  }
+  
+  // Modal Start Quiz button
+  const modalStartQuiz = document.getElementById("modalStartQuiz");
+  if (modalStartQuiz) {
+    modalStartQuiz.addEventListener("click", function() {
+      const category = document.getElementById("modalCategorySelect").value;
+      const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
+      const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+      
+      document.getElementById("quizSetupModal").style.display = "none";
+
+      // Update this part to include the spaced repetition option
+      const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+      
+      loadQuestions({
+        type: category ? 'custom' : 'random',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered,
+        spacedRepetition: useSpacedRepetition
+      });
+    });
+  }
+  
+  // Modal Cancel button
+  const modalCancelQuiz = document.getElementById("modalCancelQuiz");
+  if (modalCancelQuiz) {
+    modalCancelQuiz.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "none";
+    });
+  }
+  
+  // User Progress card click - go to Performance
+  const userProgressCard = document.getElementById("userProgressCard");
+  if (userProgressCard) {
+    userProgressCard.addEventListener("click", function() {
+      displayPerformance();
+    });
+  }
+  
+  // Quick Stats card click - go to Performance
+  const quickStatsCard = document.getElementById("quickStatsCard");
+  if (quickStatsCard) {
+    quickStatsCard.addEventListener("click", function() {
+      displayPerformance();
+    });
+  }
+  
+  // Leaderboard Preview card click - go to Leaderboard
+  const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
+  if (leaderboardPreviewCard) {
+    leaderboardPreviewCard.addEventListener("click", function() {
+      showLeaderboard();
+    });
+  }
+  
+  // Review Queue card click - start review
+  const reviewQueueCard = document.getElementById("reviewQueueCard");
+  if (reviewQueueCard) {
+    reviewQueueCard.addEventListener("click", async function() {
+      // Get count of due reviews
+      const { dueCount } = await countDueReviews();
+      
+      if (dueCount === 0) {
+        alert("You have no questions due for review today. Good job!");
+        return;
+      }
+      
+      // We need to get the actual due question IDs
+      const dueQuestionIds = await getDueQuestionIds();
+      
+      if (dueQuestionIds.length === 0) {
+        alert("No questions found for review. Please try again later.");
+        return;
+      }
+      
+      // Load ONLY the specific due questions, not mixed with new questions
+      loadSpecificQuestions(dueQuestionIds);
+    });
+  }
+}
+
+// Function to fix streak calendar alignment
+function fixStreakCalendar(streaks) {
+  // Get the streak calendar element
+  const streakCalendar = document.getElementById("streakCalendar");
+  if (!streakCalendar) {
+    console.error("Streak calendar element not found");
+    return;
+  }
+  
+  // Clear existing circles
+  streakCalendar.innerHTML = '';
+  
+  // Get today's date
+  const today = new Date();
+  
+  // Convert JavaScript's day (0=Sunday, 6=Saturday) to our display format (0=Monday, 6=Sunday)
+  let todayDayIndex = today.getDay() - 1; // Convert from JS day to our index
+  if (todayDayIndex < 0) todayDayIndex = 6; // Handle Sunday (becomes 6)
+  
+  console.log("Today:", today);
+  console.log("Day of week (0=Sun, 6=Sat):", today.getDay());
+  console.log("Our day index (0=Mon, 6=Sun):", todayDayIndex);
+  
+  // Generate all the days of the week
+  for (let i = 0; i < 7; i++) {
+    // Calculate the date offset from today
+    // i is the position in our display (0=Monday, 6=Sunday)
+    // todayDayIndex is today's position in our display
+    const offset = i - todayDayIndex;
+    
+    // Create the date for this position
+    const date = new Date(today);
+    date.setDate(today.getDate() + offset);
+    
+    // Create the day circle
+    const dayCircle = document.createElement("div");
+    dayCircle.className = "day-circle";
+    
+    // If this is today, add the today class
+    if (offset === 0) {
+      dayCircle.classList.add("today");
+    }
+    
+    // Check if this day is active in the streak
+    if (streaks && streaks.currentStreak > 0) {
+      const dayDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+      if (dayDiff >= 0 && dayDiff < streaks.currentStreak) {
+        dayCircle.classList.add("active");
+      }
+    }
+    
+    // Set the date number as the content
+    dayCircle.textContent = date.getDate();
+    
+    // Add to the calendar
+    streakCalendar.appendChild(dayCircle);
+  }
+}
+
+// Initialize the app
+window.addEventListener('load', function() {
+  // Check streak after Firebase auth is initialized
+  const checkAuthAndInitAll = function() {
+    if (window.auth && window.auth.currentUser) {
+      checkAndUpdateStreak();
+      setupDashboardEvents();
+      initializeDashboard();
+    } else {
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndInitAll, 1000);
+    }
+  };
+  
+  // Start checking for auth
+  checkAuthAndInitAll();
+  
+  // Also try after a delay to ensure all DOM elements are ready
+  setTimeout(function() {
+    setupDashboardEvents();
+    initializeDashboard();
+  }, 2000);
+});
+
+// Function to get IDs of questions due for review
+async function getDueQuestionIds() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    return [];
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (!userDocSnap.exists()) {
+      return [];
+    }
+    
+    const data = userDocSnap.data();
+    const spacedRepetitionData = data.spacedRepetition || {};
+    
+    // Get current date (just the date portion, no time)
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    let dueQuestionIds = [];
+    
+    // Loop through all questions in spaced repetition data
+    for (const questionId in spacedRepetitionData) {
+      const reviewData = spacedRepetitionData[questionId];
+      if (!reviewData || !reviewData.nextReviewDate) continue;
+      
+      const reviewDate = new Date(reviewData.nextReviewDate);
+      
+      // Check if review date is today or earlier by comparing just the date portions
+      const reviewDateOnly = new Date(reviewDate.getFullYear(), reviewDate.getMonth(), reviewDate.getDate());
+      
+      if (reviewDateOnly <= today) {
+        dueQuestionIds.push(questionId);
+      }
+    }
+    
+    return dueQuestionIds;
+  } catch (error) {
+    console.error("Error getting due question IDs:", error);
+    return [];
+  }
+}
+
+// Function to load only specific questions by ID
+async function loadSpecificQuestions(questionIds) {
+  if (!questionIds || questionIds.length === 0) {
+    alert("No questions to review.");
+    return;
+  }
+  
+  console.log("Loading specific review questions:", questionIds.length);
+  
+  // Fetch all questions from CSV
+  Papa.parse(csvUrl, {
+    download: true,
+    header: true,
+    complete: function(results) {
+      console.log("All questions loaded:", results.data.length);
+      
+      // Filter only the questions that are due for review
+      const reviewQuestions = results.data.filter(q => 
+        questionIds.includes(q["Question"].trim())
+      );
+      
+      console.log("Filtered review questions:", reviewQuestions.length);
+      
+      if (reviewQuestions.length === 0) {
+        alert("No review questions found. This might be because questions have been removed from the question bank.");
+        return;
+      }
+      
+      // Shuffle the review questions for a better learning experience
+      const shuffledReviewQuestions = shuffleArray([...reviewQuestions]);
+      
+      // Initialize the quiz with only these specific review questions
+      initializeQuiz(shuffledReviewQuestions);
+    },
+    error: function(error) {
+      console.error("Error parsing CSV:", error);
+      alert("Error loading questions. Please try again later.");
+    }
+  });
+}
+// Add this helper function at the end of app.js
+function ensureEventListenersAttached() {
+  // This function makes sure key event listeners are attached
+  // Call this whenever dashboard is shown
+  
+  // Start Quiz button
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  if (startQuizBtn && !startQuizBtn._hasEventListener) {
+    startQuizBtn.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "block";
+    });
+    startQuizBtn._hasEventListener = true;
+  }
+  
+  // Check other important buttons
+  setupDashboardEvents();
+}
+
+// Then call this function when showing the dashboard after auth
+// in the auth state change listener
