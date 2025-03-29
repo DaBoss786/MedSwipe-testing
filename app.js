@@ -216,7 +216,6 @@ function showRegisterForm() {
         <small>Password must be at least 6 characters</small>
       </div>
       <div class="form-group terms-container">
-  <div class="form-group terms-container">
   <div class="terms-checkbox">
     <input type="checkbox" id="agreeTerms" required>
     <label for="agreeTerms">
@@ -1873,3 +1872,110 @@ function positionModals() {
 document.addEventListener('DOMContentLoaded', function() {
   positionModals();
 });
+
+// Function to ensure Terms and Privacy modals exist with your content
+function ensureTermsModalsExist() {
+  // Terms of Service Modal
+  if (!document.getElementById('termsOfServiceModal')) {
+    const tosModal = document.createElement('div');
+    tosModal.id = 'termsOfServiceModal';
+    tosModal.className = 'modal';
+    tosModal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Terms of Use – MedSwipe</h2>
+          <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+          <p><strong>Effective Date:</strong> [Insert date]</p>
+          <p>By using MedSwipe, you agree to the following terms:</p>
+          
+          <h3>Use of the App</h3>
+          <ul>
+            <li>MedSwipe is an educational tool for healthcare professionals. It does not provide medical advice.</li>
+            <li>You are responsible for keeping your login credentials secure.</li>
+          </ul>
+          
+          <h3>Intellectual Property</h3>
+          <ul>
+            <li>All app content (questions, explanations, analytics) is owned by MedSwipe and may not be copied, redistributed, or used for commercial purposes without permission.</li>
+          </ul>
+          
+          <h3>CME Disclaimer</h3>
+          <ul>
+            <li>CME credits are only available to registered users through eligible, accredited modules.</li>
+          </ul>
+          
+          <h3>Termination</h3>
+          <ul>
+            <li>We may suspend access to users who violate these terms or misuse the platform.</li>
+          </ul>
+          
+          <h3>Limitation of Liability</h3>
+          <ul>
+            <li>MedSwipe is not liable for decisions made based on app content. Always refer to professional guidelines and clinical judgment.</li>
+          </ul>
+          
+          <p><strong>Contact us:</strong> <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a></p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(tosModal);
+  }
+  
+  // Privacy Policy Modal
+  if (!document.getElementById('privacyPolicyModal')) {
+    const privacyModal = document.createElement('div');
+    privacyModal.id = 'privacyPolicyModal';
+    privacyModal.className = 'modal';
+    privacyModal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Privacy Policy – MedSwipe</h2>
+          <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+          <p><strong>Effective Date:</strong> [Insert date]</p>
+          <p>MedSwipe ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our app.</p>
+          
+          <h3>Information We Collect</h3>
+          <ul>
+            <li><strong>Personal Information:</strong> When you register or sign in using Apple, Google, or email, we collect your name (if provided), email address, and authentication token.</li>
+            <li><strong>Usage Data:</strong> We collect anonymous data on how you interact with the app (e.g., questions answered, categories used) to improve the user experience.</li>
+          </ul>
+          
+          <h3>How We Use Your Information</h3>
+          <ul>
+            <li>To create and manage your account</li>
+            <li>To track your learning progress and analytics</li>
+            <li>To improve app functionality and content</li>
+            <li>To communicate with you about app updates, features, or educational resources (you may unsubscribe at any time)</li>
+          </ul>
+          
+          <h3>Sharing</h3>
+          <ul>
+            <li>We do not sell or share your personal information with third parties, except trusted service providers like Firebase and analytics tools, solely for the purpose of delivering our services.</li>
+          </ul>
+          
+          <h3>Data Security</h3>
+          <ul>
+            <li>We use secure technologies and best practices to protect your data.</li>
+          </ul>
+          
+          <h3>Your Rights</h3>
+          <ul>
+            <li>You may request to access, modify, or delete your data by contacting us at <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a>.</li>
+          </ul>
+          
+          <h3>Changes to This Policy</h3>
+          <ul>
+            <li>We may update this policy periodically. Continued use of the app constitutes acceptance of any changes.</li>
+          </ul>
+          
+          <p><strong>Contact us:</strong> <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a></p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(privacyModal);
+  }
+}
