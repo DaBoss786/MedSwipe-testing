@@ -1,31 +1,9 @@
-// user-profile.js - Handle user profile UI elements
+// user-profile.js - Fixed version
 document.addEventListener('DOMContentLoaded', function() {
-  
-  // Update user profile UI based on auth state
+  // Update user profile UI based on auth state - without creating new UI elements
   function updateUserProfileUI(authState) {
-    const profileContainer = createUserProfileUI();
-    
-    if (!profileContainer) return;
-    
-    if (authState.isRegistered && authState.user) {
-      // User is registered - show profile
-      const userAvatar = profileContainer.querySelector('.user-avatar');
-      const userName = profileContainer.querySelector('.user-name');
-      
-      if (userAvatar && userName) {
-        // Get first letter of username or email
-        const displayName = authState.user.displayName || authState.user.email || 'User';
-        const initial = displayName.charAt(0).toUpperCase();
-        
-        userAvatar.textContent = initial;
-        userName.textContent = displayName;
-      }
-      
-      profileContainer.style.display = 'flex';
-    } else {
-      // User is not registered or not logged in - hide profile
-      profileContainer.style.display = 'none';
-    }
+    // We're skipping the profile creation since you don't want it
+    return;
   }
   
   // Update the user info section in the user menu
