@@ -328,6 +328,8 @@ function showRegisterForm() {
   registerModal.style.display = 'flex';
 }
 
+window.showRegisterForm = showRegisterForm;
+
 // Helper function to get user-friendly error messages
 function getAuthErrorMessage(error) {
   const errorCode = error.code;
