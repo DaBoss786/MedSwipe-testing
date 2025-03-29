@@ -160,9 +160,21 @@ function showLoginForm(fromWelcomeScreen = false) {
     });
     
     document.getElementById('createAccountBtn').addEventListener('click', function() {
-      loginModal.style.display = 'none';
-      showRegisterForm();
-    });
+  loginModal.style.display = 'none';
+  
+  // Check if the function exists and call it
+  if (typeof showRegisterForm === 'function') {
+    showRegisterForm();
+  } else {
+    // If the function doesn't exist, try to find it on the window object
+    if (typeof window.showRegisterForm === 'function') {
+      window.showRegisterForm();
+    } else {
+      console.error("Registration form function not found");
+      alert("Sorry, there was an error accessing the registration form. Please try again later.");
+    }
+  }
+});
     
     document.getElementById('closeLoginBtn').addEventListener('click', function() {
       loginModal.style.display = 'none';
