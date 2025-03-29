@@ -2027,3 +2027,58 @@ function getResetErrorMessage(error) {
       return error.message || 'An error occurred. Please try again.';
   }
 }
+
+// Make the function global so it's accessible everywhere
+window.showForgotPasswordModal = function() {
+  ensureForgotPasswordModalExists(); // Make sure the modal exists
+  
+  const modal = document.getElementById('forgotPasswordModal');
+  if (modal) {
+    // Reset form and messages
+    const form = document.getElementById('forgotPasswordForm');
+    const resetMessage = document.getElementById('resetMessage');
+    const resetEmailError = document.getElementById('resetEmailError');
+    
+    if (form) form.reset();
+    if (resetMessage) resetMessage.textContent = '';
+    if (resetMessage) resetMessage.className = 'reset-message';
+    if (resetEmailError) resetEmailError.textContent = '';
+    
+    // Show the modal
+    modal.style.display = 'flex';
+  }
+};
+
+// Add a direct event listener when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+  // Ensure our modal exists as soon as the page loads
+  ensureForgotPasswordModalExists();
+  
+  // Find the forgot password link
+  const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+  
+  // If found, add a direct click handler
+  if (forgotPasswordLink) {
+    // Remove any existing listeners first to avoid duplication
+    forgotPasswordLink.replaceWith(forgotPasswordLink.cloneNode(true));
+    
+    // Get fresh reference after replacing
+    const newForgotPasswordLink = document.getElementById('forgotPasswordLink');
+    
+    // Add our listener
+    newForgotPasswordLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('Forgot password link clicked');
+      
+      // Directly show the modal
+      window.showForgotPasswordModal();
+      
+      // Return false to stop any other handlers
+      return false;
+    });
+    
+    console.log('Forgot password link handler attached');
+  } else {
+    console.log('Forgot password link not found in DOM');
+  }
+});
