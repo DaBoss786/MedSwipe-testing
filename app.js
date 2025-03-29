@@ -215,6 +215,16 @@ function showRegisterForm() {
         <input type="password" id="registerPassword" required minlength="6">
         <small>Password must be at least 6 characters</small>
       </div>
+      <div class="form-group terms-container">
+  <div class="terms-checkbox">
+    <input type="checkbox" id="agreeTerms" required>
+    <label for="agreeTerms">
+      I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and 
+      <a href="#" id="registerViewPrivacy">Privacy Policy</a>
+    </label>
+  </div>
+  <div class="form-error" id="termsError"></div>
+</div>
       <div class="auth-buttons">
         <button type="submit" class="auth-primary-btn">Create Account</button>
         <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
