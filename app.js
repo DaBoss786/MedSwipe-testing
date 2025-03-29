@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     welcomeScreen.style.opacity = '0';
   }
   
-  // Update the auth state change handler
+  // Update the auth state change listener to properly handle welcome screen
 window.addEventListener('authStateChanged', function(event) {
   console.log('Auth state changed in app.js:', event.detail);
   
@@ -30,6 +30,9 @@ window.addEventListener('authStateChanged', function(event) {
         setTimeout(function() {
           splashScreen.style.display = 'none';
           
+          // First ensure all screens are properly hidden regardless of auth state
+          ensureAllScreensHidden();
+          
           if (event.detail.isRegistered) {
             // Registered user - go straight to dashboard
             console.log('User is registered, showing dashboard');
@@ -41,9 +44,10 @@ window.addEventListener('authStateChanged', function(event) {
               }, 100);
             }
           } else {
-            // Guest user - show welcome screen
+            // Guest user - show welcome screen properly
             console.log('User is guest, showing welcome screen');
             if (welcomeScreen) {
+              welcomeScreen.style.display = 'flex';
               welcomeScreen.style.opacity = '1';
             }
           }
@@ -1473,10 +1477,12 @@ function ensureEventListenersAttached() {
   setupDashboardEvents();
 }
 
-// Add this enhanced function to app.js
+// Update the forceReinitializeDashboard function
 function forceReinitializeDashboard() {
   console.log("Force reinitializing dashboard...");
-  setTimeout(debugOverlays, 300);
+  
+  // First, ensure all screens are properly hidden
+  ensureAllScreensHidden();
   
   // 1. Check for any overlays that might be active and remove them
   const menuOverlay = document.getElementById("menuOverlay");
@@ -1488,6 +1494,10 @@ function forceReinitializeDashboard() {
   // 2. Force a redraw/layout recalculation of the dashboard
   const mainOptions = document.getElementById("mainOptions");
   if (mainOptions) {
+    // Make sure the mainOptions has a lower z-index than any potential overlays
+    mainOptions.style.zIndex = "1";
+    mainOptions.style.position = "relative";
+    
     // Temporarily hide and show to force a repaint
     const display = mainOptions.style.display;
     mainOptions.style.display = 'none';
@@ -1496,15 +1506,14 @@ function forceReinitializeDashboard() {
     setTimeout(() => {
       mainOptions.style.display = display || 'flex';
       
-      // 3. Fix any potential positioning issues
-      mainOptions.style.position = 'relative';
-      mainOptions.style.zIndex = '1';
-      
       console.log("Dashboard redraw complete, attaching event listeners...");
       
       // 4. Reattach all event listeners
       setTimeout(() => {
         setupDashboardEventListenersExplicitly();
+        
+        // Debug overlays after setup is complete
+        setTimeout(debugOverlays, 200);
       }, 50);
     }, 50);
   }
@@ -1637,6 +1646,28 @@ function debugOverlays() {
     const zIndex = window.getComputedStyle(el).zIndex;
     if (zIndex !== 'auto' && zIndex > 10) {
       console.log('High z-index element:', el, 'z-index:', zIndex);
+    }
+  });
+}
+
+// Add this function to your app.js to properly hide all screens
+function ensureAllScreensHidden() {
+  console.log("Ensuring all screens are properly hidden...");
+  
+  // Get all potential overlay screens
+  const screens = [
+    document.getElementById("welcomeScreen"),
+    document.getElementById("loginScreen"),
+    document.getElementById("splashScreen")
+  ];
+  
+  // Properly hide all screens
+  screens.forEach(screen => {
+    if (screen) {
+      // Both set display to none AND set opacity to 0
+      screen.style.display = 'none';
+      screen.style.opacity = '0';
+      console.log(`Hiding screen: ${screen.id}`);
     }
   });
 }
