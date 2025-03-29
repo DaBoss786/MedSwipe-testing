@@ -1476,6 +1476,7 @@ function ensureEventListenersAttached() {
 // Add this enhanced function to app.js
 function forceReinitializeDashboard() {
   console.log("Force reinitializing dashboard...");
+  setTimeout(debugOverlays, 300);
   
   // 1. Check for any overlays that might be active and remove them
   const menuOverlay = document.getElementById("menuOverlay");
@@ -1615,4 +1616,27 @@ function setupDashboardEventListenersExplicitly() {
   }
   
   console.log("All dashboard event listeners explicitly attached");
+}
+
+// Add this function to app.js
+function debugOverlays() {
+  console.log("Debugging overlays...");
+  
+  // Temporary debugging code to highlight overlays
+  document.querySelectorAll('*').forEach(el => {
+    if (window.getComputedStyle(el).position === 'fixed' && 
+        el.id !== 'mainOptions' && 
+        !el.classList.contains('toolbar')) {
+      el.style.backgroundColor = 'rgba(255,0,0,0.2)';
+      console.log('Potential overlay:', el);
+    }
+  });
+  
+  // Also debug z-index values
+  document.querySelectorAll('*').forEach(el => {
+    const zIndex = window.getComputedStyle(el).zIndex;
+    if (zIndex !== 'auto' && zIndex > 10) {
+      console.log('High z-index element:', el, 'z-index:', zIndex);
+    }
+  });
 }
