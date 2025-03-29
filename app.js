@@ -89,7 +89,7 @@ window.addEventListener('authStateChanged', function(event) {
         welcomeScreen.style.display = 'none';
         
         // Show the login form with back button (true = from welcome screen)
-        window.showLoginForm(true);
+        showLoginForm(true);
       }, 500);
     }
   });
@@ -98,7 +98,6 @@ window.addEventListener('authStateChanged', function(event) {
 
 // Function to show the login form modal
 function showLoginForm(fromWelcomeScreen = false) {
-  window.showLoginForm = function(fromWelcomeScreen = false) {
   // Create login modal if it doesn't exist
   let loginModal = document.getElementById('loginModal');
   
@@ -161,15 +160,21 @@ function showLoginForm(fromWelcomeScreen = false) {
     });
     
     document.getElementById('createAccountBtn').addEventListener('click', function() {
-      console.log("Create account button clicked");
-      loginModal.style.display = 'none';
+  loginModal.style.display = 'none';
+  
+  // Check if the function exists and call it
+  if (typeof showRegisterForm === 'function') {
+    showRegisterForm();
+  } else {
+    // If the function doesn't exist, try to find it on the window object
+    if (typeof window.showRegisterForm === 'function') {
       window.showRegisterForm();
-    });
-    
-    document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
-      e.preventDefault();
-      showForgotPasswordModal();
-    });
+    } else {
+      console.error("Registration form function not found");
+      alert("Sorry, there was an error accessing the registration form. Please try again later.");
+    }
+  }
+});
     
     document.getElementById('closeLoginBtn').addEventListener('click', function() {
       loginModal.style.display = 'none';
@@ -213,11 +218,11 @@ function showLoginForm(fromWelcomeScreen = false) {
   
   // Show the modal
   loginModal.style.display = 'flex';
-};
+}
 
 // Function to show the registration form modal
-window.showRegisterForm = function() {
-  // Let's create registration modal if it doesn't exist
+function showRegisterForm() {
+  // Create registration modal if it doesn't exist
   let registerModal = document.getElementById('registerModal');
   
   if (!registerModal) {
@@ -226,54 +231,54 @@ window.showRegisterForm = function() {
     registerModal.className = 'auth-modal';
     
     registerModal.innerHTML = `
-      <div class="auth-modal-content">
-        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
-        <h2>Create MedSwipe Account</h2>
-        <div id="registerError" class="auth-error"></div>
-        <form id="registerForm">
-          <div class="form-group">
-            <label for="registerUsername">Username</label>
-            <input type="text" id="registerUsername" required>
-          </div>
-          <div class="form-group">
-            <label for="registerExperience">Experience Level</label>
-            <select id="registerExperience" required>
-              <option value="" disabled selected>Select your experience level</option>
-              <option value="Medical Student">Medical Student</option>
-              <option value="PGY 1-2">PGY 1-2</option>
-              <option value="PGY 3-4">PGY 3-4</option>
-              <option value="PGY 5+">PGY 5+</option>
-              <option value="Attending">Attending</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="registerEmail">Email</label>
-            <input type="email" id="registerEmail" required>
-          </div>
-          <div class="form-group">
-            <label for="registerPassword">Password</label>
-            <input type="password" id="registerPassword" required minlength="6">
-            <small>Password must be at least 6 characters</small>
-          </div>
-          <div class="form-group terms-container">
-            <div class="terms-checkbox">
-              <input type="checkbox" id="agreeTerms" required>
-              <label for="agreeTerms">
-                I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and 
-                <a href="#" id="registerViewPrivacy">Privacy Policy</a>
-              </label>
-            </div>
-            <div class="form-error" id="termsError"></div>
-          </div>
-          <div class="auth-buttons">
-            <button type="submit" class="auth-primary-btn">Create Account</button>
-            <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
-          </div>
-        </form>
-        <button id="closeRegisterBtn" class="auth-close-btn">×</button>
+  <div class="auth-modal-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
+    <h2>Create MedSwipe Account</h2>
+    <div id="registerError" class="auth-error"></div>
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="registerUsername">Username</label>
+        <input type="text" id="registerUsername" required>
       </div>
-    `;
+      <div class="form-group">
+        <label for="registerExperience">Experience Level</label>
+        <select id="registerExperience" required>
+          <option value="" disabled selected>Select your experience level</option>
+          <option value="Medical Student">Medical Student</option>
+          <option value="PGY 1-2">PGY 1-2</option>
+          <option value="PGY 3-4">PGY 3-4</option>
+          <option value="PGY 5+">PGY 5+</option>
+          <option value="Attending">Attending</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="registerEmail">Email</label>
+        <input type="email" id="registerEmail" required>
+      </div>
+      <div class="form-group">
+        <label for="registerPassword">Password</label>
+        <input type="password" id="registerPassword" required minlength="6">
+        <small>Password must be at least 6 characters</small>
+      </div>
+      <div class="form-group terms-container">
+  <div class="terms-checkbox">
+    <input type="checkbox" id="agreeTerms" required>
+    <label for="agreeTerms">
+      I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and 
+      <a href="#" id="registerViewPrivacy">Privacy Policy</a>
+    </label>
+  </div>
+  <div class="form-error" id="termsError"></div>
+</div>
+      <div class="auth-buttons">
+        <button type="submit" class="auth-primary-btn">Create Account</button>
+        <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
+      </div>
+    </form>
+    <button id="closeRegisterBtn" class="auth-close-btn">×</button>
+  </div>
+`;
     
     document.body.appendChild(registerModal);
     
@@ -285,21 +290,11 @@ window.showRegisterForm = function() {
       const email = document.getElementById('registerEmail').value;
       const password = document.getElementById('registerPassword').value;
       const experience = document.getElementById('registerExperience').value;
-      const agreeTerms = document.getElementById('agreeTerms').checked;
       const errorElement = document.getElementById('registerError');
-      const termsError = document.getElementById('termsError');
-      
-      // Clear previous errors
-      errorElement.textContent = '';
-      termsError.textContent = '';
-      
-      // Validate terms agreement
-      if (!agreeTerms) {
-        termsError.textContent = 'You must agree to the Terms of Service and Privacy Policy';
-        return;
-      }
       
       try {
+        errorElement.textContent = '';
+        
         if (window.authState.user && window.authState.user.isAnonymous) {
           // Upgrade anonymous user
           await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
@@ -320,29 +315,18 @@ window.showRegisterForm = function() {
     
     document.getElementById('goToLoginBtn').addEventListener('click', function() {
       registerModal.style.display = 'none';
-      window.showLoginForm();
+      showLoginForm();
     });
     
     document.getElementById('closeRegisterBtn').addEventListener('click', function() {
       registerModal.style.display = 'none';
       document.getElementById('mainOptions').style.display = 'flex';
     });
-    
-    // Handle TOS and Privacy links
-    document.getElementById('registerViewTOS').addEventListener('click', function(e) {
-      e.preventDefault();
-      document.getElementById('termsOfServiceModal').style.display = 'flex';
-    });
-    
-    document.getElementById('registerViewPrivacy').addEventListener('click', function(e) {
-      e.preventDefault();
-      document.getElementById('privacyPolicyModal').style.display = 'flex';
-    });
   }
   
   // Show the modal
   registerModal.style.display = 'flex';
-};
+}
 
 // Helper function to get user-friendly error messages
 function getAuthErrorMessage(error) {
