@@ -3283,3 +3283,50 @@ html, body {
     font-size: 1rem;
   }
 }
+
+/* Forgot Password Modal Styling */
+.form-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.reset-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  min-height: 20px;
+}
+
+.reset-message.success {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.reset-message.error {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* Loader for password reset */
+.reset-loader {
+  display: none;
+  margin: 10px auto;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #0C72D3;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
