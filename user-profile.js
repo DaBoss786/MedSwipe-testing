@@ -1,41 +1,5 @@
 // user-profile.js - Handle user profile UI elements
 document.addEventListener('DOMContentLoaded', function() {
-  // Create user profile container for toolbar
-  function createUserProfileUI() {
-    const toolbarRight = document.querySelector('.toolbar-right');
-    
-    if (!toolbarRight) return;
-    
-    // Check if element already exists
-    let profileContainer = document.querySelector('.user-profile-container');
-    
-    if (!profileContainer) {
-      // Create new container
-      profileContainer = document.createElement('div');
-      profileContainer.className = 'user-profile-container';
-      profileContainer.style.display = 'none'; // Hidden initially
-      
-      profileContainer.innerHTML = `
-        <div class="user-avatar"></div>
-        <div class="user-name"></div>
-      `;
-      
-      // Add to beginning of toolbar-right
-      toolbarRight.insertBefore(profileContainer, toolbarRight.firstChild);
-      
-      // Add click handler for user menu
-      profileContainer.addEventListener('click', function() {
-        const userMenu = document.getElementById("userMenu");
-        const menuOverlay = document.getElementById("menuOverlay");
-        if (userMenu && menuOverlay) {
-          userMenu.classList.add("open");
-          menuOverlay.classList.add("show");
-        }
-      });
-    }
-    
-    return profileContainer;
-  }
   
   // Update user profile UI based on auth state
   function updateUserProfileUI(authState) {
