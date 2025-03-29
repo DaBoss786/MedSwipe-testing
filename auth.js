@@ -185,8 +185,14 @@ async function logoutUser() {
   const auth = window.auth;
   
   try {
+    // First clean up UI elements
+    await cleanupOnLogout();
+    
+    // Then sign out
     await signOut(auth);
     // Will automatically sign in anonymously due to our auth state listener
+    
+    console.log("User logged out successfully");
   } catch (error) {
     console.error("Error signing out:", error);
     throw error;
