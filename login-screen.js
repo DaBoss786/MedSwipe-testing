@@ -174,12 +174,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Handle forgot password
-  function handleForgotPassword(e) {
-    e.preventDefault();
-    alert('Password reset functionality will be implemented in a future update.');
-    // TODO: Implement password reset functionality
+  // REPLACE it with this updated function:
+function handleForgotPassword(e) {
+  e.preventDefault();
+  // Show the forgot password modal instead of the alert
+  showForgotPasswordModal();
+}
+
+// Make sure this function is defined
+function showForgotPasswordModal() {
+  const modal = document.getElementById('forgotPasswordModal');
+  if (modal) {
+    // Reset form and messages
+    const form = document.getElementById('forgotPasswordForm');
+    const resetMessage = document.getElementById('resetMessage');
+    const resetEmailError = document.getElementById('resetEmailError');
+    
+    if (form) form.reset();
+    if (resetMessage) resetMessage.textContent = '';
+    if (resetMessage) resetMessage.className = 'reset-message';
+    if (resetEmailError) resetEmailError.textContent = '';
+    
+    // Show the modal
+    modal.style.display = 'flex';
   }
+}
   
   // Handle create account
   function handleCreateAccount() {
