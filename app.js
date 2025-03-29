@@ -77,17 +77,28 @@ window.addEventListener('authStateChanged', function(event) {
 
   if (existingAccountBtn) {
     existingAccountBtn.addEventListener('click', function() {
-      welcomeScreen.style.opacity = '0';
-      setTimeout(function() {
-        welcomeScreen.style.display = 'none';
-        // Show the new login screen instead of the old modal
-        if (typeof window.showLoginScreen === 'function') {
-          window.showLoginScreen();
-        } else {
-          // Fallback to the old login form if the new one isn't available
-          showLoginForm();
-        }
-      }, 500);
+      console.log("'I already have an account' button clicked");
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      const loginScreen = document.getElementById('loginScreen');
+      
+      if (welcomeScreen && loginScreen) {
+        // Fade out welcome screen
+        welcomeScreen.style.opacity = '0';
+        
+        setTimeout(function() {
+          // Hide welcome screen
+          welcomeScreen.style.display = 'none';
+          
+          // Show login screen - but do NOT call ensureAllScreensHidden here
+          loginScreen.style.display = 'flex';
+          
+          // Use setTimeout to ensure a smooth transition
+          setTimeout(function() {
+            loginScreen.style.opacity = '1';
+            console.log("Login screen should now be visible");
+          }, 50);
+        }, 500);
+      }
     });
   }
 });
@@ -1674,8 +1685,8 @@ function debugOverlays() {
 }
 
 // Add this function to your app.js to properly hide all screens
-function ensureAllScreensHidden() {
-  console.log("Ensuring all screens are properly hidden...");
+function ensureAllScreensHidden(exceptScreenId) {
+  console.log(`Ensuring all screens are properly hidden (except: ${exceptScreenId || 'none'})...`);
   
   // Get all potential overlay screens
   const screens = [
@@ -1684,13 +1695,15 @@ function ensureAllScreensHidden() {
     document.getElementById("splashScreen")
   ];
   
-  // Properly hide all screens
+  // Properly hide all screens except the specified one
   screens.forEach(screen => {
-    if (screen) {
+    if (screen && screen.id !== exceptScreenId) {
       // Both set display to none AND set opacity to 0
       screen.style.display = 'none';
       screen.style.opacity = '0';
       console.log(`Hiding screen: ${screen.id}`);
+    } else if (screen && screen.id === exceptScreenId) {
+      console.log(`Keeping screen visible: ${screen.id}`);
     }
   });
 }
