@@ -131,6 +131,9 @@ function showLoginForm() {
         <button type="submit" class="auth-primary-btn">Log In</button>
         <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
       </div>
+      <div style="text-align: center; margin-top: 15px;">
+        <a href="#" id="forgotPasswordLink" style="color: #0056b3; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
+      </div>
     </form>
     <button id="closeLoginBtn" class="auth-close-btn">×</button>
   </div>
@@ -2027,3 +2030,18 @@ function getResetErrorMessage(error) {
       return error.message || 'An error occurred. Please try again.';
   }
 }
+
+// Fix for main login screen
+document.addEventListener('DOMContentLoaded', function() {
+  // Look for the forgot password link on the main login screen
+  const mainLoginForgotPwLink = document.querySelector('#loginScreen a[href="#forgotPassword"]');
+  
+  if (mainLoginForgotPwLink) {
+    // Replace the current click handler with one that uses the actual reset functionality
+    mainLoginForgotPwLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Use the existing password reset functionality
+      showForgotPasswordModal();
+    });
+  }
+});
