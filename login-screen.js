@@ -175,10 +175,28 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // REPLACE it with this updated function:
+// Replace it with this function
 function handleForgotPassword(e) {
   e.preventDefault();
-  // Show the forgot password modal instead of the alert
-  showForgotPasswordModal();
+  console.log('Forgot password handler in login-screen.js');
+  
+  // Use the global function if available, otherwise fall back to the modal
+  if (typeof window.showForgotPasswordModal === 'function') {
+    window.showForgotPasswordModal();
+  } else {
+    // Find the modal
+    const modal = document.getElementById('forgotPasswordModal');
+    if (modal) {
+      modal.style.display = 'flex';
+    } else {
+      console.log('Modal not found, falling back to alert');
+      alert('Forgot password functionality is loading. Please try again in a moment.');
+    }
+  }
+  
+  // Prevent any other handlers from running
+  e.stopPropagation();
+  return false;
 }
 
 // Make sure this function is defined
