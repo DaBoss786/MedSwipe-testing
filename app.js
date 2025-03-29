@@ -160,43 +160,44 @@ function showRegisterForm() {
     registerModal.className = 'auth-modal';
     
     registerModal.innerHTML = `
-      <div class="auth-modal-content">
-        <h2>Create MedSwipe Account</h2>
-        <div id="registerError" class="auth-error"></div>
-        <form id="registerForm">
-          <div class="form-group">
-            <label for="registerUsername">Username</label>
-            <input type="text" id="registerUsername" required>
-          </div>
-          <div class="form-group">
-            <label for="registerEmail">Email</label>
-            <input type="email" id="registerEmail" required>
-          </div>
-          <div class="form-group">
-            <label for="registerPassword">Password</label>
-            <input type="password" id="registerPassword" required minlength="6">
-            <small>Password must be at least 6 characters</small>
-          </div>
-          <div class="form-group">
-            <label for="registerExperience">Experience Level</label>
-            <select id="registerExperience" required>
-              <option value="" disabled selected>Select your experience level</option>
-              <option value="Medical Student">Medical Student</option>
-              <option value="PGY 1-2">PGY 1-2</option>
-              <option value="PGY 3-4">PGY 3-4</option>
-              <option value="PGY 5+">PGY 5+</option>
-              <option value="Attending">Attending</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="auth-buttons">
-            <button type="submit" class="auth-primary-btn">Create Account</button>
-            <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
-          </div>
-        </form>
-        <button id="closeRegisterBtn" class="auth-close-btn">×</button>
+  <div class="auth-modal-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
+    <h2>Create MedSwipe Account</h2>
+    <div id="registerError" class="auth-error"></div>
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="registerUsername">Username</label>
+        <input type="text" id="registerUsername" required>
       </div>
-    `;
+      <div class="form-group">
+        <label for="registerExperience">Experience Level</label>
+        <select id="registerExperience" required>
+          <option value="" disabled selected>Select your experience level</option>
+          <option value="Medical Student">Medical Student</option>
+          <option value="PGY 1-2">PGY 1-2</option>
+          <option value="PGY 3-4">PGY 3-4</option>
+          <option value="PGY 5+">PGY 5+</option>
+          <option value="Attending">Attending</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="registerEmail">Email</label>
+        <input type="email" id="registerEmail" required>
+      </div>
+      <div class="form-group">
+        <label for="registerPassword">Password</label>
+        <input type="password" id="registerPassword" required minlength="6">
+        <small>Password must be at least 6 characters</small>
+      </div>
+      <div class="auth-buttons">
+        <button type="submit" class="auth-primary-btn">Create Account</button>
+        <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
+      </div>
+    </form>
+    <button id="closeRegisterBtn" class="auth-close-btn">×</button>
+  </div>
+`;
     
     document.body.appendChild(registerModal);
     
