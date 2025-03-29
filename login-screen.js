@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle create account
   function handleCreateAccount() {
     hideLoginScreen();
-    showRegisterForm();
+    window.showRegisterForm(); // Access the function through the window object
   }
   
   // Handle continue as guest
