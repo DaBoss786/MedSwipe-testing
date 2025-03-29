@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(function() {
         welcomeScreen.style.display = 'none';
         mainOptions.style.display = 'flex';
+        ensureEventListenersAttached(); // Add this line
       }, 500);
     });
   }
@@ -130,6 +131,7 @@ function showLoginForm() {
         // Success - close modal and show dashboard
         loginModal.style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
+        ensureEventListenersAttached(); // Add this line
       } catch (error) {
         // Show error message
         errorElement.textContent = getAuthErrorMessage(error);
@@ -227,6 +229,7 @@ function showRegisterForm() {
         // Success - close modal and show dashboard
         registerModal.style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
+        ensureEventListenersAttached(); // Add this line
       } catch (error) {
         // Show error message
         errorElement.textContent = getAuthErrorMessage(error);
@@ -1449,3 +1452,20 @@ function ensureEventListenersAttached() {
 
 // Then call this function when showing the dashboard after auth
 // in the auth state change listener
+
+function ensureEventListenersAttached() {
+  // This function makes sure key event listeners are attached
+  // Call this whenever dashboard is shown
+  
+  // Start Quiz button
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  if (startQuizBtn && !startQuizBtn._hasEventListener) {
+    startQuizBtn.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "block";
+    });
+    startQuizBtn._hasEventListener = true;
+  }
+  
+  // Check other important buttons
+  setupDashboardEvents();
+}
