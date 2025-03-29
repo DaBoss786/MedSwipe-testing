@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -44,6 +44,7 @@ window.signInWithEmailAndPassword = signInWithEmailAndPassword;
 window.signInAnonymously = signInAnonymously;
 window.signOut = signOut;
 window.updateProfile = updateProfile;
+window.sendPasswordResetEmail = sendPasswordResetEmail;
 
 // Once Firebase is fully initialized, initialize the auth module
 document.addEventListener('DOMContentLoaded', function() {
