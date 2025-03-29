@@ -2844,3 +2844,25 @@ html, body {
     padding: 10px;
   }
 }
+
+/* Authentication Modal Styling Fixes */
+.auth-modal-content {
+  width: 100%;
+  max-width: 400px;
+  padding: 25px;
+  box-sizing: border-box;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* Add logo styling */
+.auth-logo {
+  max-width: 140px;
+  margin: 0 auto 15px;
+  display: block;
+}
