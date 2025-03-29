@@ -15,40 +15,43 @@ document.addEventListener('DOMContentLoaded', function() {
     welcomeScreen.style.opacity = '0';
   }
   
-  // Listen for authentication state changes
-  window.addEventListener('authStateChanged', function(event) {
-    console.log('Auth state changed in app.js:', event.detail);
-    
-    // Once authentication is initialized and not loading
-    if (!event.detail.isLoading) {
-      // Hide splash screen after 2 seconds
-      setTimeout(function() {
-        if (splashScreen) {
-          splashScreen.classList.add('fade-out');
+  // Update the auth state change handler
+window.addEventListener('authStateChanged', function(event) {
+  console.log('Auth state changed in app.js:', event.detail);
+  
+  // Once authentication is initialized and not loading
+  if (!event.detail.isLoading) {
+    // Hide splash screen after 2 seconds
+    setTimeout(function() {
+      if (splashScreen) {
+        splashScreen.classList.add('fade-out');
+        
+        // After splash fades out, decide where to go based on auth state
+        setTimeout(function() {
+          splashScreen.style.display = 'none';
           
-          // After splash fades out, decide where to go based on auth state
-          setTimeout(function() {
-            splashScreen.style.display = 'none';
-            
-            if (event.detail.isRegistered) {
-              // Registered user - go straight to dashboard
-              console.log('User is registered, showing dashboard');
-              if (mainOptions) {
-                mainOptions.style.display = 'flex';
-                ensureEventListenersAttached();
-              }
-            } else {
-              // Guest user - show welcome screen
-              console.log('User is guest, showing welcome screen');
-              if (welcomeScreen) {
-                welcomeScreen.style.opacity = '1';
-              }
+          if (event.detail.isRegistered) {
+            // Registered user - go straight to dashboard
+            console.log('User is registered, showing dashboard');
+            if (mainOptions) {
+              mainOptions.style.display = 'flex';
+              // Use the enhanced initialization with a slightly longer delay
+              setTimeout(() => {
+                forceReinitializeDashboard();
+              }, 100);
             }
-          }, 500); // Matches the transition duration in CSS
-        }
-      }, 2000);
-    }
-  });
+          } else {
+            // Guest user - show welcome screen
+            console.log('User is guest, showing welcome screen');
+            if (welcomeScreen) {
+              welcomeScreen.style.opacity = '1';
+            }
+          }
+        }, 500); // Matches the transition duration in CSS
+      }
+    }, 2000);
+  }
+});
   
   // Handle welcome screen buttons
   const startLearningBtn = document.getElementById('startLearningBtn');
@@ -1468,4 +1471,148 @@ function ensureEventListenersAttached() {
   
   // Check other important buttons
   setupDashboardEvents();
+}
+
+// Add this enhanced function to app.js
+function forceReinitializeDashboard() {
+  console.log("Force reinitializing dashboard...");
+  
+  // 1. Check for any overlays that might be active and remove them
+  const menuOverlay = document.getElementById("menuOverlay");
+  if (menuOverlay) {
+    menuOverlay.classList.remove("show");
+    menuOverlay.style.zIndex = "1599"; // Ensure correct z-index
+  }
+  
+  // 2. Force a redraw/layout recalculation of the dashboard
+  const mainOptions = document.getElementById("mainOptions");
+  if (mainOptions) {
+    // Temporarily hide and show to force a repaint
+    const display = mainOptions.style.display;
+    mainOptions.style.display = 'none';
+    
+    // Use a timeout to ensure the browser processes the display change
+    setTimeout(() => {
+      mainOptions.style.display = display || 'flex';
+      
+      // 3. Fix any potential positioning issues
+      mainOptions.style.position = 'relative';
+      mainOptions.style.zIndex = '1';
+      
+      console.log("Dashboard redraw complete, attaching event listeners...");
+      
+      // 4. Reattach all event listeners
+      setTimeout(() => {
+        setupDashboardEventListenersExplicitly();
+      }, 50);
+    }, 50);
+  }
+}
+
+// Create a more robust function that explicitly attaches all needed listeners
+function setupDashboardEventListenersExplicitly() {
+  // Start Quiz Button
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  if (startQuizBtn) {
+    console.log("Found Start Quiz button, attaching listener");
+    // Remove any existing listeners by cloning and replacing the element
+    const newBtn = startQuizBtn.cloneNode(true);
+    startQuizBtn.parentNode.replaceChild(newBtn, startQuizBtn);
+    
+    // Add the event listener to the new element
+    newBtn.addEventListener("click", function(e) {
+      console.log("Start Quiz button clicked");
+      const quizSetupModal = document.getElementById("quizSetupModal");
+      if (quizSetupModal) {
+        quizSetupModal.style.display = "block";
+      }
+    });
+  } else {
+    console.warn("Start Quiz button not found in DOM");
+  }
+  
+  // User Progress Card
+  const userProgressCard = document.getElementById("userProgressCard");
+  if (userProgressCard) {
+    console.log("Found User Progress card, attaching listener");
+    const newCard = userProgressCard.cloneNode(true);
+    userProgressCard.parentNode.replaceChild(newCard, userProgressCard);
+    newCard.addEventListener("click", function() {
+      console.log("User Progress card clicked");
+      if (typeof displayPerformance === 'function') {
+        displayPerformance();
+      }
+    });
+  }
+  
+  // Quick Stats Card
+  const quickStatsCard = document.getElementById("quickStatsCard");
+  if (quickStatsCard) {
+    console.log("Found Quick Stats card, attaching listener");
+    const newCard = quickStatsCard.cloneNode(true);
+    quickStatsCard.parentNode.replaceChild(newCard, quickStatsCard);
+    newCard.addEventListener("click", function() {
+      console.log("Quick Stats card clicked");
+      if (typeof displayPerformance === 'function') {
+        displayPerformance();
+      }
+    });
+  }
+  
+  // Leaderboard Preview Card
+  const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
+  if (leaderboardPreviewCard) {
+    console.log("Found Leaderboard Preview card, attaching listener");
+    const newCard = leaderboardPreviewCard.cloneNode(true);
+    leaderboardPreviewCard.parentNode.replaceChild(newCard, leaderboardPreviewCard);
+    newCard.addEventListener("click", function() {
+      console.log("Leaderboard Preview card clicked");
+      if (typeof showLeaderboard === 'function') {
+        showLeaderboard();
+      }
+    });
+  }
+  
+  // Review Queue Card
+  const reviewQueueCard = document.getElementById("reviewQueueCard");
+  if (reviewQueueCard) {
+    console.log("Found Review Queue card, attaching listener");
+    const newCard = reviewQueueCard.cloneNode(true);
+    reviewQueueCard.parentNode.replaceChild(newCard, reviewQueueCard);
+    newCard.addEventListener("click", function() {
+      console.log("Review Queue card clicked");
+      if (typeof getDueQuestionIds === 'function') {
+        getDueQuestionIds().then(dueQuestionIds => {
+          if (dueQuestionIds.length === 0) {
+            alert("You have no questions due for review today. Good job!");
+            return;
+          }
+          loadSpecificQuestions(dueQuestionIds);
+        });
+      }
+    });
+  }
+  
+  // Menu Button
+  const menuToggle = document.getElementById("menuToggle");
+  if (menuToggle) {
+    console.log("Found Menu Toggle button, attaching listener");
+    const newToggle = menuToggle.cloneNode(true);
+    menuToggle.parentNode.replaceChild(newToggle, menuToggle);
+    newToggle.addEventListener("click", function() {
+      console.log("Menu Toggle button clicked");
+      const sideMenu = document.getElementById("sideMenu");
+      const menuOverlay = document.getElementById("menuOverlay");
+      
+      if (sideMenu) sideMenu.classList.add("open");
+      if (menuOverlay) menuOverlay.classList.add("show");
+    });
+  }
+  
+  // This adds original setup as well in case we missed anything
+  if (typeof setupDashboardEvents === 'function') {
+    setupDashboardEvents();
+  }
+  
+  console.log("All dashboard event listeners explicitly attached");
 }
