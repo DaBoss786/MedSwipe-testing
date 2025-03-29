@@ -1803,3 +1803,50 @@ async function cleanupOnLogout() {
   
   console.log("User display data reset completed");
 }
+
+// Add event listeners for Terms and Privacy Policy links
+document.addEventListener('DOMContentLoaded', function() {
+  // Terms of Service link handler
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'registerViewTOS') {
+      e.preventDefault();
+      document.getElementById('termsOfServiceModal').style.display = 'flex';
+    }
+    
+    // Privacy Policy link handler
+    if (e.target && e.target.id === 'registerViewPrivacy') {
+      e.preventDefault();
+      document.getElementById('privacyPolicyModal').style.display = 'flex';
+    }
+    
+    // Close modal buttons
+    if (e.target && e.target.classList.contains('close-modal')) {
+      const modal = e.target.closest('.modal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+    
+    // Click outside to close
+    if (e.target && (e.target.id === 'termsOfServiceModal' || e.target.id === 'privacyPolicyModal')) {
+      e.target.style.display = 'none';
+    }
+  });
+  
+  // Terms checkbox validation
+  const registerForm = document.getElementById('registerForm');
+  const agreeTerms = document.getElementById('agreeTerms');
+  
+  if (registerForm && agreeTerms) {
+    registerForm.addEventListener('submit', function(e) {
+      if (!agreeTerms.checked) {
+        e.preventDefault();
+        const termsError = document.getElementById('termsError');
+        if (termsError) {
+          termsError.textContent = 'You must agree to the Terms of Service and Privacy Policy';
+        }
+        return false;
+      }
+    });
+  }
+});
