@@ -129,7 +129,7 @@ function showLoginForm(fromWelcomeScreen = false) {
           </div>
           <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
             <p style="margin-bottom: 10px; color: #666;">Don't have an account?</p>
-            <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
+            <button type="button" id="createAccountBtn" class="auth-secondary-btn" onclick="window.showRegisterForm()">Create Account</button>
           </div>
         </form>
         <button id="closeLoginBtn" class="auth-close-btn">×</button>
