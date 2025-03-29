@@ -174,49 +174,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // REPLACE it with this updated function:
-// Replace it with this function
-function handleForgotPassword(e) {
-  e.preventDefault();
-  console.log('Forgot password handler in login-screen.js');
-  
-  // Use the global function if available, otherwise fall back to the modal
-  if (typeof window.showForgotPasswordModal === 'function') {
-    window.showForgotPasswordModal();
-  } else {
-    // Find the modal
-    const modal = document.getElementById('forgotPasswordModal');
-    if (modal) {
-      modal.style.display = 'flex';
-    } else {
-      console.log('Modal not found, falling back to alert');
-      alert('Forgot password functionality is loading. Please try again in a moment.');
-    }
+  // Handle forgot password
+  function handleForgotPassword(e) {
+    e.preventDefault();
+    alert('Password reset functionality will be implemented in a future update.');
+    // TODO: Implement password reset functionality
   }
-  
-  // Prevent any other handlers from running
-  e.stopPropagation();
-  return false;
-}
-
-// Make sure this function is defined
-function showForgotPasswordModal() {
-  const modal = document.getElementById('forgotPasswordModal');
-  if (modal) {
-    // Reset form and messages
-    const form = document.getElementById('forgotPasswordForm');
-    const resetMessage = document.getElementById('resetMessage');
-    const resetEmailError = document.getElementById('resetEmailError');
-    
-    if (form) form.reset();
-    if (resetMessage) resetMessage.textContent = '';
-    if (resetMessage) resetMessage.className = 'reset-message';
-    if (resetEmailError) resetEmailError.textContent = '';
-    
-    // Show the modal
-    modal.style.display = 'flex';
-  }
-}
   
   // Handle create account
   function handleCreateAccount() {
