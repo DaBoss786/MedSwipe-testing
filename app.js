@@ -91,26 +91,27 @@ function showLoginForm() {
     loginModal.className = 'auth-modal';
     
     loginModal.innerHTML = `
-      <div class="auth-modal-content">
-        <h2>Log In to MedSwipe</h2>
-        <div id="loginError" class="auth-error"></div>
-        <form id="loginForm">
-          <div class="form-group">
-            <label for="loginEmail">Email</label>
-            <input type="email" id="loginEmail" required>
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" required>
-          </div>
-          <div class="auth-buttons">
-            <button type="submit" class="auth-primary-btn">Log In</button>
-            <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
-          </div>
-        </form>
-        <button id="closeLoginBtn" class="auth-close-btn">×</button>
+  <div class="auth-modal-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
+    <h2>Log In to MedSwipe</h2>
+    <div id="loginError" class="auth-error"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required>
       </div>
-    `;
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" required>
+      </div>
+      <div class="auth-buttons">
+        <button type="submit" class="auth-primary-btn">Log In</button>
+        <button type="button" id="createAccountBtn" class="auth-secondary-btn">Create Account</button>
+      </div>
+    </form>
+    <button id="closeLoginBtn" class="auth-close-btn">×</button>
+  </div>
+`;
     
     document.body.appendChild(loginModal);
     
