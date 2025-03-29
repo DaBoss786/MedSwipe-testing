@@ -176,10 +176,17 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Handle forgot password
   function handleForgotPassword(e) {
-    e.preventDefault();
-    alert('Password reset functionality will be implemented in a future update.');
-    // TODO: Implement password reset functionality
+  e.preventDefault();
+  
+  // Use the existing password reset functionality
+  if (typeof showForgotPasswordModal === 'function') {
+    showForgotPasswordModal();
+  } else {
+    // Fallback if function not available yet
+    console.error("showForgotPasswordModal function not found");
+    alert('Error accessing password reset. Please try again later.');
   }
+}
   
   // Handle create account
   function handleCreateAccount() {
