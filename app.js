@@ -1689,3 +1689,76 @@ function clearDebugStyles() {
     }
   });
 }
+
+// Add this function to your auth.js or app.js file
+async function cleanupOnLogout() {
+  console.log("Cleaning up after logout...");
+  
+  // Clear any cached user data in the UI
+  const xpDisplays = [
+    document.getElementById("xpDisplay"),
+    document.getElementById("dashboardXP"),
+    document.getElementById("userXpDisplay")
+  ];
+  
+  // Reset XP displays to 0
+  xpDisplays.forEach(element => {
+    if (element) {
+      element.textContent = "0 XP";
+    }
+  });
+  
+  // Reset level displays to 1
+  const levelDisplays = [
+    document.getElementById("scoreCircle"),
+    document.getElementById("dashboardLevel"),
+    document.getElementById("userScoreCircle")
+  ];
+  
+  levelDisplays.forEach(element => {
+    if (element) {
+      element.textContent = "1";
+    }
+  });
+  
+  // Reset level progress indicators to 0%
+  const progressElements = [
+    document.getElementById("levelCircleProgress"),
+    document.getElementById("dashboardLevelProgress"),
+    document.getElementById("userLevelProgress"),
+    document.getElementById("levelProgressBar")
+  ];
+  
+  progressElements.forEach(element => {
+    if (element) {
+      if (element.style.setProperty) {
+        element.style.setProperty('--progress', '0%');
+      } else {
+        element.style.width = '0%';
+      }
+    }
+  });
+  
+  // Reset other stats displays
+  const statsElements = [
+    document.getElementById("dashboardAnswered"),
+    document.getElementById("dashboardAccuracy"),
+    document.getElementById("currentStreak")
+  ];
+  
+  statsElements.forEach((element, index) => {
+    if (element) {
+      if (index === 1) { // Accuracy needs % symbol
+        element.textContent = "0%";
+      } else {
+        element.textContent = "0";
+      }
+    }
+  });
+  
+  // Clear any other cached user-specific data
+  // This prevents old data from showing up in the UI
+  localStorage.removeItem("quizProgress");
+  
+  console.log("User display data reset completed");
+}
