@@ -1850,3 +1850,180 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Add Forgot Password Functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Make sure the modal exists
+  ensureForgotPasswordModalExists();
+  
+  // Add click handler for "Forgot Password" link
+  document.addEventListener('click', function(e) {
+    // Check if forgot password link was clicked
+    if (e.target && e.target.id === 'forgotPasswordLink') {
+      e.preventDefault();
+      showForgotPasswordModal();
+    }
+    
+    // Handle cancel button click
+    if (e.target && e.target.id === 'cancelResetBtn') {
+      hideForgotPasswordModal();
+    }
+  });
+  
+  // Add submit handler for forgot password form
+  const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+  if (forgotPasswordForm) {
+    forgotPasswordForm.addEventListener('submit', handlePasswordReset);
+  }
+});
+
+// Make sure the forgot password modal exists in the DOM
+function ensureForgotPasswordModalExists() {
+  if (!document.getElementById('forgotPasswordModal')) {
+    const modal = document.createElement('div');
+    modal.id = 'forgotPasswordModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Reset Password</h2>
+          <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+          <p>Enter your email address below and we'll send you a link to reset your password.</p>
+          
+          <form id="forgotPasswordForm">
+            <div class="form-group">
+              <label for="resetEmail">Email Address</label>
+              <input type="email" id="resetEmail" required placeholder="Enter your email">
+              <div class="form-error" id="resetEmailError"></div>
+            </div>
+            
+            <div class="reset-loader" id="resetLoader"></div>
+            <div id="resetMessage" class="reset-message"></div>
+            
+            <div class="form-buttons">
+              <button type="submit" id="sendResetLinkBtn" class="auth-primary-btn">Send Reset Link</button>
+              <button type="button" id="cancelResetBtn" class="auth-secondary-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Add close button functionality
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', hideForgotPasswordModal);
+    }
+    
+    // Add click outside to close
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        hideForgotPasswordModal();
+      }
+    });
+  }
+}
+
+// Show the forgot password modal
+function showForgotPasswordModal() {
+  const modal = document.getElementById('forgotPasswordModal');
+  if (modal) {
+    // Reset form and messages
+    const form = document.getElementById('forgotPasswordForm');
+    const resetMessage = document.getElementById('resetMessage');
+    const resetEmailError = document.getElementById('resetEmailError');
+    
+    if (form) form.reset();
+    if (resetMessage) resetMessage.textContent = '';
+    if (resetMessage) resetMessage.className = 'reset-message';
+    if (resetEmailError) resetEmailError.textContent = '';
+    
+    // Show the modal
+    modal.style.display = 'flex';
+  }
+}
+
+// Hide the forgot password modal
+function hideForgotPasswordModal() {
+  const modal = document.getElementById('forgotPasswordModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// Handle password reset form submission
+async function handlePasswordReset(e) {
+  e.preventDefault();
+  
+  const emailInput = document.getElementById('resetEmail');
+  const resetMessage = document.getElementById('resetMessage');
+  const resetEmailError = document.getElementById('resetEmailError');
+  const resetLoader = document.getElementById('resetLoader');
+  const sendResetLinkBtn = document.getElementById('sendResetLinkBtn');
+  const cancelResetBtn = document.getElementById('cancelResetBtn');
+  
+  // Clear previous messages
+  if (resetMessage) resetMessage.textContent = '';
+  if (resetMessage) resetMessage.className = 'reset-message';
+  if (resetEmailError) resetEmailError.textContent = '';
+  
+  // Validate email
+  const email = emailInput ? emailInput.value.trim() : '';
+  if (!email) {
+    if (resetEmailError) resetEmailError.textContent = 'Please enter your email address';
+    return;
+  }
+  
+  // Show loader and disable buttons
+  if (resetLoader) resetLoader.style.display = 'block';
+  if (sendResetLinkBtn) sendResetLinkBtn.disabled = true;
+  if (cancelResetBtn) cancelResetBtn.disabled = true;
+  
+  try {
+    // Send password reset email using Firebase
+    await window.sendPasswordResetEmail(window.auth, email);
+    
+    // Show success message
+    if (resetMessage) {
+      resetMessage.textContent = 'Password reset email sent! Check your inbox and spam folder.';
+      resetMessage.className = 'reset-message success';
+    }
+    
+    // Close the modal after 5 seconds
+    setTimeout(hideForgotPasswordModal, 5000);
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    
+    // Show error message
+    if (resetMessage) {
+      resetMessage.textContent = getResetErrorMessage(error);
+      resetMessage.className = 'reset-message error';
+    }
+  } finally {
+    // Hide loader and enable buttons
+    if (resetLoader) resetLoader.style.display = 'none';
+    if (sendResetLinkBtn) sendResetLinkBtn.disabled = false;
+    if (cancelResetBtn) cancelResetBtn.disabled = false;
+  }
+}
+
+// Get user-friendly error message for password reset
+function getResetErrorMessage(error) {
+  const errorCode = error.code;
+  
+  switch (errorCode) {
+    case 'auth/invalid-email':
+      return 'Invalid email address format';
+    case 'auth/user-not-found':
+      return 'No account found with this email';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please try again later.';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your connection.';
+    default:
+      return error.message || 'An error occurred. Please try again.';
+  }
+}
