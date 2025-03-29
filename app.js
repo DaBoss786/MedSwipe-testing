@@ -1477,7 +1477,7 @@ function ensureEventListenersAttached() {
   setupDashboardEvents();
 }
 
-// Update the forceReinitializeDashboard function
+// Update the forceReinitializeDashboard function to call clearDebugStyles
 function forceReinitializeDashboard() {
   console.log("Force reinitializing dashboard...");
   
@@ -1513,7 +1513,12 @@ function forceReinitializeDashboard() {
         setupDashboardEventListenersExplicitly();
         
         // Debug overlays after setup is complete
-        setTimeout(debugOverlays, 200);
+        setTimeout(() => {
+          debugOverlays();
+          
+          // Clear debugging styles after we've seen the debug output
+          setTimeout(clearDebugStyles, 500);
+        }, 200);
       }, 50);
     }, 50);
   }
@@ -1668,6 +1673,19 @@ function ensureAllScreensHidden() {
       screen.style.display = 'none';
       screen.style.opacity = '0';
       console.log(`Hiding screen: ${screen.id}`);
+    }
+  });
+}
+
+// Add this function to your app.js
+function clearDebugStyles() {
+  console.log("Clearing debug background colors...");
+  
+  // Remove the red background color from all elements
+  document.querySelectorAll('*').forEach(el => {
+    if (el.style.backgroundColor === 'rgba(255, 0, 0, 0.2)') {
+      el.style.backgroundColor = '';
+      console.log(`Cleared debug background from: ${el.id || el.tagName}`);
     }
   });
 }
