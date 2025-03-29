@@ -1804,3 +1804,26 @@ async function cleanupOnLogout() {
   
   console.log("User display data reset completed");
 }
+
+function positionModals() {
+  const modals = [
+    document.getElementById('termsOfServiceModal'),
+    document.getElementById('privacyPolicyModal')
+  ];
+  
+  modals.forEach(modal => {
+    if (modal) {
+      // Ensure modal content is positioned properly
+      const modalContent = modal.querySelector('div');
+      if (modalContent) {
+        modalContent.style.maxHeight = '80vh';
+        modalContent.style.overflowY = 'auto';
+      }
+    }
+  });
+}
+
+// Call this when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+  positionModals();
+});
