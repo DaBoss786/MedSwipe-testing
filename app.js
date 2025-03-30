@@ -2113,3 +2113,73 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Function to show the registration benefits modal
+function showRegistrationBenefitsModal() {
+  const modal = document.getElementById('registrationBenefitsModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    
+    // Remove any existing event listeners by cloning
+    const createAccountBtn = document.getElementById('createAccountBenefitsBtn');
+    const continueAsGuestBtn = document.getElementById('continueAsGuestBtn');
+    const closeModal = modal.querySelector('.close-modal');
+    
+    if (createAccountBtn) {
+      const newBtn = createAccountBtn.cloneNode(true);
+      createAccountBtn.parentNode.replaceChild(newBtn, createAccountBtn);
+      newBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+        if (typeof showRegisterForm === 'function') {
+          showRegisterForm();
+        }
+      });
+    }
+    
+    if (continueAsGuestBtn) {
+      const newBtn = continueAsGuestBtn.cloneNode(true);
+      continueAsGuestBtn.parentNode.replaceChild(newBtn, continueAsGuestBtn);
+      newBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+        // Show the main dashboard
+        document.getElementById('mainOptions').style.display = 'flex';
+      });
+    }
+    
+    if (closeModal) {
+      const newClose = closeModal.cloneNode(true);
+      closeModal.parentNode.replaceChild(newClose, closeModal);
+      newClose.addEventListener('click', function() {
+        modal.style.display = 'none';
+        // Show the main dashboard
+        document.getElementById('mainOptions').style.display = 'flex';
+      });
+    }
+  }
+}
+
+// Counter for tracking questions answered by guest users
+window.guestQuestionsAnswered = 0;
+
+// Function to check if registration prompt should be shown
+function checkRegistrationPrompt() {
+  // Only show prompts for anonymous users
+  if (!window.auth || !window.auth.currentUser || !window.auth.currentUser.isAnonymous) {
+    return;
+  }
+  
+  // Increment the counter
+  window.guestQuestionsAnswered = (window.guestQuestionsAnswered || 0) + 1;
+  
+  // Show registration prompt after every 7-8 questions
+  if (window.guestQuestionsAnswered % 7 === 0) {
+    // Wait a moment before showing the prompt
+    setTimeout(() => {
+      showRegistrationBenefitsModal();
+    }, 1500);
+  }
+}
+
+// Make functions globally available
+window.showRegistrationBenefitsModal = showRegistrationBenefitsModal;
+window.checkRegistrationPrompt = checkRegistrationPrompt;
