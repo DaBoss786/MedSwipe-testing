@@ -358,65 +358,90 @@ function addOptionListeners() {
       if (answerSlide) {
         // If this is the last question, add a "View Summary" button directly to the explanation
         if (currentQuestion + 1 === totalQuestions) {
-          answerSlide.querySelector('.card').innerHTML = `
-            <div class="answer">
-              <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-              Correct Answer: ${correct}<br>
-              ${explanation}
-            </div>
-            <div class="difficulty-buttons">
-    <p class="difficulty-prompt">How difficult was this question?</p>
-    <div class="difficulty-btn-container">
-      <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-      <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-      <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
-    </div>
-  </div>
-            <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
-              Loading Summary...
-            </button>
-          `;
+          // Check if this is the onboarding quiz (window flag set in loadQuestions)
+          if (window.isOnboardingQuiz) {
+            answerSlide.querySelector('.card').innerHTML = `
+              <div class="answer">
+                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                Correct Answer: ${correct}<br>
+                ${explanation}
+              </div>
+              <div class="difficulty-buttons">
+                <p class="difficulty-prompt">How difficult was this question?</p>
+                <div class="difficulty-btn-container">
+                  <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                  <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                  <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                </div>
+              </div>
+              <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
+                Continue
+              </button>
+            `;
+          } else {
+            // Regular quiz with summary button
+            answerSlide.querySelector('.card').innerHTML = `
+              <div class="answer">
+                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                Correct Answer: ${correct}<br>
+                ${explanation}
+              </div>
+              <div class="difficulty-buttons">
+                <p class="difficulty-prompt">How difficult was this question?</p>
+                <div class="difficulty-btn-container">
+                  <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                  <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                  <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                </div>
+              </div>
+              <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
+                Loading Summary...
+              </button>
+            `;
+          }
+          
           // Add click handlers for difficulty buttons
-const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
-difficultyButtons.forEach(btn => {
-  btn.addEventListener('click', async function() {
-    // Remove selected class from all buttons
-    difficultyButtons.forEach(b => b.classList.remove('selected'));
-    // Add selected class to clicked button
-    this.classList.add('selected');
-    
-    const difficulty = this.getAttribute('data-difficulty');
-    const questionId = questionSlide.dataset.id;
-    
-    // Calculate next review date based on difficulty and correctness
-    let nextReviewInterval = 1; // Default 1 day
-    
-    if (isCorrect) {
-      if (difficulty === 'easy') {
-        nextReviewInterval = 7; // 7 days
-      } else if (difficulty === 'medium') {
-        nextReviewInterval = 3; // 3 days
-      } else if (difficulty === 'hard') {
-        nextReviewInterval = 1; // 1 day
-      }
-    } else {
-      // If answered incorrectly, review it soon regardless of rating
-      nextReviewInterval = 1; // 1 day
-    }
-    
-    // Store the spaced repetition data
-    await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
-    
-    // Show feedback to the user
-    const feedbackEl = document.createElement('p');
-    feedbackEl.className = 'review-scheduled';
-    feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
-    this.closest('.difficulty-buttons').appendChild(feedbackEl);
-    
-    // Disable all buttons after selection
-    difficultyButtons.forEach(b => b.disabled = true);
-  });
-});
+          const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
+          difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', async function() {
+              // Remove selected class from all buttons
+              difficultyButtons.forEach(b => b.classList.remove('selected'));
+              // Add selected class to clicked button
+              this.classList.add('selected');
+              
+              const difficulty = this.getAttribute('data-difficulty');
+              const questionId = questionSlide.dataset.id;
+              
+              // Calculate next review date based on difficulty and correctness
+              let nextReviewInterval = 1; // Default 1 day
+              
+              if (isCorrect) {
+                if (difficulty === 'easy') {
+                  nextReviewInterval = 7; // 7 days
+                } else if (difficulty === 'medium') {
+                  nextReviewInterval = 3; // 3 days
+                } else if (difficulty === 'hard') {
+                  nextReviewInterval = 1; // 1 day
+                }
+              } else {
+                // If answered incorrectly, review it soon regardless of rating
+                nextReviewInterval = 1; // 1 day
+              }
+              
+              // Store the spaced repetition data
+              await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+              
+              // Show feedback to the user
+              const feedbackEl = document.createElement('p');
+              feedbackEl.className = 'review-scheduled';
+              feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+              this.closest('.difficulty-buttons').appendChild(feedbackEl);
+              
+              // Disable all buttons after selection
+              difficultyButtons.forEach(b => b.disabled = true);
+            });
+          });
+          
           // Process the answer
           currentQuestion++;
           if (isCorrect) { score++; }
@@ -426,8 +451,30 @@ difficultyButtons.forEach(btn => {
           await recordAnswer(qId, category, isCorrect, timeSpent);
           await updateQuestionStats(qId, isCorrect);
           
-          // Prepare and show the summary button once data is loaded
-          prepareSummary();
+          // For onboarding quiz, prepare to show registration benefits
+          if (window.isOnboardingQuiz) {
+            const viewSummaryBtn = document.getElementById('viewSummaryBtn');
+            if (viewSummaryBtn) {
+              viewSummaryBtn.textContent = "Continue";
+              viewSummaryBtn.addEventListener('click', function() {
+                // Hide the quiz
+                document.querySelector(".swiper").style.display = "none";
+                document.getElementById("bottomToolbar").style.display = "none";
+                document.getElementById("iconBar").style.display = "none";
+                
+                // Show the registration benefits modal
+                if (typeof window.showRegistrationBenefitsModal === 'function') {
+                  window.showRegistrationBenefitsModal();
+                } else {
+                  // Fallback if function isn't available
+                  document.getElementById("mainOptions").style.display = "flex";
+                }
+              });
+            }
+          } else {
+            // Prepare regular summary for normal quizzes
+            prepareSummary();
+          }
         } else {
           // Regular question (not the last one)
           answerSlide.querySelector('.card').innerHTML = `
@@ -437,56 +484,58 @@ difficultyButtons.forEach(btn => {
               ${explanation}
             </div>
             <div class="difficulty-buttons">
-    <p class="difficulty-prompt">How difficult was this question?</p>
-    <div class="difficulty-btn-container">
-      <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-      <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-      <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
-    </div>
-  </div>
+              <p class="difficulty-prompt">How difficult was this question?</p>
+              <div class="difficulty-btn-container">
+                <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+              </div>
+            </div>
             <p class="swipe-next-hint">Swipe up for next question</p>
           `;
+          
           // Add click handlers for difficulty buttons
-const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
-difficultyButtons.forEach(btn => {
-  btn.addEventListener('click', async function() {
-    // Remove selected class from all buttons
-    difficultyButtons.forEach(b => b.classList.remove('selected'));
-    // Add selected class to clicked button
-    this.classList.add('selected');
-    
-    const difficulty = this.getAttribute('data-difficulty');
-    const questionId = questionSlide.dataset.id;
-    
-    // Calculate next review date based on difficulty and correctness
-    let nextReviewInterval = 1; // Default 1 day
-    
-    if (isCorrect) {
-      if (difficulty === 'easy') {
-        nextReviewInterval = 7; // 7 days
-      } else if (difficulty === 'medium') {
-        nextReviewInterval = 3; // 3 days
-      } else if (difficulty === 'hard') {
-        nextReviewInterval = 1; // 1 day
-      }
-    } else {
-      // If answered incorrectly, review it soon regardless of rating
-      nextReviewInterval = 1; // 1 day
-    }
-    
-    // Store the spaced repetition data
-    await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
-    
-    // Show feedback to the user
-    const feedbackEl = document.createElement('p');
-    feedbackEl.className = 'review-scheduled';
-    feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
-    this.closest('.difficulty-buttons').appendChild(feedbackEl);
-    
-    // Disable all buttons after selection
-    difficultyButtons.forEach(b => b.disabled = true);
-  });
-});
+          const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
+          difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', async function() {
+              // Remove selected class from all buttons
+              difficultyButtons.forEach(b => b.classList.remove('selected'));
+              // Add selected class to clicked button
+              this.classList.add('selected');
+              
+              const difficulty = this.getAttribute('data-difficulty');
+              const questionId = questionSlide.dataset.id;
+              
+              // Calculate next review date based on difficulty and correctness
+              let nextReviewInterval = 1; // Default 1 day
+              
+              if (isCorrect) {
+                if (difficulty === 'easy') {
+                  nextReviewInterval = 7; // 7 days
+                } else if (difficulty === 'medium') {
+                  nextReviewInterval = 3; // 3 days
+                } else if (difficulty === 'hard') {
+                  nextReviewInterval = 1; // 1 day
+                }
+              } else {
+                // If answered incorrectly, review it soon regardless of rating
+                nextReviewInterval = 1; // 1 day
+              }
+              
+              // Store the spaced repetition data
+              await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+              
+              // Show feedback to the user
+              const feedbackEl = document.createElement('p');
+              feedbackEl.className = 'review-scheduled';
+              feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+              this.closest('.difficulty-buttons').appendChild(feedbackEl);
+              
+              // Disable all buttons after selection
+              difficultyButtons.forEach(b => b.disabled = true);
+            });
+          });
+          
           currentQuestion++;
           if (isCorrect) { score++; }
           updateProgress();
