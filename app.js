@@ -65,15 +65,38 @@ window.addEventListener('authStateChanged', function(event) {
   const existingAccountBtn = document.getElementById('existingAccountBtn');
 
   if (startLearningBtn) {
-    startLearningBtn.addEventListener('click', function() {
-      welcomeScreen.style.opacity = '0';
-      setTimeout(function() {
-        welcomeScreen.style.display = 'none';
-        mainOptions.style.display = 'flex';
-        ensureEventListenersAttached(); // Add this line
-      }, 500);
-    });
-  }
+  startLearningBtn.addEventListener("click", function() {
+    // Hide welcome screen
+    welcomeScreen.style.opacity = '0';
+    
+    setTimeout(function() {
+      welcomeScreen.style.display = 'none';
+      
+      // Show onboarding loading screen
+      const onboardingLoadingScreen = document.getElementById('onboardingLoadingScreen');
+      if (onboardingLoadingScreen) {
+        onboardingLoadingScreen.style.display = 'flex';
+        
+        // After a brief delay, start the onboarding quiz
+        setTimeout(function() {
+          onboardingLoadingScreen.style.display = 'none';
+          startOnboardingQuiz();
+        }, 2000); // Show loading screen for 2 seconds
+      }
+    }, 500);
+  });
+}
+
+  // Function to start the onboarding quiz with 3 questions
+function startOnboardingQuiz() {
+  // Start a 3-question quiz
+  loadQuestions({
+    type: 'random',
+    num: 3,
+    includeAnswered: false,
+    isOnboarding: true  // Flag to indicate this is the onboarding quiz
+  });
+}
 
   if (existingAccountBtn) {
   existingAccountBtn.addEventListener('click', function() {
