@@ -3371,3 +3371,63 @@ html, body {
   color: #0C72D3;
   margin: 0;
 }
+
+/* Registration Benefits Modal */
+.benefits-list {
+  margin: 20px 0;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  transition: transform 0.2s;
+}
+
+.benefit-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.benefit-icon {
+  font-size: 2rem;
+  margin-right: 15px;
+  color: #0C72D3;
+}
+
+.benefit-text h3 {
+  margin: 0 0 5px 0;
+  color: #0C72D3;
+  font-size: 1.1rem;
+}
+
+.benefit-text p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.registration-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Guest Analytics Prompt */
+.guest-analytics-prompt {
+  background: #f2f7ff;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  margin: 20px 0;
+  border-left: 4px solid #0C72D3;
+}
+
+.guest-analytics-prompt p {
+  margin-bottom: 15px;
+  color: #0056b3;
+}
