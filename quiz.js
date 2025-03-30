@@ -28,6 +28,7 @@ async function fetchQuestionBank() {
 // Load questions according to quiz options
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
+  window.isOnboardingQuiz = options.isOnboarding || false;
   Papa.parse(csvUrl, {
     download: true,
     header: true,
@@ -186,6 +187,8 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
 async function initializeQuiz(questions) {
   // Get starting XP before the quiz begins
   try {
+    const isOnboardingQuiz = window.isOnboardingQuiz || false;
+    console.log("Initializing quiz, isOnboarding:", isOnboardingQuiz);
     if (window.auth && window.auth.currentUser) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
