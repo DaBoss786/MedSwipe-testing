@@ -39,6 +39,12 @@ async function loadQuestions(options = {}) {
 
       // Check if spaced repetition mode is enabled
       if (options.spacedRepetition) {
+        // Prevent guests from using spaced repetition
+        if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+          alert('Spaced repetition learning is only available for registered users. Please create a free account to access this feature.');
+          document.getElementById("mainOptions").style.display = "flex";
+          return;
+        }
         await loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds);
         return;
       }
@@ -87,7 +93,7 @@ async function loadQuestions(options = {}) {
       }
       
       console.log("Selected questions count:", selectedQuestions.length);
-      initializeQuiz(selectedQuestions);
+      initializeQuiz(selectedQuestions, options.isOnboarding);
     },
     error: function(error) {
       console.error("Error parsing CSV:", error);
@@ -184,6 +190,8 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions) {
+  // Store the onboarding flag for later use
+  window.isOnboardingQuiz = isOnboarding;
   // Get starting XP before the quiz begins
   try {
     if (window.auth && window.auth.currentUser) {
