@@ -192,7 +192,7 @@ if (registerBtn) {
 }
 }
 
-// Load XP Rankings leaderboard with weekly/all-time toggle
+// Modified function for XP Rankings leaderboard
 async function loadOverallData() {
   console.log(`Loading XP rankings leaderboard data`);
   const currentUid = window.auth.currentUser.uid;
@@ -202,7 +202,8 @@ async function loadOverallData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    if (data.stats) {
+    // Only include registered users (not anonymous/guest users)
+    if (data.stats && data.isRegistered !== false) {
       let xp = data.stats.xp || 0;
       const level = data.stats.level || 1;
       
@@ -303,7 +304,7 @@ async function loadOverallData() {
   });
 }
 
-// Load Streaks leaderboard (no time range tabs)
+// Modified function for Streaks leaderboard
 async function loadStreaksData() {
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
@@ -312,8 +313,9 @@ async function loadStreaksData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
-    if (streak > 0 || true) { // Include all users for comprehensive leaderboard
+    // Only include registered users (not anonymous/guest users)
+    if (data.isRegistered !== false) {
+      let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
       streakEntries.push({
         uid: docSnap.id,
         username: data.username || "Anonymous",
@@ -404,7 +406,7 @@ async function loadStreaksData() {
   });
 }
 
-// Load Total Answered leaderboard (no time range tabs)
+// Modified function for Total Answered leaderboard
 async function loadTotalAnsweredData() {
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
@@ -414,22 +416,24 @@ async function loadTotalAnsweredData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    let weeklyCount = 0;
-    if (data.answeredQuestions) {
-      for (const key in data.answeredQuestions) {
-        const answer = data.answeredQuestions[key];
-        if (answer.timestamp && answer.timestamp >= weekStart) {
-          weeklyCount++;
+    // Only include registered users (not anonymous/guest users)
+    if (data.isRegistered !== false) {
+      let weeklyCount = 0;
+      if (data.answeredQuestions) {
+        for (const key in data.answeredQuestions) {
+          const answer = data.answeredQuestions[key];
+          if (answer.timestamp && answer.timestamp >= weekStart) {
+            weeklyCount++;
+          }
         }
       }
+      
+      answeredEntries.push({
+        uid: docSnap.id,
+        username: data.username || "Anonymous",
+        weeklyCount: weeklyCount
+      });
     }
-    
-    // Include all users for comprehensive leaderboard
-    answeredEntries.push({
-      uid: docSnap.id,
-      username: data.username || "Anonymous",
-      weeklyCount: weeklyCount
-    });
   });
   
   // Sort by weekly count (descending)
