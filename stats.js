@@ -65,6 +65,9 @@ async function displayPerformance() {
   const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
   
   let categoryBreakdown = "";
+
+// Only show detailed category breakdown for registered users
+if (window.auth && window.auth.currentUser && !window.auth.currentUser.isAnonymous) {
   if (stats.categories) {
     categoryBreakdown = Object.keys(stats.categories).map(cat => {
       const c = stats.categories[cat];
@@ -83,6 +86,15 @@ async function displayPerformance() {
   } else {
     categoryBreakdown = "<p>No category data available.</p>";
   }
+} else {
+  // For guest users, show registration prompt
+  categoryBreakdown = `
+    <div class="guest-analytics-prompt">
+      <p>Subject-specific analytics are available for registered users only.</p>
+      <button id="registerForAnalyticsBtn" class="start-quiz-btn">Create Free Account</button>
+    </div>
+  `;
+}
   
   document.getElementById("performanceView").innerHTML = `
     <h2 style="text-align:center; color:#0056b3;">Performance</h2>
@@ -166,6 +178,18 @@ async function displayPerformance() {
     document.getElementById("performanceView").style.display = "none";
     document.getElementById("mainOptions").style.display = "flex";
   });
+  // Add event listener for the register button in guest analytics prompt
+const registerBtn = document.getElementById('registerForAnalyticsBtn');
+if (registerBtn) {
+  registerBtn.addEventListener('click', function() {
+    document.getElementById("performanceView").style.display = "none";
+    if (typeof window.showRegistrationBenefitsModal === 'function') {
+      window.showRegistrationBenefitsModal();
+    } else if (typeof window.showRegisterForm === 'function') {
+      window.showRegisterForm();
+    }
+  });
+}
 }
 
 // Load XP Rankings leaderboard with weekly/all-time toggle
