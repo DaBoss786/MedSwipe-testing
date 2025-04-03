@@ -2118,43 +2118,96 @@ document.addEventListener('DOMContentLoaded', function() {
 function showRegistrationBenefitsModal() {
   const modal = document.getElementById('registrationBenefitsModal');
   if (modal) {
+    // Reset modal state before showing it
+    modal.style.opacity = '1';
+    modal.style.zIndex = '9800'; // Ensure high z-index
     modal.style.display = 'flex';
     
-    // Remove any existing event listeners by cloning
+    // Clear any previous handlers with completely new buttons
     const createAccountBtn = document.getElementById('createAccountBenefitsBtn');
     const continueAsGuestBtn = document.getElementById('continueAsGuestBtn');
     const closeModal = modal.querySelector('.close-modal');
     
+    // Create completely new buttons to eliminate any stale event listeners
     if (createAccountBtn) {
-      const newBtn = createAccountBtn.cloneNode(true);
+      const newBtn = document.createElement('button');
+      newBtn.id = 'createAccountBenefitsBtn';
+      newBtn.className = 'auth-primary-btn';
+      newBtn.textContent = 'Create Free Account';
+      
       createAccountBtn.parentNode.replaceChild(newBtn, createAccountBtn);
-      newBtn.addEventListener('click', function() {
+      
+      newBtn.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent event bubbling
+        console.log("Create account button clicked");
         modal.style.display = 'none';
         if (typeof showRegisterForm === 'function') {
           showRegisterForm();
+        } else if (typeof window.showRegisterForm === 'function') {
+          window.showRegisterForm();
+        } else {
+          console.error("Registration function not found");
         }
       });
     }
     
     if (continueAsGuestBtn) {
-      const newBtn = continueAsGuestBtn.cloneNode(true);
+      const newBtn = document.createElement('button');
+      newBtn.id = 'continueAsGuestBtn';
+      newBtn.className = 'auth-secondary-btn';
+      newBtn.textContent = 'Continue as Guest';
+      
       continueAsGuestBtn.parentNode.replaceChild(newBtn, continueAsGuestBtn);
-      newBtn.addEventListener('click', function() {
+      
+      newBtn.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent event bubbling
+        console.log("Continue as guest button clicked");
         modal.style.display = 'none';
-        // Show the main dashboard
-        document.getElementById('mainOptions').style.display = 'flex';
+        // Show the main dashboard and ensure it's visible
+        const mainOptions = document.getElementById('mainOptions');
+        if (mainOptions) {
+          mainOptions.style.display = 'flex';
+          mainOptions.style.visibility = 'visible';
+          
+          // Force reinitialize the dashboard to ensure it's properly displayed
+          if (typeof initializeDashboard === 'function') {
+            setTimeout(initializeDashboard, 100);
+          }
+        }
       });
     }
     
     if (closeModal) {
-      const newClose = closeModal.cloneNode(true);
+      const newClose = document.createElement('span');
+      newClose.className = 'close-modal';
+      newClose.innerHTML = '&times;';
+      
       closeModal.parentNode.replaceChild(newClose, closeModal);
-      newClose.addEventListener('click', function() {
+      
+      newClose.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent event bubbling
+        console.log("Close modal button clicked");
         modal.style.display = 'none';
         // Show the main dashboard
-        document.getElementById('mainOptions').style.display = 'flex';
+        const mainOptions = document.getElementById('mainOptions');
+        if (mainOptions) {
+          mainOptions.style.display = 'flex';
+        }
       });
     }
+    
+    // Also add click handler for the modal background
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        console.log("Modal background clicked");
+        modal.style.display = 'none';
+        // Show the main dashboard
+        const mainOptions = document.getElementById('mainOptions');
+        if (mainOptions) {
+          mainOptions.style.display = 'flex';
+        }
+      }
+    });
   }
 }
 
