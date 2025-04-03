@@ -998,6 +998,44 @@ async function loadLeaderboardPreview() {
   const leaderboardPreview = document.getElementById("leaderboardPreview");
   if (!leaderboardPreview) return;
   
+  // Check if user is anonymous (guest)
+  const isAnonymous = window.auth.currentUser.isAnonymous;
+  
+  // For guest users, show registration prompt instead of leaderboard
+  if (isAnonymous) {
+    leaderboardPreview.innerHTML = `
+      <div class="guest-analytics-prompt">
+        <p>Leaderboards are only available for registered users.</p>
+        <p>Create a free account to compete with others!</p>
+        <button id="registerForLeaderboardBtn" class="start-quiz-btn">Create Free Account</button>
+      </div>
+    `;
+    
+    // Add event listener for registration button
+    const registerBtn = document.getElementById('registerForLeaderboardBtn');
+    if (registerBtn) {
+      registerBtn.addEventListener('click', function() {
+        if (typeof window.showRegistrationBenefitsModal === 'function') {
+          window.showRegistrationBenefitsModal();
+        } else if (typeof window.showRegisterForm === 'function') {
+          window.showRegisterForm();
+        }
+      });
+    }
+    
+    // Also modify the card footer to reflect guest status
+    const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer");
+    if (cardFooter) {
+      cardFooter.innerHTML = `
+        <span>Register to Access</span>
+        <span class="arrow-icon">→</span>
+      `;
+    }
+    
+    return;
+  }
+  
+  // For registered users, continue with normal leaderboard preview
   try {
     const currentUid = window.auth.currentUser.uid;
     const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
@@ -1005,7 +1043,8 @@ async function loadLeaderboardPreview() {
     
     querySnapshot.forEach(docSnap => {
       const data = docSnap.data();
-      if (data.stats) {
+      // Only include registered users (not anonymous)
+      if (data.stats && data.isRegistered !== false) {
         // Use total XP instead of weekly XP calculation
         let xp = data.stats.xp || 0;
         
@@ -1031,8 +1070,6 @@ async function loadLeaderboardPreview() {
     
     // Create HTML for the preview with well-structured entries
     let html = '';
-    
-    // Remove the weekly indicator header
     
     // Add top 3 entries
     if (top3.length === 0) {
