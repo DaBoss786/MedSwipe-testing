@@ -89,7 +89,7 @@
     
     <div class="login-alternative-options">
       <button id="createAccountBtn" class="secondary-button">Create Account</button>
-      <button id="continueAsGuestBtn" class="tertiary-button">Continue as Guest</button>
+      <button id="continueAsGuestBtn" class="auth-secondary-btn" onclick="document.getElementById('registrationBenefitsModal').style.display='none'; document.getElementById('mainOptions').style.display='flex';">Continue as Guest</button>
     </div>
     
     <div id="loginScreenError" class="login-error-message"></div>
@@ -649,7 +649,7 @@
       
       <div class="registration-options">
         <button id="createAccountBenefitsBtn" class="auth-primary-btn">Create Free Account</button>
-        <button id="continueAsGuestBtn" class="auth-secondary-btn">Continue as Guest</button>
+        <button id="continueAsGuestBtn" class="auth-secondary-btn" onclick="document.getElementById('registrationBenefitsModal').style.display='none'; document.getElementById('mainOptions').style.display='flex';">Continue as Guest</button>
       </div>
     </div>
   </div>
