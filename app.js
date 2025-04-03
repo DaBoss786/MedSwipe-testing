@@ -2273,3 +2273,46 @@ function checkRegistrationPrompt() {
 // Make functions globally available
 window.showRegistrationBenefitsModal = showRegistrationBenefitsModal;
 window.checkRegistrationPrompt = checkRegistrationPrompt;
+
+// Direct fix for the "Continue as Guest" button in the registration benefits modal
+document.addEventListener('DOMContentLoaded', function() {
+  // Add a direct event listener for the button, outside of any function
+  function fixContinueAsGuestButton() {
+    const continueAsGuestBtn = document.getElementById('continueAsGuestBtn');
+    
+    if (continueAsGuestBtn) {
+      console.log("Found Continue as Guest button, adding direct event listener");
+      
+      // Remove any existing listeners by cloning
+      const newBtn = continueAsGuestBtn.cloneNode(true);
+      continueAsGuestBtn.parentNode.replaceChild(newBtn, continueAsGuestBtn);
+      
+      // Add simple, direct click handler
+      newBtn.addEventListener('click', function() {
+        console.log("Continue as Guest button clicked");
+        
+        // Close the modal directly
+        const modal = document.getElementById('registrationBenefitsModal');
+        if (modal) {
+          modal.style.display = 'none';
+        }
+        
+        // Show the main dashboard directly
+        const mainOptions = document.getElementById('mainOptions');
+        if (mainOptions) {
+          mainOptions.style.display = 'flex';
+          console.log("Main options displayed");
+        }
+      });
+    }
+  }
+  
+  // Run the fix immediately
+  fixContinueAsGuestButton();
+  
+  // Also run the fix after a delay to catch any later DOM changes
+  setTimeout(fixContinueAsGuestButton, 1000);
+  
+  // Add a failsafe method the user can manually call if needed
+  window.fixContinueAsGuestButton = fixContinueAsGuestButton;
+});
