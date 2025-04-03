@@ -290,6 +290,12 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
   } catch (error) {
     console.error("Error recording answer:", error);
   }
+  // Check if registration prompt should be shown (for guest users)
+if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+  if (typeof window.checkRegistrationPrompt === 'function') {
+    window.checkRegistrationPrompt();
+  }
+}
 }
 
 // Calculate level based on XP thresholds
