@@ -1264,6 +1264,40 @@ async function updateReviewQueue() {
   
   if (!reviewCount || !reviewQueueContent || !reviewProgressBar) return;
   
+  // Check if user is anonymous/guest
+  const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+  
+  if (isAnonymous) {
+    // Guest user - show registration prompt instead of reviews
+    
+    // Clear existing content first
+    reviewQueueContent.innerHTML = '';
+    
+    // Create registration prompt
+    const registrationPrompt = document.createElement("div");
+    registrationPrompt.className = "review-empty-state guest-analytics-prompt";
+    registrationPrompt.innerHTML = `
+      <p>Spaced repetition review is available for registered users only.</p>
+      <p>Create a free account to unlock this feature!</p>
+    `;
+    
+    // Add to the content
+    reviewQueueContent.appendChild(registrationPrompt);
+    
+    // Update footer text
+    const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
+    if (footerText) {
+      footerText.textContent = "Register to Access";
+    }
+    
+    // Reset count and progress bar
+    reviewCount.textContent = "0";
+    reviewProgressBar.style.width = "0%";
+    
+    return;
+  }
+  
+  // Regular functionality for registered users continues below
   // Get count of due reviews
   const { dueCount, nextReviewDate } = await countDueReviews();
   
@@ -1314,12 +1348,30 @@ async function updateReviewQueue() {
 // Set up event listeners for dashboard
 function setupDashboardEvents() {
   // Start Quiz button
-  const startQuizBtn = document.getElementById("startQuizBtn");
-  if (startQuizBtn) {
-    startQuizBtn.addEventListener("click", function() {
-      document.getElementById("quizSetupModal").style.display = "block";
-    });
-  }
+const startQuizBtn = document.getElementById("startQuizBtn");
+if (startQuizBtn) {
+  startQuizBtn.addEventListener("click", function() {
+    // Check if user is anonymous before showing the modal
+    const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+    
+    // Show or hide the spaced repetition option based on user status
+    const spacedRepetitionContainer = document.querySelector('#modalSpacedRepetition').closest('.formGroup');
+    if (spacedRepetitionContainer) {
+      if (isAnonymous) {
+        // Hide the option for guest users
+        spacedRepetitionContainer.style.display = 'none';
+        // Make sure checkbox is unchecked for guest users
+        document.getElementById('modalSpacedRepetition').checked = false;
+      } else {
+        // Show the option for registered users
+        spacedRepetitionContainer.style.display = 'block';
+      }
+    }
+    
+    // Show the modal
+    document.getElementById("quizSetupModal").style.display = "block";
+  });
+}
   
   // Modal Start Quiz button
   const modalStartQuiz = document.getElementById("modalStartQuiz");
@@ -1376,30 +1428,48 @@ function setupDashboardEvents() {
     });
   }
   
-  // Review Queue card click - start review
-  const reviewQueueCard = document.getElementById("reviewQueueCard");
-  if (reviewQueueCard) {
-    reviewQueueCard.addEventListener("click", async function() {
-      // Get count of due reviews
-      const { dueCount } = await countDueReviews();
+  // Review Queue card click
+const reviewQueueCard = document.getElementById("reviewQueueCard");
+if (reviewQueueCard) {
+  reviewQueueCard.addEventListener("click", async function() {
+    // Check if user is anonymous/guest
+    const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+    
+    if (isAnonymous) {
+      console.log("Guest user attempted to access review queue");
       
-      if (dueCount === 0) {
-        alert("You have no questions due for review today. Good job!");
-        return;
+      // Show registration benefits modal for guest users
+      if (typeof window.showRegistrationBenefitsModal === 'function') {
+        window.showRegistrationBenefitsModal();
+      } else {
+        // Fallback if function isn't available
+        alert("Spaced repetition review is available for registered users only. Please create a free account to access this feature.");
       }
       
-      // We need to get the actual due question IDs
-      const dueQuestionIds = await getDueQuestionIds();
-      
-      if (dueQuestionIds.length === 0) {
-        alert("No questions found for review. Please try again later.");
-        return;
-      }
-      
-      // Load ONLY the specific due questions, not mixed with new questions
-      loadSpecificQuestions(dueQuestionIds);
-    });
-  }
+      return;
+    }
+    
+    // Original functionality for registered users continues below
+    // Get count of due reviews
+    const { dueCount } = await countDueReviews();
+    
+    if (dueCount === 0) {
+      alert("You have no questions due for review today. Good job!");
+      return;
+    }
+    
+    // We need to get the actual due question IDs
+    const dueQuestionIds = await getDueQuestionIds();
+    
+    if (dueQuestionIds.length === 0) {
+      alert("No questions found for review. Please try again later.");
+      return;
+    }
+    
+    // Load ONLY the specific due questions, not mixed with new questions
+    loadSpecificQuestions(dueQuestionIds);
+  });
+}
 }
 
 // Function to fix streak calendar alignment
