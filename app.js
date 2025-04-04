@@ -1193,6 +1193,43 @@ async function initializeDashboard() {
       loadLeaderboardPreview();
 
       // Also load review queue data
+      // Check if user is anonymous
+  const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+  
+  // Get the review queue card content element
+  const reviewQueueContent = document.getElementById("reviewQueueContent");
+  
+  // If user is anonymous, show registration prompt instead of review queue
+  if (isAnonymous && reviewQueueContent) {
+    reviewQueueContent.innerHTML = `
+      <div class="guest-analytics-prompt">
+        <p>Review Queue is only available for registered users.</p>
+        <p>Create an account to track your progress with spaced repetition!</p>
+        <button id="registerForReviewQueueBtn" class="start-quiz-btn">Create Free Account</button>
+      </div>
+    `;
+    
+    // Update the card footer text
+    const cardFooter = document.querySelector("#reviewQueueCard .card-footer");
+    if (cardFooter) {
+      cardFooter.innerHTML = `
+        <span>Register to Access</span>
+        <span class="arrow-icon">→</span>
+      `;
+    }
+    
+    // Add event listener for registration button
+    const registerBtn = document.getElementById('registerForReviewQueueBtn');
+    if (registerBtn) {
+      registerBtn.addEventListener('click', function() {
+        if (typeof window.showRegistrationBenefitsModal === 'function') {
+          window.showRegistrationBenefitsModal();
+        } else if (typeof window.showRegisterForm === 'function') {
+          window.showRegisterForm();
+        }
+      });
+    }
+  } else {
       updateReviewQueue();
     }
   } catch (error) {
