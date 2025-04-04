@@ -1035,7 +1035,7 @@ async function loadLeaderboardPreview() {
     return;
   }
   
-  // For registered users, continue with normal leaderboard preview
+   // For registered users, continue with normal leaderboard preview
   try {
     const currentUid = window.auth.currentUser.uid;
     const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
@@ -1043,8 +1043,8 @@ async function loadLeaderboardPreview() {
     
     querySnapshot.forEach(docSnap => {
       const data = docSnap.data();
-      // Only include registered users (not anonymous)
-      if (data.stats && data.isRegistered !== false) {
+      // Only include EXPLICITLY registered users
+      if (data.stats && data.isRegistered === true) {
         // Use total XP instead of weekly XP calculation
         let xp = data.stats.xp || 0;
         
