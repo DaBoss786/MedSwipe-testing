@@ -1714,6 +1714,17 @@ function setupDashboardEventListenersExplicitly() {
   const startQuizBtn = document.getElementById("startQuizBtn");
   if (startQuizBtn) {
     console.log("Found Start Quiz button, attaching listener");
+    // Before showing the modal, check if user is anonymous
+const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+
+// Show/hide the spaced repetition option based on user status
+const spacedRepetitionOption = document.getElementById("modalSpacedRepetition").parentElement;
+if (spacedRepetitionOption) {
+  spacedRepetitionOption.style.display = isAnonymous ? "none" : "block";
+}
+
+// Now show the modal
+document.getElementById("quizSetupModal").style.display = "block";
     // Remove any existing listeners by cloning and replacing the element
     const newBtn = startQuizBtn.cloneNode(true);
     startQuizBtn.parentNode.replaceChild(newBtn, startQuizBtn);
@@ -1776,6 +1787,19 @@ function setupDashboardEventListenersExplicitly() {
   const reviewQueueCard = document.getElementById("reviewQueueCard");
   if (reviewQueueCard) {
     console.log("Found Review Queue card, attaching listener");
+    // Check if user is anonymous
+const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+
+if (isAnonymous) {
+  // For guest users, show registration benefits modal
+  if (typeof window.showRegistrationBenefitsModal === 'function') {
+    window.showRegistrationBenefitsModal();
+  } else {
+    alert("Review Queue is only available for registered users. Please create a free account to access this feature.");
+  }
+  return;
+}
+
     const newCard = reviewQueueCard.cloneNode(true);
     reviewQueueCard.parentNode.replaceChild(newCard, reviewQueueCard);
     newCard.addEventListener("click", function() {
