@@ -655,6 +655,73 @@
     </div>
   </div>
 </div>
-  
+
+<!-- ========================== -->
+<!-- == CME Dashboard View == -->
+<!-- ========================== -->
+<div id="cmeDashboardView" style="display: none; padding: 20px; margin-top: 60px; max-width: 600px; margin-left: auto; margin-right: auto;"> <!-- Start hidden, centered -->
+    <h2 style="text-align: center; color: #0056b3; margin-bottom: 20px;">CME Dashboard</h2>
+
+    <!-- Start CME Quiz Button -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <!-- Using start-quiz-btn class for consistency, adjust if needed -->
+        <button id="startCmeQuizBtn" class="start-quiz-btn">Start CME Quiz</button>
+    </div>
+
+    <!-- CME Tracker Card -->
+    <div id="cmeTrackerCard" class="dashboard-card" style="width: 100%; margin-bottom: 20px;">
+        <div class="card-header">
+            <h3>CME Tracker</h3>
+        </div>
+        <div class="card-content" id="cmeTrackerContent" style="padding: 15px;">
+            <!-- Stats will be loaded here by JS -->
+            <p>Loading tracker data...</p>
+        </div>
+        <div class="card-footer" style="justify-content: center;">
+             <!-- Using auth-primary-btn for styling, adjust if needed -->
+             <button id="claimCmeBtn" class="auth-primary-btn" style="padding: 8px 15px;" disabled>Claim CME Credits</button>
+        </div>
+    </div>
+
+    <!-- CME Credit History Card -->
+    <div id="cmeHistoryCard" class="dashboard-card" style="width: 100%; margin-bottom: 20px;">
+        <div class="card-header">
+            <h3>CME Credit History</h3>
+        </div>
+        <div class="card-content" id="cmeHistoryContent" style="padding: 15px; max-height: 200px; overflow-y: auto;">
+            <!-- History will be loaded here by JS -->
+            <p>No credits claimed yet.</p>
+        </div>
+         <div class="card-footer">
+            <span>View Past Claims</span>
+            <span class="arrow-icon">→</span>
+        </div>
+    </div>
+
+    <!-- How CME Credits Work Card -->
+    <div id="cmeInfoCard" class="dashboard-card" style="width: 100%; margin-bottom: 20px;">
+        <div class="card-header">
+            <h3>How CME Credits Work</h3>
+        </div>
+        <div class="card-content" style="padding: 15px; font-size: 0.9rem; line-height: 1.5;">
+            <ul>
+                <li>Answer CME-eligible questions within the CME Module.</li>
+                <li>Score at least 70% overall on questions attempted for CME credit.</li>
+                <li>Every <strong>12 questions</strong> answered (with >=70% accuracy) earns <strong>1 CME credit</strong>.</li>
+                <li>You can claim credits in increments of 0.25 (i.e., after every 3 questions meeting the criteria).</li>
+                <li>Claim available credits anytime using the "Claim CME Credits" button.</li>
+                <li>A short evaluation is required before generating your certificate.</li>
+                <li>Certificates are downloadable and emailed to you.</li>
+            </ul>
+        </div>
+    </div>
+
+     <!-- Back Button -->
+     <div style="text-align: center; margin-top: 20px;">
+          <!-- Using start-quiz-btn class for consistency, adjust if needed -->
+          <button id="cmeDashboardBackBtn" class="start-quiz-btn">Back to Main Dashboard</button>
+     </div>
+
+</div> <!-- End of cmeDashboardView -->
 </body>
 </html>
