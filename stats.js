@@ -202,8 +202,8 @@ async function loadOverallData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    // Only include registered users (not anonymous/guest users)
-    if (data.stats && data.isRegistered !== false) {
+    // Only include EXPLICITLY registered users
+    if (data.stats && data.isRegistered === true) {
       let xp = data.stats.xp || 0;
       const level = data.stats.level || 1;
       
@@ -313,8 +313,8 @@ async function loadStreaksData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    // Only include registered users (not anonymous/guest users)
-    if (data.isRegistered !== false) {
+    // Only include EXPLICITLY registered users
+    if (data.isRegistered === true) {
       let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
       streakEntries.push({
         uid: docSnap.id,
@@ -416,8 +416,8 @@ async function loadTotalAnsweredData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    // Only include registered users (not anonymous/guest users)
-    if (data.isRegistered !== false) {
+    // Only include EXPLICITLY registered users
+    if (data.isRegistered === true) {
       let weeklyCount = 0;
       if (data.answeredQuestions) {
         for (const key in data.answeredQuestions) {
@@ -427,6 +427,14 @@ async function loadTotalAnsweredData() {
           }
         }
       }
+      
+      answeredEntries.push({
+        uid: docSnap.id,
+        username: data.username || "Anonymous",
+        weeklyCount: weeklyCount
+      });
+    }
+  });
       
       answeredEntries.push({
         uid: docSnap.id,
