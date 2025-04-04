@@ -437,7 +437,7 @@ window.addEventListener('load', function() {
   if (performanceItemUser) {
     performanceItemUser.addEventListener("click", function() {
       closeUserMenu();
-      displayPerformance();
+      window.displayPerformance(); 
     });
   }
   
@@ -1356,7 +1356,7 @@ function setupDashboardEvents() {
   const userProgressCard = document.getElementById("userProgressCard");
   if (userProgressCard) {
     userProgressCard.addEventListener("click", function() {
-      displayPerformance();
+      window.displayPerformance(); 
     });
   }
   
@@ -1364,7 +1364,7 @@ function setupDashboardEvents() {
   const quickStatsCard = document.getElementById("quickStatsCard");
   if (quickStatsCard) {
     quickStatsCard.addEventListener("click", function() {
-      displayPerformance();
+      window.displayPerformance(); 
     });
   }
   
@@ -1702,7 +1702,7 @@ function setupDashboardEventListenersExplicitly() {
     newCard.addEventListener("click", function() {
       console.log("User Progress card clicked");
       if (typeof displayPerformance === 'function') {
-        displayPerformance();
+        window.displayPerformance(); 
       }
     });
   }
@@ -1716,7 +1716,7 @@ function setupDashboardEventListenersExplicitly() {
     newCard.addEventListener("click", function() {
       console.log("Quick Stats card clicked");
       if (typeof displayPerformance === 'function') {
-        displayPerformance();
+        window.displayPerformance(); 
       }
     });
   }
