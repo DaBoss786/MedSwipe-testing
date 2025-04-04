@@ -41,24 +41,24 @@ function initAuth() {
       const isRegistered = userDoc.exists() && userDoc.data().isRegistered === true;
       window.authState.isRegistered = isRegistered;
       
-      // Make sure the user document exists
-      if (!userDoc.exists()) {
-        // Create a new user document for this anonymous user
-        await setDoc(doc(db, 'users', user.uid), {
-          username: generateGuestUsername(),
-          createdAt: serverTimestamp(),
-          isRegistered: false,
-          stats: {
-            totalAnswered: 0,
-            totalCorrect: 0,
-            totalIncorrect: 0,
-            categories: {},
-            totalTimeSpent: 0,
-            xp: 0,
-            level: 1
-          }
-        });
-      }
+      // In the auth state listener where anonymous users are created
+if (!userDoc.exists()) {
+  // Create a new user document for this anonymous user
+  await setDoc(doc(db, 'users', user.uid), {
+    username: generateGuestUsername(),
+    createdAt: serverTimestamp(),
+    isRegistered: false, // EXPLICITLY set to false
+    stats: {
+      totalAnswered: 0,
+      totalCorrect: 0,
+      totalIncorrect: 0,
+      categories: {},
+      totalTimeSpent: 0,
+      xp: 0,
+      level: 1
+    }
+  });
+}
     } else {
       // No user is signed in, reset auth state
       window.authState.user = null;
@@ -135,8 +135,8 @@ async function registerUser(email, password, username, experience) {
       ...existingData,
       username: username,
       email: email,
-      experience: experience, // Add experience level
-      isRegistered: true,
+      experience: experience,
+      isRegistered: true, // EXPLICITLY set to true
       updatedAt: serverTimestamp(),
       ...(userDoc.exists() ? {} : {
         createdAt: serverTimestamp(),
@@ -241,8 +241,8 @@ async function upgradeAnonymousUser(email, password, username, experience) {
         ...userData,
         username: username,
         email: email,
-        experience: experience, // Add experience level
-        isRegistered: true,
+        experience: experience,
+        isRegistered: true, // EXPLICITLY set to true
         previousAnonymousUid: anonymousUid,
         updatedAt: serverTimestamp()
       }, { merge: true });
