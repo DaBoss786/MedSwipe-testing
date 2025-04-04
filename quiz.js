@@ -100,6 +100,24 @@ async function loadQuestions(options = {}) {
 // Add this function to quiz.js
 async function loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds) {
   try {
+    // Check if the user is anonymous/guest
+    if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+      console.log("Guest user attempted to use spaced repetition");
+      
+      // Disable spaced repetition for guest users
+      options.spacedRepetition = false;
+      
+      // Show registration benefits modal
+      if (typeof window.showRegistrationBenefitsModal === 'function') {
+        window.showRegistrationBenefitsModal();
+      } else {
+        alert("Spaced repetition is available for registered users only. Please create a free account to access this feature.");
+      }
+      
+      // Fall back to regular mode
+      loadQuestions(options);
+      return;
+    }
     // Get user's spaced repetition data
     const spacedRepetitionData = await fetchSpacedRepetitionData();
     if (!spacedRepetitionData) {
