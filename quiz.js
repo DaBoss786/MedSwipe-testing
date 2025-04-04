@@ -100,17 +100,6 @@ async function loadQuestions(options = {}) {
 // Add this function to quiz.js
 async function loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds) {
   try {
-    // Check if user is anonymous
-    const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
-    
-    // If anonymous, redirect to regular question loading
-    if (isAnonymous) {
-      console.log("Spaced repetition not available for guest users, falling back to regular mode");
-      // Disable spaced repetition and use regular loading
-      options.spacedRepetition = false;
-      loadQuestions(options);
-      return;
-    }
     // Get user's spaced repetition data
     const spacedRepetitionData = await fetchSpacedRepetitionData();
     if (!spacedRepetitionData) {
