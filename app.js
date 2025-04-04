@@ -117,6 +117,73 @@ function startOnboardingQuiz() {
     }
   });
 }
+// --- Step 3: CME Module Button Logic ---
+
+const cmeModuleBtn = document.getElementById("cmeModuleBtn");
+if (cmeModuleBtn) {
+    cmeModuleBtn.addEventListener("click", function() {
+        console.log("CME Module button clicked."); // For debugging
+
+        // --- PAYWALL INTEGRATION POINT ---
+        // 1. Check if user is registered (guests cannot access CME)
+        if (!window.authState || !window.authState.user || window.authState.user.isAnonymous) {
+             alert("Please register or log in to access the CME Module.");
+             // Optionally, show the login/register form
+             // if (typeof showLoginScreen === 'function') showLoginScreen();
+             return; // Stop processing for guests
+        }
+
+        // 2. Check if the registered user has an active CME subscription
+        // Using await here as the check might be async
+        checkUserCmeSubscriptionStatus().then(hasActiveCmeSubscription => {
+            if (hasActiveCmeSubscription) {
+                // User has paid, show the CME dashboard
+                showCmeDashboard();
+            } else {
+                // User has NOT paid, show the paywall/subscription options
+                // For now, we'll just show an alert and then the dashboard for testing.
+                // Replace this alert with your actual Stripe integration later.
+                alert("CME Module requires a subscription. (Placeholder - Bypassing for testing)"); // Inform user
+
+                // --- TRIGGER YOUR STRIPE CHECKOUT/PAYMENT FLOW HERE ---
+                // Example: redirectToStripeCheckout(window.authState.user.uid);
+
+                // FOR TESTING PURPOSES ONLY - REMOVE LATER: Directly show CME dashboard
+                 console.warn("Bypassing paywall for testing. Implement Stripe check and payment flow.");
+                 showCmeDashboard(); // Show dashboard even without payment for now
+            }
+        }).catch(error => {
+             console.error("Error during subscription check:", error);
+             alert("Could not verify subscription status. Please try again.");
+        });
+    });
+} else {
+    console.error("CME Module button (#cmeModuleBtn) not found."); // Error if button doesn't exist
+}
+
+// Add event listener for the CME Dashboard's back button
+const cmeDashboardBackBtn = document.getElementById("cmeDashboardBackBtn");
+if(cmeDashboardBackBtn) {
+    cmeDashboardBackBtn.addEventListener("click", function() {
+        console.log("CME Dashboard Back button clicked."); // For debugging
+        const cmeDashboard = document.getElementById("cmeDashboardView");
+        const mainOptions = document.getElementById("mainOptions"); // Assuming this is your main dashboard view ID
+
+        if (cmeDashboard) {
+            cmeDashboard.style.display = "none";
+        }
+        // Ensure mainOptions exists before trying to show it
+        if (mainOptions) {
+            mainOptions.style.display = "flex"; // Show main options again
+        } else {
+             console.error("Main options element (#mainOptions) not found when going back.");
+        }
+    });
+} else {
+     console.error("CME Dashboard Back button (#cmeDashboardBackBtn) not found.");
+}
+
+// --- End of Step 3 Code Block 1 ---
 });
 
 // Function to show the login form modal
@@ -2375,3 +2442,126 @@ document.addEventListener('DOMContentLoaded', function() {
   // Add a failsafe method the user can manually call if needed
   window.fixContinueAsGuestButton = fixContinueAsGuestButton;
 });
+
+// --- Step 3: Helper Functions ---
+
+// Placeholder function - replace with your actual logic to check subscription
+async function checkUserCmeSubscriptionStatus() {
+    console.log("Checking CME subscription status (placeholder)...");
+    // TODO: Implement actual check against Firestore user data or your backend
+    // Example: Fetch user doc and check a field like 'cmeSubscriptionActive: true'
+    //          or 'cmeSubscriptionExpiry > currentDate'
+
+    if (window.authState && window.authState.user && !window.authState.user.isAnonymous) { // Ensure user is logged in and not guest
+        try {
+            const userDocRef = window.doc(window.db, 'users', window.authState.user.uid);
+            const userDocSnap = await window.getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                // --- Replace this line with your actual check ---
+                // Example: Check if a field 'cmeSubscriptionActive' is true
+                const isActive = userData.cmeSubscriptionActive === true;
+                console.log(`Firestore check: User ${window.authState.user.uid}, cmeSubscriptionActive = ${userData.cmeSubscriptionActive}, Result: ${isActive}`);
+                return isActive;
+            } else {
+                console.log("User document not found for subscription check.");
+                return false; // No document, no subscription
+            }
+        } catch (error) {
+            console.error("Error checking subscription status in Firestore:", error);
+            return false; // Error occurred, assume no subscription
+        }
+    } else {
+         console.log("User not logged in or is anonymous, cannot check subscription.");
+         return false; // Not a registered user, no subscription
+    }
+}
+
+// Function to show the CME Dashboard and hide others
+function showCmeDashboard() {
+    console.log("Attempting to show CME Dashboard..."); // For debugging
+
+    // Define IDs of all top-level views to hide
+    const viewsToHide = [
+        "mainOptions",
+        "performanceView",
+        "leaderboardView",
+        "aboutView",
+        "faqView",
+        "welcomeScreen", // Add welcome/splash if they might be visible
+        "splashScreen",
+        "loginScreen",
+        "onboardingLoadingScreen" // Add onboarding loading screen
+        // Add any other top-level view IDs here
+    ];
+    // Define IDs of modals/forms to hide
+    const modalsToHide = [
+        "customQuizForm",
+        "randomQuizForm",
+        "quizSetupModal",
+        "contactModal",
+        "feedbackModal",
+        "loginModal",
+        "registerModal",
+        "forgotPasswordModal",
+        "registrationBenefitsModal",
+        "termsOfServiceModal", // Add TOS/Privacy modals
+        "privacyPolicyModal"
+        // Add other modal IDs
+    ];
+    // Define elements related to the quiz interface
+    const quizElementsToHide = [
+        ".swiper", // Use class selector for swiper container
+        "#bottomToolbar",
+        "#iconBar"
+    ];
+
+    // Hide all other views
+    viewsToHide.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = "none";
+             // console.log(`Hid view: #${id}`);
+        } else {
+            // console.warn(`View element with ID #${id} not found.`);
+        }
+    });
+
+    // Hide all modals
+    modalsToHide.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            // Modals might use 'flex' or 'block', setting to 'none' is safest
+            element.style.display = "none";
+             // console.log(`Hid modal: #${id}`);
+        } else {
+             // console.warn(`Modal element with ID #${id} not found.`);
+        }
+    });
+
+     // Hide quiz interface elements
+     quizElementsToHide.forEach(selector => {
+        const element = document.querySelector(selector); // Use querySelector for class/tag
+        if (element) {
+            element.style.display = "none";
+             // console.log(`Hid quiz element: ${selector}`);
+        } else {
+             // console.warn(`Quiz element with selector ${selector} not found.`);
+        }
+    });
+
+
+    // Show the CME dashboard
+    const cmeDashboard = document.getElementById("cmeDashboardView");
+    if (cmeDashboard) {
+        cmeDashboard.style.display = "block";
+        console.log("CME Dashboard display set to 'block'."); // Confirm display change
+        // Load initial data for the CME dashboard (stats, history) - Placeholder
+        // loadCmeDashboardData(); // We will create this function in a later step
+        console.log("Placeholder: Would call loadCmeDashboardData() now.");
+    } else {
+        console.error("CME Dashboard element (#cmeDashboardView) not found."); // Error if dashboard doesn't exist
+    }
+}
+
+// --- End of Step 3 Helper Functions ---
