@@ -1193,43 +1193,6 @@ async function initializeDashboard() {
       loadLeaderboardPreview();
 
       // Also load review queue data
-      // Check if user is anonymous
-  const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
-  
-  // Get the review queue card content element
-  const reviewQueueContent = document.getElementById("reviewQueueContent");
-  
-  // If user is anonymous, show registration prompt instead of review queue
-  if (isAnonymous && reviewQueueContent) {
-    reviewQueueContent.innerHTML = `
-      <div class="guest-analytics-prompt">
-        <p>Review Queue is only available for registered users.</p>
-        <p>Create an account to track your progress with spaced repetition!</p>
-        <button id="registerForReviewQueueBtn" class="start-quiz-btn">Create Free Account</button>
-      </div>
-    `;
-    
-    // Update the card footer text
-    const cardFooter = document.querySelector("#reviewQueueCard .card-footer");
-    if (cardFooter) {
-      cardFooter.innerHTML = `
-        <span>Register to Access</span>
-        <span class="arrow-icon">→</span>
-      `;
-    }
-    
-    // Add event listener for registration button
-    const registerBtn = document.getElementById('registerForReviewQueueBtn');
-    if (registerBtn) {
-      registerBtn.addEventListener('click', function() {
-        if (typeof window.showRegistrationBenefitsModal === 'function') {
-          window.showRegistrationBenefitsModal();
-        } else if (typeof window.showRegisterForm === 'function') {
-          window.showRegisterForm();
-        }
-      });
-    }
-  } else {
       updateReviewQueue();
     }
   } catch (error) {
@@ -1714,17 +1677,6 @@ function setupDashboardEventListenersExplicitly() {
   const startQuizBtn = document.getElementById("startQuizBtn");
   if (startQuizBtn) {
     console.log("Found Start Quiz button, attaching listener");
-    // Before showing the modal, check if user is anonymous
-const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
-
-// Show/hide the spaced repetition option based on user status
-const spacedRepetitionOption = document.getElementById("modalSpacedRepetition").parentElement;
-if (spacedRepetitionOption) {
-  spacedRepetitionOption.style.display = isAnonymous ? "none" : "block";
-}
-
-// Now show the modal
-document.getElementById("quizSetupModal").style.display = "block";
     // Remove any existing listeners by cloning and replacing the element
     const newBtn = startQuizBtn.cloneNode(true);
     startQuizBtn.parentNode.replaceChild(newBtn, startQuizBtn);
@@ -1787,19 +1739,6 @@ document.getElementById("quizSetupModal").style.display = "block";
   const reviewQueueCard = document.getElementById("reviewQueueCard");
   if (reviewQueueCard) {
     console.log("Found Review Queue card, attaching listener");
-    // Check if user is anonymous
-const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
-
-if (isAnonymous) {
-  // For guest users, show registration benefits modal
-  if (typeof window.showRegistrationBenefitsModal === 'function') {
-    window.showRegistrationBenefitsModal();
-  } else {
-    alert("Review Queue is only available for registered users. Please create a free account to access this feature.");
-  }
-  return;
-}
-
     const newCard = reviewQueueCard.cloneNode(true);
     reviewQueueCard.parentNode.replaceChild(newCard, reviewQueueCard);
     newCard.addEventListener("click", function() {
