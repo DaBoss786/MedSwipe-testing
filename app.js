@@ -225,20 +225,26 @@ if (modalStartCmeQuizBtn) {
         const includeAnsweredCheckbox = document.getElementById("cmeIncludeAnsweredCheckbox");
 
         const selectedCategory = categorySelect ? categorySelect.value : "";
-        // Ensure numQuestions is a valid number, default to 12 if not
-        let numQuestions = numQuestionsInput ? parseInt(numQuestionsInput.value, 10) : 12;
-        if (isNaN(numQuestions) || numQuestions < 3) {
-            numQuestions = 12; // Default or minimum if invalid
-        } else if (numQuestions > 50) {
-             numQuestions = 50; // Max limit
+        // Ensure numQuestions is read correctly and parsed as an integer
+        let numQuestions = numQuestionsInput ? parseInt(numQuestionsInput.value, 10) : 12; // Base 10 parse
+
+        // --- UPDATED VALIDATION ---
+        // Validate the parsed number (allow 1 to 50)
+        if (isNaN(numQuestions) || numQuestions < 1) { // Check if Not-a-Number or less than 1
+            console.warn(`Invalid number input (${numQuestionsInput.value}), defaulting to 12.`);
+            numQuestions = 12; // Default to 12 if parsing fails or below min
+        } else if (numQuestions > 50) { // Check if greater than 50
+             console.warn(`Number input (${numQuestionsInput.value}) exceeds max 50, capping at 50.`);
+             numQuestions = 50; // Cap at max limit
         }
+        // No need for Math.max(3, ...) anymore
 
         const includeAnswered = includeAnsweredCheckbox ? includeAnsweredCheckbox.checked : false;
 
-        console.log("CME Quiz Options:", {
+        console.log("CME Quiz Options:", { // Log the FINAL options being passed
             quizType: 'cme',
             category: selectedCategory,
-            num: numQuestions,
+            num: numQuestions, // Ensure this logs the correct number
             includeAnswered: includeAnswered
         });
 
