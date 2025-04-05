@@ -2651,9 +2651,7 @@ function showCmeDashboard() {
     if (cmeDashboard) {
         cmeDashboard.style.display = "block";
         console.log("CME Dashboard display set to 'block'."); // Confirm display change
-        // Load initial data for the CME dashboard (stats, history) - Placeholder
-        // loadCmeDashboardData(); // We will create this function in a later step
-        console.log("Placeholder: Would call loadCmeDashboardData() now.");
+        loadCmeDashboardData();
     } else {
         console.error("CME Dashboard element (#cmeDashboardView) not found."); // Error if dashboard doesn't exist
     }
@@ -2706,3 +2704,117 @@ async function populateCmeCategoryDropdown() {
 }
 
 // --- End of Step 5b Code ---
+
+// --- Step 9: Load and Display CME Dashboard Data ---
+
+async function loadCmeDashboardData() {
+    console.log("Loading CME dashboard data...");
+    const trackerContent = document.getElementById("cmeTrackerContent");
+    const historyContent = document.getElementById("cmeHistoryContent");
+    const claimButton = document.getElementById("claimCmeBtn");
+
+    // Ensure elements exist
+    if (!trackerContent || !historyContent || !claimButton) {
+        console.error("Required CME dashboard elements not found.");
+        return;
+    }
+
+    // Reset display while loading
+    trackerContent.innerHTML = "<p>Loading tracker data...</p>";
+    historyContent.innerHTML = "<p>Loading history...</p>";
+    claimButton.disabled = true; // Disable button while loading/if no credits
+
+    // Ensure user is logged in and registered
+    if (!window.authState || !window.authState.user || window.authState.user.isAnonymous) {
+        trackerContent.innerHTML = "<p>Please log in as a registered user to view CME data.</p>";
+        historyContent.innerHTML = "<p>Login required.</p>";
+        console.log("User not logged in/registered for CME data.");
+        return;
+    }
+
+    const uid = window.authState.user.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+
+    try {
+        const userDocSnap = await window.getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+            trackerContent.innerHTML = "<p>No CME data found for this user.</p>";
+            historyContent.innerHTML = "<p>No claim history.</p>";
+            console.log("User document not found for CME data.");
+            return;
+        }
+
+        const data = userDocSnap.data();
+        const cmeStats = data.cmeStats || { // Default to zeros if cmeStats doesn't exist
+            totalAnswered: 0,
+            totalCorrect: 0,
+            eligibleAnswerCount: 0,
+            creditsEarned: 0.00,
+            creditsClaimed: 0.00
+        };
+        const cmeHistory = data.cmeClaimHistory || []; // Default to empty array
+
+        // --- Update Tracker Card ---
+        const cmeAccuracy = cmeStats.totalAnswered > 0
+            ? Math.round((cmeStats.totalCorrect / cmeStats.totalAnswered) * 100)
+            : 0;
+        // Ensure credits are formatted to 2 decimal places
+        const creditsEarned = parseFloat(cmeStats.creditsEarned || 0).toFixed(2);
+        const creditsClaimed = parseFloat(cmeStats.creditsClaimed || 0).toFixed(2);
+        const creditsAvailable = Math.max(0, creditsEarned - creditsClaimed).toFixed(2); // Ensure not negative
+
+        trackerContent.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalAnswered || 0}</div>
+                    <div style="font-size: 0.8em; color: #555;">Questions Answered</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalCorrect || 0}</div>
+                    <div style="font-size: 0.8em; color: #555;">Correct Answers</div>
+                </div>
+                 <div style="text-align: center;">
+                    <div style="font-size: 1.4em; font-weight: bold; color: ${cmeAccuracy >= 70 ? '#28a745' : '#dc3545'};">${cmeAccuracy}%</div>
+                    <div style="font-size: 0.8em; color: #555;">Overall Accuracy</div>
+                </div>
+                 <div style="text-align: center;">
+                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${creditsEarned}</div>
+                    <div style="font-size: 0.8em; color: #555;">Total Credits Earned</div>
+                </div>
+                 <div style="text-align: center;">
+                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${creditsAvailable}</div>
+                    <div style="font-size: 0.8em; color: #555;">Available to Claim</div>
+                </div>
+            </div>
+            ${cmeAccuracy < 70 && cmeStats.totalAnswered > 0 ? '<p style="color: #dc3545; font-size: 0.85rem; text-align: center; margin-top: 10px;">Note: Accuracy must be >= 70% to earn credits.</p>' : ''}
+        `;
+
+        // Enable/disable claim button
+        if (parseFloat(creditsAvailable) >= 0.25) {
+            claimButton.disabled = false;
+            claimButton.textContent = `Claim ${creditsAvailable} Credits`;
+        } else {
+            claimButton.disabled = true;
+            claimButton.textContent = "Claim CME Credits"; // Reset text
+        }
+
+        // --- Update History Card (Initial - will be refined in Step 13) ---
+        if (cmeHistory.length > 0) {
+             // Basic display for now, will format better later
+             historyContent.innerHTML = cmeHistory.map(claim =>
+                 `<p>Claimed ${parseFloat(claim.creditsClaimed || 0).toFixed(2)} credits on ${claim.timestamp ? new Date(claim.timestamp.seconds * 1000).toLocaleDateString() : 'Unknown Date'}</p>`
+             ).join('');
+        } else {
+            historyContent.innerHTML = "<p>No credits claimed yet.</p>";
+        }
+
+        console.log("CME dashboard data loaded and displayed.");
+
+    } catch (error) {
+        console.error("Error loading CME dashboard data:", error);
+        trackerContent.innerHTML = "<p>Error loading tracker data.</p>";
+        historyContent.innerHTML = "<p>Error loading history.</p>";
+        claimButton.disabled = true;
+    }
+}
