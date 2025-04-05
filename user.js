@@ -874,3 +874,124 @@ async function fetchSpacedRepetitionData() {
 
 // Make the function available globally
 window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
+
+// --- Step 8: Function to Record CME Answers and Update Stats ---
+
+async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
+    // Ensure user is logged in and not anonymous
+    if (!window.auth || !window.auth.currentUser || window.auth.currentUser.isAnonymous) {
+        console.log("User not authenticated or is guest, cannot record CME answer.");
+        return;
+    }
+
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+
+    console.log(`Recording CME Answer for Q: ${questionId}, Correct: ${isCorrect}`);
+
+    try {
+        await window.runTransaction(window.db, async (transaction) => {
+            const userDoc = await transaction.get(userDocRef);
+            if (!userDoc.exists()) {
+                console.error("User document not found for recording CME answer.");
+                // Optionally create a basic doc here if it should always exist for registered users
+                return;
+            }
+
+            let data = userDoc.data();
+
+            // --- Initialize CME-specific fields if they don't exist ---
+            if (!data.cmeStats) {
+                data.cmeStats = {
+                    totalAnswered: 0,
+                    totalCorrect: 0,
+                    eligibleAnswerCount: 0, // Questions answered while overall CME accuracy >= 70%
+                    creditsEarned: 0.00,
+                    creditsClaimed: 0.00
+                };
+                console.log("Initialized cmeStats object for user.");
+            }
+            // Ensure all sub-fields exist, defaulting to 0
+            data.cmeStats.totalAnswered = data.cmeStats.totalAnswered || 0;
+            data.cmeStats.totalCorrect = data.cmeStats.totalCorrect || 0;
+            data.cmeStats.eligibleAnswerCount = data.cmeStats.eligibleAnswerCount || 0;
+            data.cmeStats.creditsEarned = data.cmeStats.creditsEarned || 0.00;
+            data.cmeStats.creditsClaimed = data.cmeStats.creditsClaimed || 0.00;
+
+
+            if (!data.cmeAnsweredQuestions) {
+                data.cmeAnsweredQuestions = {};
+                console.log("Initialized cmeAnsweredQuestions map for user.");
+            }
+
+            // --- Avoid re-recording the same question within CME context ---
+            // Note: This check might be redundant if quiz loading already filters,
+            // but it's safer to have it here. Adjust if needed based on your
+            // "include answered" logic for CME quizzes.
+            // If you ALLOW re-answering for credit, remove or modify this check.
+            // For now, assume we only count the *first* time a CME question is answered for stats.
+            if (data.cmeAnsweredQuestions[questionId]) {
+                 console.log(`CME Question ${questionId} already answered, skipping stat update.`);
+                 // Even if answered before, update the timestamp
+                 data.cmeAnsweredQuestions[questionId] = window.serverTimestamp();
+                 transaction.set(userDocRef, { cmeAnsweredQuestions: data.cmeAnsweredQuestions }, { merge: true });
+                 return; // Don't update stats again if already answered
+            }
+
+
+            // --- Update CME Stats ---
+            data.cmeStats.totalAnswered++;
+            if (isCorrect) {
+                data.cmeStats.totalCorrect++;
+            }
+
+            // Add to the list of answered CME questions with a timestamp
+            data.cmeAnsweredQuestions[questionId] = window.serverTimestamp();
+
+            // --- Calculate CME Credit Eligibility ---
+            // Calculate current overall CME accuracy
+            const cmeAccuracy = data.cmeStats.totalAnswered > 0
+                ? (data.cmeStats.totalCorrect / data.cmeStats.totalAnswered)
+                : 0;
+            const cmeAccuracyPercent = Math.round(cmeAccuracy * 100);
+
+            console.log(`CME Accuracy after this answer: ${cmeAccuracyPercent}%`);
+
+            // Check if this answer qualifies for credit accumulation (accuracy >= 70%)
+            if (cmeAccuracy >= 0.70) {
+                data.cmeStats.eligibleAnswerCount++;
+                console.log(`Accuracy >= 70%, incremented eligibleAnswerCount to: ${data.cmeStats.eligibleAnswerCount}`);
+
+                // Calculate potential new earned credits (0.25 credits per 3 eligible answers)
+                // Use Math.floor to only count full sets of 3
+                const potentialCredits = Math.floor(data.cmeStats.eligibleAnswerCount / 3) * 0.25;
+
+                // Update creditsEarned only if it increases
+                if (potentialCredits > data.cmeStats.creditsEarned) {
+                     data.cmeStats.creditsEarned = potentialCredits;
+                     console.log(`Updated creditsEarned to: ${data.cmeStats.creditsEarned}`);
+                }
+            } else {
+                 console.log(`Accuracy < 70%, eligibleAnswerCount not incremented.`);
+            }
+
+            // --- Update Firestore Document ---
+            // We only need to update the cmeStats and cmeAnsweredQuestions fields
+            transaction.set(userDocRef, {
+                 cmeStats: data.cmeStats,
+                 cmeAnsweredQuestions: data.cmeAnsweredQuestions
+                 }, { merge: true }); // Use merge: true to avoid overwriting other user data
+
+            console.log("CME stats updated successfully in transaction.");
+        });
+
+    } catch (error) {
+        console.error("Error recording CME answer:", error);
+        // Decide how to handle errors - maybe log to a specific error collection?
+    }
+
+    // Optional: Update UI immediately if needed, though usually done by refreshing dashboard data
+    // Example: updateCmeDashboardUI(data.cmeStats);
+}
+
+// --- End of Step 8 Code ---
