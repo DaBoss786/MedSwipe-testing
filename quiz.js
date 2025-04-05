@@ -463,208 +463,185 @@ function addOptionListeners() {
       const hint = card.querySelector('.swipe-hint');
       if (hint) { hint.style.display = 'block'; }
       const answerSlide = questionSlide.nextElementSibling;
-      if (answerSlide) {
         // If this is the last question, add a "View Summary" button directly to the explanation
-        if (currentQuestion + 1 === totalQuestions) {
-          // Check if this is the onboarding quiz (window flag set in loadQuestions)
-          if (window.isOnboardingQuiz) {
-            answerSlide.querySelector('.card').innerHTML = `
-              <div class="answer">
-                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                Correct Answer: ${correct}<br>
-                ${explanation}
-              </div>
-              <div class="difficulty-buttons">
-                <p class="difficulty-prompt">How difficult was this question?</p>
-                <div class="difficulty-btn-container">
-                  <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-                  <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-                  <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
-                </div>
-              </div>
-              <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
-                Continue
-              </button>
-            `;
-          } else {
-            // Regular quiz with summary button
-            answerSlide.querySelector('.card').innerHTML = `
-              <div class="answer">
-                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                Correct Answer: ${correct}<br>
-                ${explanation}
-              </div>
-              <div class="difficulty-buttons">
-                <p class="difficulty-prompt">How difficult was this question?</p>
-                <div class="difficulty-btn-container">
-                  <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-                  <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-                  <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
-                </div>
-              </div>
-              <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
-                Loading Summary...
-              </button>
-            `;
-          }
-          
-          // Add click handlers for difficulty buttons
-          const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
-          difficultyButtons.forEach(btn => {
-            btn.addEventListener('click', async function() {
-              // Remove selected class from all buttons
-              difficultyButtons.forEach(b => b.classList.remove('selected'));
-              // Add selected class to clicked button
-              this.classList.add('selected');
-              
-              const difficulty = this.getAttribute('data-difficulty');
-              const questionId = questionSlide.dataset.id;
-              
-              // Calculate next review date based on difficulty and correctness
-              let nextReviewInterval = 1; // Default 1 day
-              
-              if (isCorrect) {
-                if (difficulty === 'easy') {
-                  nextReviewInterval = 7; // 7 days
-                } else if (difficulty === 'medium') {
-                  nextReviewInterval = 3; // 3 days
-                } else if (difficulty === 'hard') {
-                  nextReviewInterval = 1; // 1 day
+                // Inside the 'click' event listener in addOptionListeners, after getting answerSlide...
+        if (answerSlide) {
+
+            // --- Check if it's the last question ---
+            if (currentQuestion + 1 === totalQuestions) {
+                // --- THIS IS THE LAST QUESTION ---
+                console.log(`Quiz complete. Type: ${currentQuizType}, Onboarding: ${window.isOnboardingQuiz}`);
+
+                // --- Process the final answer FIRST ---
+                currentQuestion++; // Increment counter first
+                if (isCorrect) { score++; }
+                updateProgress(); // Update progress bar/text one last time
+
+                // Record the final answer using the correct function
+                if (currentQuizType === 'cme') { // CME recording
+                    if (typeof recordCmeAnswer === 'function') {
+                        await recordCmeAnswer(qId, category, isCorrect, timeSpent);
+                        console.log(`Recorded FINAL CME answer for ${qId}`);
+                    } else { console.error("recordCmeAnswer not found"); }
+                } else { // Regular or Onboarding recording
+                    if (typeof recordAnswer === 'function') {
+                        await recordAnswer(qId, category, isCorrect, timeSpent);
+                        console.log(`Recorded FINAL regular/onboarding answer for ${qId}`);
+                    } else { console.error("recordAnswer not found"); }
+                    if (typeof updateQuestionStats === 'function') {
+                         await updateQuestionStats(qId, isCorrect);
+                    } else { console.error("updateQuestionStats not found"); }
                 }
-              } else {
-                // If answered incorrectly, review it soon regardless of rating
-                nextReviewInterval = 1; // 1 day
-              }
-              
-              // Store the spaced repetition data
-              await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
-              
-              // Show feedback to the user
-              const feedbackEl = document.createElement('p');
-              feedbackEl.className = 'review-scheduled';
-              feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
-              this.closest('.difficulty-buttons').appendChild(feedbackEl);
-              
-              // Disable all buttons after selection
-              difficultyButtons.forEach(b => b.disabled = true);
-            });
-          });
-          
-          // Process the answer
-          currentQuestion++;
-          if (isCorrect) { score++; }
-          updateProgress();
-          
-          // Record the answer in the database
-          // --- Recording Answer Logic (Inside addOptionListeners click handler) ---
-            if (currentQuizType === 'cme') {
-                // Call a new function specifically for recording CME answers & stats
-                await recordCmeAnswer(qId, category, isCorrect, timeSpent); // New function needed (Step 8)
-                console.log(`Recorded CME answer for ${qId}`);
-                // Optionally, still update general question stats if desired
-                // await updateQuestionStats(qId, isCorrect);
+                // --- End of processing final answer ---
+
+
+                // --- Set up the final explanation slide content ---
+                lastAnswerSlide.querySelector('.card').innerHTML = `
+                    <div class="answer">
+                        <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                        Correct Answer: ${correct}<br>
+                        ${explanation}
+                    </div>
+                    <div class="difficulty-buttons">
+                        <p class="difficulty-prompt">How difficult was this question?</p>
+                        <div class="difficulty-btn-container">
+                            <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                            <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                            <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                        </div>
+                    </div>
+                    <!-- No "Swipe next" hint or "Loading Summary" button here initially -->
+                `;
+                // Add difficulty button listeners for the last question
+                addDifficultyListeners(lastAnswerSlide, qId, isCorrect); // Use helper function
+
+
+                // --- Add the correct FINAL ACTION BUTTON based on quiz type ---
+                const lastCard = lastAnswerSlide.querySelector('.card');
+                if (lastCard) {
+                    if (currentQuizType === 'cme') {
+                        // --- CME Quiz End Action ---
+                        const returnButton = document.createElement('button');
+                        returnButton.id = "returnToCmeDashboardBtn";
+                        returnButton.className = "start-quiz-btn"; // Use appropriate class
+                        returnButton.textContent = "Return to CME Dashboard";
+                        returnButton.style.display = "block";
+                        returnButton.style.margin = "20px auto";
+                        lastCard.appendChild(returnButton);
+                        returnButton.addEventListener('click', function() {
+                            console.log("Return to CME Dashboard button clicked.");
+                            // Hide quiz interface
+                            const swiperElement = document.querySelector(".swiper");
+                            const bottomToolbar = document.getElementById("bottomToolbar");
+                            const iconBar = document.getElementById("iconBar");
+                            if (swiperElement) swiperElement.style.display = "none";
+                            if (bottomToolbar) bottomToolbar.style.display = "none";
+                            if (iconBar) iconBar.style.display = "none";
+                            // Show the CME Dashboard and refresh its data
+                            if (typeof showCmeDashboard === 'function') {
+                                showCmeDashboard(); // This calls loadCmeDashboardData
+                            } else { /* fallback */ }
+                        });
+                        // --- End CME Action ---
+
+                    } else if (window.isOnboardingQuiz) {
+                        // --- Onboarding Quiz End Action ---
+                        console.log("Onboarding quiz finished.");
+                        const continueButton = document.createElement('button');
+                        continueButton.id = "onboardingContinueBtn";
+                        continueButton.className = "start-quiz-btn";
+                        continueButton.textContent = "Continue";
+                        continueButton.style.display = "block";
+                        continueButton.style.margin = "20px auto";
+                        lastCard.appendChild(continueButton);
+
+                        continueButton.addEventListener('click', function() {
+                            console.log("Onboarding continue button clicked.");
+                            // Hide quiz interface
+                            const swiperElement = document.querySelector(".swiper");
+                            const bottomToolbar = document.getElementById("bottomToolbar");
+                            const iconBar = document.getElementById("iconBar");
+                            if (swiperElement) swiperElement.style.display = "none";
+                            if (bottomToolbar) bottomToolbar.style.display = "none";
+                            if (iconBar) iconBar.style.display = "none";
+
+                            // Show registration benefits modal
+                            if (typeof window.showRegistrationBenefitsModal === 'function') {
+                                window.showRegistrationBenefitsModal();
+                            } else { /* fallback */ }
+                        });
+                        // --- End Onboarding Action ---
+
+                    } else {
+                        // --- Regular Quiz End Action ---
+                        const summaryButton = document.createElement('button');
+                        summaryButton.id = "viewSummaryBtn";
+                        summaryButton.className = "start-quiz-btn"; // Use appropriate class
+                        summaryButton.textContent = "Loading Summary...";
+                        summaryButton.style.display = "block";
+                        summaryButton.style.margin = "20px auto";
+                        lastCard.appendChild(summaryButton);
+
+                        // Call prepareSummary after a delay
+                        if (typeof prepareSummary === 'function') {
+                             setTimeout(() => {
+                                 prepareSummary(); // This should update the button#viewSummaryBtn
+                             }, 500); // Delay
+                        } else { /* error handling */ }
+                        // --- End Regular Action ---
+                    }
+                } // end if(lastCard)
             } else {
-                // Call the original functions for regular quizzes
-                await recordAnswer(qId, category, isCorrect, timeSpent); // Existing function
-                await updateQuestionStats(qId, isCorrect); // Existing function
-                console.log(`Recorded regular answer for ${qId}`);
-            }
-          
-          // For onboarding quiz, prepare to show registration benefits
-          if (window.isOnboardingQuiz) {
-            const viewSummaryBtn = document.getElementById('viewSummaryBtn');
-            if (viewSummaryBtn) {
-              viewSummaryBtn.textContent = "Continue";
-              viewSummaryBtn.addEventListener('click', function() {
-                // Hide the quiz
-                document.querySelector(".swiper").style.display = "none";
-                document.getElementById("bottomToolbar").style.display = "none";
-                document.getElementById("iconBar").style.display = "none";
-                
-                // Show the registration benefits modal
-                if (typeof window.showRegistrationBenefitsModal === 'function') {
-                  window.showRegistrationBenefitsModal();
+                // --- Logic for NON-last questions (Remains the same) ---
+                answerSlide.querySelector('.card').innerHTML = `
+                    <div class="answer">
+                        <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                        Correct Answer: ${correct}<br>
+                        ${explanation}
+                    </div>
+                    <div class="difficulty-buttons">
+                       <p class="difficulty-prompt">How difficult was this question?</p>
+                       <div class="difficulty-btn-container">
+                         <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                         <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                         <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                       </div>
+                     </div>
+                    <p class="swipe-next-hint">Swipe up for next question</p>
+                `;
+                // Add difficulty listeners
+                addDifficultyListeners(answerSlide, qId, isCorrect); // Use helper
+
+                // Process the answer for non-last questions
+                currentQuestion++;
+                if (isCorrect) { score++; }
+                updateProgress();
+
+                // Record the answer
+                if (currentQuizType === 'cme') {
+                    if (typeof recordCmeAnswer === 'function') {
+                        await recordCmeAnswer(qId, category, isCorrect, timeSpent);
+                        console.log(`Recorded CME answer for ${qId}`);
+                    } else { console.error("recordCmeAnswer not found"); }
                 } else {
-                  // Fallback if function isn't available
-                  document.getElementById("mainOptions").style.display = "flex";
+                    if (typeof recordAnswer === 'function') {
+                        await recordAnswer(qId, category, isCorrect, timeSpent);
+                        console.log(`Recorded regular/onboarding answer for ${qId}`);
+                    } else { console.error("recordAnswer not found"); }
+                     if (typeof updateQuestionStats === 'function') {
+                         await updateQuestionStats(qId, isCorrect);
+                    } else { console.error("updateQuestionStats not found"); }
                 }
-              });
-            }
-          } else {
-            // Prepare regular summary for normal quizzes
-            prepareSummary();
-          }
-        } else {
-          // Regular question (not the last one)
-          answerSlide.querySelector('.card').innerHTML = `
-            <div class="answer">
-              <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-              Correct Answer: ${correct}<br>
-              ${explanation}
-            </div>
-            <div class="difficulty-buttons">
-              <p class="difficulty-prompt">How difficult was this question?</p>
-              <div class="difficulty-btn-container">
-                <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-                <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-                <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
-              </div>
-            </div>
-            <p class="swipe-next-hint">Swipe up for next question</p>
-          `;
-          
-          // Add click handlers for difficulty buttons
-          const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
-          difficultyButtons.forEach(btn => {
-            btn.addEventListener('click', async function() {
-              // Remove selected class from all buttons
-              difficultyButtons.forEach(b => b.classList.remove('selected'));
-              // Add selected class to clicked button
-              this.classList.add('selected');
-              
-              const difficulty = this.getAttribute('data-difficulty');
-              const questionId = questionSlide.dataset.id;
-              
-              // Calculate next review date based on difficulty and correctness
-              let nextReviewInterval = 1; // Default 1 day
-              
-              if (isCorrect) {
-                if (difficulty === 'easy') {
-                  nextReviewInterval = 7; // 7 days
-                } else if (difficulty === 'medium') {
-                  nextReviewInterval = 3; // 3 days
-                } else if (difficulty === 'hard') {
-                  nextReviewInterval = 1; // 1 day
-                }
-              } else {
-                // If answered incorrectly, review it soon regardless of rating
-                nextReviewInterval = 1; // 1 day
-              }
-              
-              // Store the spaced repetition data
-              await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
-              
-              // Show feedback to the user
-              const feedbackEl = document.createElement('p');
-              feedbackEl.className = 'review-scheduled';
-              feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
-              this.closest('.difficulty-buttons').appendChild(feedbackEl);
-              
-              // Disable all buttons after selection
-              difficultyButtons.forEach(b => b.disabled = true);
-            });
-          });
-          
-          currentQuestion++;
-          if (isCorrect) { score++; }
-          updateProgress();
-          await recordAnswer(qId, category, isCorrect, timeSpent);
-          await updateQuestionStats(qId, isCorrect);
-        }
+                // --- End of logic for NON-last questions ---
+            } // End of if/else for last question check
+
+        } // End of if(answerSlide)
+
+    }); // End of click listener
+}); // End of forEach
+// Make sure the addDifficultyListeners helper function is defined as provided previously
+// Make sure the recordFinalAnswer helper function is defined as provided previously
       }
-    });
-  });
-}
 
 // Prepare summary data and update the button
 async function prepareSummary() {
