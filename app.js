@@ -212,8 +212,69 @@ if (modalCancelCmeQuizBtn) {
         }
     });
 }
-// We will add the listener for the "Start CME Quiz" button inside the modal later (Step 7)
+// --- Step 7: Handle Start CME Quiz button click from Modal ---
 
+const modalStartCmeQuizBtn = document.getElementById("modalStartCmeQuizBtn");
+if (modalStartCmeQuizBtn) {
+    modalStartCmeQuizBtn.addEventListener("click", function() {
+        console.log("Modal Start CME Quiz button clicked."); // For debugging
+
+        // Get the selected options from the modal
+        const categorySelect = document.getElementById("cmeCategorySelect");
+        const numQuestionsInput = document.getElementById("cmeNumQuestions");
+        const includeAnsweredCheckbox = document.getElementById("cmeIncludeAnsweredCheckbox");
+
+        const selectedCategory = categorySelect ? categorySelect.value : "";
+        // Ensure numQuestions is a valid number, default to 12 if not
+        let numQuestions = numQuestionsInput ? parseInt(numQuestionsInput.value, 10) : 12;
+        if (isNaN(numQuestions) || numQuestions < 3) {
+            numQuestions = 12; // Default or minimum if invalid
+        } else if (numQuestions > 50) {
+             numQuestions = 50; // Max limit
+        }
+
+        const includeAnswered = includeAnsweredCheckbox ? includeAnsweredCheckbox.checked : false;
+
+        console.log("CME Quiz Options:", {
+            quizType: 'cme',
+            category: selectedCategory,
+            num: numQuestions,
+            includeAnswered: includeAnswered
+        });
+
+        // Hide the setup modal
+        const cmeQuizSetupModal = document.getElementById("cmeQuizSetupModal");
+        if (cmeQuizSetupModal) {
+            cmeQuizSetupModal.style.display = "none";
+        }
+
+        // Hide the CME Dashboard view itself
+        const cmeDashboard = document.getElementById("cmeDashboardView");
+         if (cmeDashboard) {
+             cmeDashboard.style.display = "none";
+         }
+
+        // Call loadQuestions with the CME options
+        // Make sure loadQuestions is accessible (it should be if defined in quiz.js which is loaded)
+        if (typeof loadQuestions === 'function') {
+            loadQuestions({
+                quizType: 'cme', // Specify the quiz type
+                category: selectedCategory,
+                num: numQuestions,
+                includeAnswered: includeAnswered
+            });
+        } else {
+            console.error("loadQuestions function is not defined or accessible.");
+            alert("Error starting CME quiz. Function not found.");
+             // Show CME dashboard again as fallback
+             if (cmeDashboard) cmeDashboard.style.display = "block";
+        }
+    });
+} else {
+    console.error("Modal Start CME Quiz button (#modalStartCmeQuizBtn) not found.");
+}
+
+// --- End of Step 7 Code ---
 
 });
 
