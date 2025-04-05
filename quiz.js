@@ -854,3 +854,111 @@ function updateProgress() {
     updateUserXP();
   }
 }
+
+// --- Helper function for difficulty buttons ---
+// Make sure this function is defined in the main scope of quiz.js, not inside another function
+
+async function addDifficultyListeners(answerSlide, questionId, isCorrect) {
+    // Find the container for the buttons within the specific answerSlide provided
+    const difficultyButtonContainer = answerSlide.querySelector('.difficulty-btn-container');
+    if (!difficultyButtonContainer) {
+         console.warn("Difficulty button container not found in this slide.");
+         return; // Exit if container not found
+    }
+    const difficultyButtons = difficultyButtonContainer.querySelectorAll('.difficulty-btn');
+    if (difficultyButtons.length === 0) {
+         console.warn("Difficulty buttons not found in container.");
+         return; // Exit if buttons not found
+    }
+
+    difficultyButtons.forEach(btn => {
+        // Clone and replace to ensure only one listener is attached
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', async function() {
+            // 'this' refers to the clicked button (newBtn)
+            const currentButtons = this.closest('.difficulty-btn-container').querySelectorAll('.difficulty-btn');
+
+            // Prevent multiple clicks if already selected/disabled
+            if (this.classList.contains('selected') || this.disabled) {
+                return;
+            }
+
+            currentButtons.forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+
+            const difficulty = this.getAttribute('data-difficulty');
+
+            // Calculate next review interval based on difficulty and correctness
+            let nextReviewInterval = 1; // Default 1 day
+            if (isCorrect) {
+                if (difficulty === 'easy') nextReviewInterval = 7;
+                else if (difficulty === 'medium') nextReviewInterval = 3;
+                else if (difficulty === 'hard') nextReviewInterval = 1;
+            } else {
+                nextReviewInterval = 1; // Always review incorrect soon
+            }
+
+            // Store the spaced repetition data (ensure function exists)
+            if (typeof updateSpacedRepetitionData === 'function') {
+                 try {
+                     await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+                 } catch (e) { console.error("Error calling updateSpacedRepetitionData:", e); }
+            } else { console.error("updateSpacedRepetitionData function not found"); }
+
+
+            // Show feedback to the user
+            const difficultyButtonsDiv = this.closest('.difficulty-buttons'); // Find the parent div
+            if (difficultyButtonsDiv) {
+                const existingFeedback = difficultyButtonsDiv.querySelector('.review-scheduled');
+                if(existingFeedback) existingFeedback.remove(); // Remove old feedback
+
+                const feedbackEl = document.createElement('p');
+                feedbackEl.className = 'review-scheduled';
+                feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+                difficultyButtonsDiv.appendChild(feedbackEl); // Append feedback within the correct div
+            }
+
+            // Disable all buttons after selection
+            currentButtons.forEach(b => b.disabled = true);
+        });
+    });
+}
+
+// --- Helper function to avoid repeating recording logic ---
+// Place this in the main scope of quiz.js, near addDifficultyListeners
+
+async function recordFinalAnswer(qId, category, isCorrect, timeSpent) {
+    // Use the globally stored currentQuizType
+    if (currentQuizType === 'cme') {
+        // Call CME recording function (ensure it exists, likely in user.js)
+        if (typeof recordCmeAnswer === 'function') {
+            try {
+                await recordCmeAnswer(qId, category, isCorrect, timeSpent);
+                console.log(`Recorded CME answer for ${qId} via helper.`);
+            } catch (e) { console.error(`Error calling recordCmeAnswer for ${qId}:`, e); }
+        } else {
+            console.error("recordCmeAnswer function not found when trying to record final answer.");
+        }
+    } else {
+        // Call regular recording functions (ensure they exist, likely in user.js)
+        if (typeof recordAnswer === 'function') {
+             try {
+                await recordAnswer(qId, category, isCorrect, timeSpent);
+                console.log(`Recorded regular/onboarding answer for ${qId} via helper.`);
+             } catch (e) { console.error(`Error calling recordAnswer for ${qId}:`, e); }
+        } else {
+            console.error("recordAnswer function not found when trying to record final answer.");
+        }
+        // Still update general question stats for non-CME quizzes
+        if (typeof updateQuestionStats === 'function') {
+             try {
+                await updateQuestionStats(qId, isCorrect);
+             } catch (e) { console.error(`Error calling updateQuestionStats for ${qId}:`, e); }
+        } else {
+            console.error("updateQuestionStats function not found when trying to record final answer.");
+        }
+    }
+}
+// --- End of recordFinalAnswer Helper Function ---
