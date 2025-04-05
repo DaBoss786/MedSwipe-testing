@@ -183,7 +183,38 @@ if(cmeDashboardBackBtn) {
      console.error("CME Dashboard Back button (#cmeDashboardBackBtn) not found.");
 }
 
-// --- End of Step 3 Code Block 1 ---
+// --- Step 5a: Activate Start CME Quiz Button ---
+
+const startCmeQuizBtn = document.getElementById("startCmeQuizBtn");
+if (startCmeQuizBtn) {
+    startCmeQuizBtn.addEventListener("click", function() {
+        console.log("Start CME Quiz button clicked."); // For debugging
+        const cmeQuizSetupModal = document.getElementById("cmeQuizSetupModal");
+        if (cmeQuizSetupModal) {
+            // Populate categories before showing
+            populateCmeCategoryDropdown(); // Call the function to fill the dropdown
+            cmeQuizSetupModal.style.display = "block"; // Show the modal
+        } else {
+            console.error("CME Quiz Setup Modal (#cmeQuizSetupModal) not found.");
+        }
+    });
+} else {
+    console.error("Start CME Quiz button (#startCmeQuizBtn) not found.");
+}
+
+// Add listeners for the modal's own buttons (Cancel)
+const modalCancelCmeQuizBtn = document.getElementById("modalCancelCmeQuizBtn");
+if (modalCancelCmeQuizBtn) {
+    modalCancelCmeQuizBtn.addEventListener("click", function() {
+        const cmeQuizSetupModal = document.getElementById("cmeQuizSetupModal");
+        if (cmeQuizSetupModal) {
+            cmeQuizSetupModal.style.display = "none"; // Hide the modal
+        }
+    });
+}
+// We will add the listener for the "Start CME Quiz" button inside the modal later (Step 7)
+
+
 });
 
 // Function to show the login form modal
@@ -2561,4 +2592,50 @@ function showCmeDashboard() {
     }
 }
 
-// --- End of Step 3 Helper Functions ---
+// --- Step 5b: Populate CME Category Dropdown ---
+
+async function populateCmeCategoryDropdown() {
+    const categorySelect = document.getElementById("cmeCategorySelect");
+    if (!categorySelect) {
+        console.error("CME Category Select dropdown (#cmeCategorySelect) not found.");
+        return;
+    }
+
+    // Clear existing options except the first "All" option
+    while (categorySelect.options.length > 1) {
+        categorySelect.remove(1);
+    }
+
+    try {
+        // Fetch all questions to extract categories
+        // Note: This fetches all questions just for categories.
+        // If performance becomes an issue with a very large sheet,
+        // consider storing categories separately in Firestore.
+        const allQuestions = await fetchQuestionBank(); // Assuming fetchQuestionBank is globally available or defined in this file
+
+        // Filter for CME eligible questions first
+        const cmeEligibleQuestions = allQuestions.filter(q => q["CME Eligible"] && q["CME Eligible"].trim().toLowerCase() === 'yes');
+
+        // Get unique categories from CME-eligible questions
+        const categories = [...new Set(cmeEligibleQuestions
+            .map(q => q.Category ? q.Category.trim() : null) // Get category, trim whitespace
+            .filter(cat => cat && cat !== "") // Filter out null/empty categories
+        )].sort(); // Sort alphabetically
+
+        // Add categories to the dropdown
+        categories.forEach(category => {
+            const option = document.createElement("option");
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+        console.log("CME Category dropdown populated with:", categories);
+
+    } catch (error) {
+        console.error("Error fetching or processing questions for categories:", error);
+        // Optionally inform the user
+        // alert("Could not load categories. Please try again later.");
+    }
+}
+
+// --- End of Step 5b Code ---
