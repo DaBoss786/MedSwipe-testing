@@ -8,6 +8,7 @@ let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
+let currentQuizType = 'regular';
 
 // Fetch questions from CSV
 async function fetchQuestionBank() {
@@ -291,6 +292,7 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions, quizType = 'regular') {
     console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
+  currentQuizType = quizType; 
   // Get starting XP before the quiz begins
   try {
     const isOnboardingQuiz = window.isOnboardingQuiz || false;
@@ -555,7 +557,7 @@ function addOptionListeners() {
           
           // Record the answer in the database
           // --- Recording Answer Logic (Inside addOptionListeners click handler) ---
-            if (quizType === 'cme') {
+            if (currentQuizType === 'cme') {
                 // Call a new function specifically for recording CME answers & stats
                 await recordCmeAnswer(qId, category, isCorrect, timeSpent); // New function needed (Step 8)
                 console.log(`Recorded CME answer for ${qId}`);
