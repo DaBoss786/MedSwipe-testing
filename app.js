@@ -2448,10 +2448,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // Placeholder function - replace with your actual logic to check subscription
 async function checkUserCmeSubscriptionStatus() {
     console.log("Checking CME subscription status (placeholder)...");
-    // TODO: Implement actual check against Firestore user data or your backend
-    // Example: Fetch user doc and check a field like 'cmeSubscriptionActive: true'
-    //          or 'cmeSubscriptionExpiry > currentDate'
-
+    // --- TEMPORARY CODE FOR TESTING 'TRUE' ---
+    console.warn("TEMPORARY CODE ACTIVE: Forcing subscription check to TRUE");
+    return true; // Add this line to force true
+    // --- END OF TEMPORARY CODE ---
     if (window.authState && window.authState.user && !window.authState.user.isAnonymous) { // Ensure user is logged in and not guest
         try {
             const userDocRef = window.doc(window.db, 'users', window.authState.user.uid);
