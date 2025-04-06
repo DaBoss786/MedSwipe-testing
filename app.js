@@ -2780,65 +2780,167 @@ async function prepareClaimModal() {
 // --- End of Step 12b ---
 
 
-// --- Step 12c: Placeholder for Submission Handler (Outside DOMContentLoaded) ---
-// We will fill this in properly in the next step
+// --- Step 13: Implement CME Claim Submission Logic ---
 
 async function handleCmeClaimSubmission(event) {
     event.preventDefault(); // Prevent default form submission
-    console.log("CME Claim Form submitted (placeholder).");
+    console.log("CME Claim Form submitted - processing...");
 
     const errorDiv = document.getElementById("claimModalError");
     const loadingIndicator = document.getElementById('claimLoadingIndicator');
     const submitButton = document.getElementById('submitCmeClaimBtn');
     const cancelButton = document.getElementById('cancelCmeClaimBtn');
+    const form = document.getElementById('cmeClaimForm');
+    const creditsInput = document.getElementById('creditsToClaimInput');
+    const cmeClaimModal = document.getElementById("cmeClaimModal");
 
-    // Clear previous errors
+    // --- Helper function for cleanup ---
+    const cleanup = (enableButtons = true) => {
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        if (submitButton) submitButton.disabled = !enableButtons;
+        if (cancelButton) cancelButton.disabled = !enableButtons;
+    };
+
+    // --- Clear previous errors & Show Loader ---
     if (errorDiv) errorDiv.textContent = '';
-
-    // Show loader, disable buttons
     if (loadingIndicator) loadingIndicator.style.display = 'block';
     if (submitButton) submitButton.disabled = true;
     if (cancelButton) cancelButton.disabled = true;
 
+    // --- Ensure user is still valid ---
+    if (!window.authState || !window.authState.user || window.authState.user.isAnonymous) {
+        if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
+        cleanup();
+        return;
+    }
+    const uid = window.authState.user.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
 
-    // --- TODO: Add Validation and Firestore Update Logic Here (Step 13) ---
-    // 1. Get available credits again (server-side check is better, but client-side for now)
-    // 2. Get claimed amount from input, validate (>=0.25, <= available, multiple of 0.25)
-    // 3. Get evaluation answers
-    // 4. Perform Firestore transaction:
-    //    - Read user doc again inside transaction
-    //    - Verify available credits again
-    //    - Update cmeStats.creditsClaimed
-    //    - Add entry to cmeClaimHistory array
-    //    - Set updated data back
-    // 5. If successful:
-    //    - Simulate certificate generation call (console.log)
-    //    - Show success message to user
-    //    - Close modal after delay
-    //    - Refresh CME dashboard data
-    // 6. If error:
-    //    - Show error message in errorDiv
-    //    - Hide loader, re-enable buttons
+    try {
+        // --- 1. Get Form Data & Validate ---
+        const formData = new FormData(form);
+        const creditsToClaim = parseFloat(creditsInput.value);
 
-    // Placeholder logic for now:
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-    console.log("Placeholder: Claim processing finished.");
-    alert("Claim Submitted (Placeholder) - Certificate generation would happen now.");
+        // Basic validation
+        if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
+            throw new Error("Invalid credits amount. Must be a positive multiple of 0.25.");
+        }
 
-    // Hide loader, re-enable buttons (in real version, do this in finally block)
-    if (loadingIndicator) loadingIndicator.style.display = 'none';
-    if (submitButton) submitButton.disabled = false;
-    if (cancelButton) cancelButton.disabled = false;
+        // Evaluation data extraction
+        const evaluationData = {
+            objectivesMet: formData.get('evalObjectivesMet'),
+            confidence: formData.get('evalConfidence'),
+            usefulness: formData.get('evalUsefulness') || 'N/A', // Default if not answered
+            practiceChange: formData.getAll('evalPracticeChange'), // Gets all checked values
+            practiceChangeOtherText: formData.get('evalPracticeChangeOtherText').trim(),
+            biasChange: formData.getAll('evalBiasChange'), // Gets all checked values
+            biasChangeOtherText: formData.get('evalBiasChangeOtherText').trim(),
+            delivery: formData.get('evalDelivery'),
+            commercialBias: formData.get('evalCommercialBias'),
+            commercialBiasComment: formData.get('evalCommercialBiasComment').trim(),
+            additionalComments: formData.get('evalAdditionalComments').trim()
+        };
 
-     // Close modal (for now)
-     const cmeClaimModal = document.getElementById("cmeClaimModal");
-     if (cmeClaimModal) cmeClaimModal.style.display = 'none';
+        // Required evaluation validation (add more checks as needed)
+        if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) {
+             throw new Error("Please complete all required evaluation questions (1, 2, 6, 7).");
+        }
+         if (evaluationData.practiceChange.length === 0) {
+             throw new Error("Please select at least one option for Practice Change Areas (Question 4).");
+         }
+         if (evaluationData.biasChange.length === 0) {
+             throw new Error("Please select at least one option for Implicit Bias Change Areas (Question 5).");
+         }
+        if (evaluationData.commercialBias === 'No' && !evaluationData.commercialBiasComment) {
+            throw new Error("Please provide a comment if you indicated commercial bias was present.");
+        }
+        // Clean up other text if 'Other' wasn't selected
+        if (!evaluationData.practiceChange.includes('Other')) {
+            evaluationData.practiceChangeOtherText = '';
+        }
+         if (!evaluationData.biasChange.includes('Other')) {
+            evaluationData.biasChangeOtherText = '';
+        }
 
-     // Refresh dashboard
-     if(typeof loadCmeDashboardData === 'function') loadCmeDashboardData();
 
+        // --- 2. Firestore Transaction ---
+        await window.runTransaction(window.db, async (transaction) => {
+            console.log("Starting Firestore transaction for claim...");
+            const userDoc = await transaction.get(userDocRef);
+            if (!userDoc.exists()) {
+                throw new Error("User data not found.");
+            }
+
+            const data = userDoc.data();
+            const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
+            const currentEarned = parseFloat(cmeStats.creditsEarned || 0);
+            const currentClaimed = parseFloat(cmeStats.creditsClaimed || 0);
+            const currentAvailable = Math.max(0, currentEarned - currentClaimed);
+
+            console.log(`Credits check inside transaction: Available=${currentAvailable.toFixed(2)}, Attempting to claim=${creditsToClaim.toFixed(2)}`);
+
+            // Verify available credits again inside transaction
+            if (creditsToClaim > currentAvailable) {
+                throw new Error(`Insufficient credits. You only have ${currentAvailable.toFixed(2)} available.`);
+            }
+
+            // Prepare updated stats and history
+            const newCreditsClaimed = currentClaimed + creditsToClaim;
+            const updatedCmeStats = {
+                ...cmeStats, // Keep existing stats
+                creditsClaimed: parseFloat(newCreditsClaimed.toFixed(2)) // Ensure precision
+            };
+
+            const newHistoryEntry = {
+                timestamp: window.serverTimestamp(), // Use server timestamp
+                creditsClaimed: creditsToClaim,
+                evaluationData: evaluationData // Store the collected evaluation data
+            };
+
+            // Get existing history or initialize empty array
+            const existingHistory = data.cmeClaimHistory || [];
+            const updatedHistory = [...existingHistory, newHistoryEntry];
+
+            // Update the document
+            transaction.set(userDocRef, {
+                cmeStats: updatedCmeStats,
+                cmeClaimHistory: updatedHistory
+            }, { merge: true }); // Merge to avoid overwriting other fields
+
+            console.log("Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
+        });
+
+        // --- 3. Post-Transaction Actions ---
+
+        // Simulate Certificate Generation/Email (Replace with actual backend call)
+        console.log(`PLACEHOLDER: Initiate certificate generation for user ${uid}, Credits: ${creditsToClaim.toFixed(2)}`);
+        // Example: await generateAndEmailCertificate(uid, creditsToClaim, evaluationData);
+
+        // Show success message (could be a temporary message in the modal or an alert)
+        alert(`Successfully claimed ${creditsToClaim.toFixed(2)} credits! Your certificate will be generated and sent via email (simulation).`);
+
+        // Close modal after a short delay
+        setTimeout(() => {
+             if (cmeClaimModal) cmeClaimModal.style.display = 'none';
+        }, 1500); // 1.5 second delay
+
+        // Refresh the CME dashboard data
+        if(typeof loadCmeDashboardData === 'function') {
+             loadCmeDashboardData();
+        }
+
+    } catch (error) {
+        console.error("Error processing CME claim:", error);
+        if (errorDiv) errorDiv.textContent = `Claim failed: ${error.message}`;
+        cleanup(true); // Re-enable buttons on error
+    } finally {
+         // Ensure cleanup runs even if closing modal early, but only re-enable if not successful
+         // The success path handles closing and refreshing separately.
+         // cleanup(true); // Moved cleanup call to error block only
+    }
 }
-// --- End of Step 12c ---
+
+// --- End of Step 13 Code ---
 
 // --- Step 5b: Populate CME Category Dropdown ---
 
