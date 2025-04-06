@@ -2910,24 +2910,83 @@ async function handleCmeClaimSubmission(event) {
             console.log("Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
         });
 
-        // --- 3. Post-Transaction Actions ---
+            // --- 3. Post-Transaction Actions ---
 
-        // Simulate Certificate Generation/Email (Replace with actual backend call)
-        console.log(`PLACEHOLDER: Initiate certificate generation for user ${uid}, Credits: ${creditsToClaim.toFixed(2)}`);
-        // Example: await generateAndEmailCertificate(uid, creditsToClaim, evaluationData);
+    // --- Certificate Generation Simulation ---
+    console.log("------------------------------------");
+    console.log("--- CERTIFICATE GENERATION START (SIMULATION) ---");
+    console.log(`User ID: ${uid}`);
+    // Fetch user's name/email for the certificate (optional but good practice)
+    let userName = window.authState.user.displayName || 'User'; // Get display name
+    let userEmail = window.authState.user.email || 'No Email'; // Get email
+    console.log(`User Name: ${userName}`);
+    console.log(`User Email: ${userEmail}`);
+    console.log(`Credits Claimed: ${creditsToClaim.toFixed(2)}`);
+    const claimDate = new Date(); // Use current client date for simulation
+    console.log(`Claim Date: ${claimDate.toISOString()}`);
+    console.log("Evaluation Data:", evaluationData); // Log evaluation data submitted
+    console.log("Accreditation Statement: [Your Official Accreditation Statement Would Go Here]"); // Add your actual statement text
 
-        // Show success message (could be a temporary message in the modal or an alert)
-        alert(`Successfully claimed ${creditsToClaim.toFixed(2)} credits! Your certificate will be generated and sent via email (simulation).`);
+    // TODO: Replace this section with an actual call to your backend function
+    // Example:
+    // try {
+    //   const backendResult = await callBackendCertificateFunction({
+    //      userId: uid,
+    //      userName: userName,
+    //      userEmail: userEmail,
+    //      credits: creditsToClaim.toFixed(2),
+    //      claimDate: claimDate.toISOString(),
+    //      evaluation: evaluationData,
+    //      accreditationStatement: "Your actual statement..."
+    //   });
+    //   console.log("Backend certificate function response:", backendResult);
+    //   // Show success based on backend result
+    // } catch (backendError) {
+    //   console.error("Error calling backend certificate function:", backendError);
+    //   // Handle backend error - maybe revert claim or notify user?
+    // }
+    console.log("--- CERTIFICATE GENERATION END (SIMULATION) ---");
+    console.log("------------------------------------");
+    // --- End of Simulation ---
 
-        // Close modal after a short delay
-        setTimeout(() => {
-             if (cmeClaimModal) cmeClaimModal.style.display = 'none';
-        }, 1500); // 1.5 second delay
 
-        // Refresh the CME dashboard data
-        if(typeof loadCmeDashboardData === 'function') {
-             loadCmeDashboardData();
-        }
+    // --- User Feedback ---
+    // Use a more persistent message instead of just an alert
+    const successMessageDiv = document.getElementById("claimModalError"); // Reuse error div for success message
+    if (successMessageDiv) {
+        successMessageDiv.textContent = `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Your certificate is being processed and will be emailed to ${userEmail}. You can also view past claims in your history.`;
+        successMessageDiv.style.color = '#28a745'; // Green color for success
+        successMessageDiv.style.border = '1px solid #c3e6cb';
+        successMessageDiv.style.backgroundColor = '#d4edda';
+        successMessageDiv.style.padding = '10px';
+        successMessageDiv.style.borderRadius = '5px';
+    } else {
+         // Fallback alert if the div isn't found
+         alert(`Successfully claimed ${creditsToClaim.toFixed(2)} credits! Certificate processing simulated.`);
+    }
+
+    // --- Cleanup and Refresh ---
+    // Hide loader, keep buttons disabled until modal closes
+    cleanup(false); // Keep buttons disabled
+
+    // Close modal after a longer delay so user can read the message
+    setTimeout(() => {
+         if (cmeClaimModal) cmeClaimModal.style.display = 'none';
+         // Reset message style after closing
+         if (successMessageDiv) {
+             successMessageDiv.textContent = '';
+             successMessageDiv.style.color = ''; // Reset color
+             successMessageDiv.style.border = '';
+             successMessageDiv.style.backgroundColor = '';
+             successMessageDiv.style.padding = '';
+             successMessageDiv.style.borderRadius = '';
+         }
+    }, 4000); // 4 second delay
+
+    // Refresh the CME dashboard data immediately after transaction success
+    if(typeof loadCmeDashboardData === 'function') {
+         loadCmeDashboardData();
+    }
 
     } catch (error) {
         console.error("Error processing CME claim:", error);
