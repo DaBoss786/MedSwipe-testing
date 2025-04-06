@@ -778,6 +778,12 @@
         <div id="claimModalError" class="auth-error" style="text-align: center; margin-bottom: 15px;"></div>
 
     <form id="cmeClaimForm">
+
+      <div class="formGroup">
+                <label for="certificateFullName">Full Name (for Certificate):</label>
+                <input type="text" id="certificateFullName" name="certificateFullName" required placeholder="Enter your full name as you want it on the certificate">
+                <small class="formHelper" style="display: block; margin-top: 5px;">This name will appear on your CME certificate.</small>
+            </div>
         <div class="formGroup">
             <label for="creditsToClaimInput">Credits to Claim:</label>
             <input type="number" id="creditsToClaimInput" value="0.25" min="0.25" step="0.25" required style="max-width: 100px; display: inline-block; margin-left: 10px;">
