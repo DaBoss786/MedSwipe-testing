@@ -2820,14 +2820,19 @@ async function handleCmeClaimSubmission(event) {
         // --- 1. Get Form Data & Validate ---
         const formData = new FormData(form);
         const creditsToClaim = parseFloat(creditsInput.value);
+        const certificateFullName = formData.get('certificateFullName').trim(); // <<<--- GET FULL NAME
 
         // Basic validation
+        if (!certificateFullName) { // <<<--- VALIDATE FULL NAME
+            throw new Error("Please enter your full name for the certificate.");
+        }
         if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
             throw new Error("Invalid credits amount. Must be a positive multiple of 0.25.");
         }
 
         // Evaluation data extraction
         const evaluationData = {
+            certificateFullName: certificateFullName,
             objectivesMet: formData.get('evalObjectivesMet'),
             confidence: formData.get('evalConfidence'),
             usefulness: formData.get('evalUsefulness') || 'N/A', // Default if not answered
@@ -2916,10 +2921,8 @@ async function handleCmeClaimSubmission(event) {
     console.log("------------------------------------");
     console.log("--- CERTIFICATE GENERATION START (SIMULATION) ---");
     console.log(`User ID: ${uid}`);
-    // Fetch user's name/email for the certificate (optional but good practice)
-    let userName = window.authState.user.displayName || 'User'; // Get display name
     let userEmail = window.authState.user.email || 'No Email'; // Get email
-    console.log(`User Name: ${userName}`);
+    console.log(`Certificate Name: ${certificateFullName}`); // <<<--- LOG CERTIFICATE NAME  
     console.log(`User Email: ${userEmail}`);
     console.log(`Credits Claimed: ${creditsToClaim.toFixed(2)}`);
     const claimDate = new Date(); // Use current client date for simulation
