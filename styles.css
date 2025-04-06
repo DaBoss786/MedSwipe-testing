@@ -466,70 +466,63 @@ html, body {
   /* DO NOT add max-height or overflow here by default */
 }
 
-/* --- Overrides and Additions for the CME Claim Modal (Revised Centering/Width) --- */
+/* --- Overrides and Additions for the CME Claim Modal (Simplified Centering) --- */
 
-/* Target the specific modal ID - Outer full-screen container */
+/* Target the specific modal ID - Outer full-screen background */
 #cmeClaimModal {
     position: fixed; /* Cover the whole screen */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker background */
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
     z-index: 2200; /* High z-index */
-    padding: 20px; /* Padding around the content box */
-    box-sizing: border-box; /* Include padding in width/height */
-
-    /* --- Flexbox for Centering --- */
-    display: none; /* Keep hidden by default - change to flex to show */
-    align-items: center; /* Vertical centering */
-    justify-content: center; /* Horizontal centering */
-
-    overflow-y: auto; /* Allow outer scroll on very small screens */
+    display: none; /* Keep hidden by default */
+    /* We will NOT use flexbox here, centering handled by inner */
+    overflow-y: auto; /* Allow scrolling the background if inner content is huge */
+    padding: 20px; /* Add padding so content isn't stuck to edges */
+    box-sizing: border-box;
 }
 
 /* Style the inner content box specifically for the claim modal */
 #cmeClaimModal .modal-content-inner {
     background: #fff;
-    padding: 25px 30px; /* More horizontal padding */
-    border-radius: 8px; /* Slightly larger radius */
+    padding: 25px 30px;
+    border-radius: 8px;
     box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
-    width: 90%; /* Responsive width */
-    max-width: 650px; /* <<< INCREASED MAX-WIDTH for less smushed content */
+    width: 90%;
+    max-width: 650px; /* Wider */
     max-height: 85vh; /* Limit height */
     overflow-y: auto; /* Make the CONTENT scrollable */
-    position: relative; /* For the close button */
+    position: relative; /* Relative for close button AND centering */
 
-    /* Ensure it doesn't shrink unnecessarily */
-    flex-shrink: 0;
-
-    /* Explicitly set margin auto for robust centering within flex container */
-    margin: auto;
+    /* --- Centering using margin auto and positioning hints --- */
+    margin: 3vh auto; /* Vertical margin (e.g., 3% of viewport height) + auto horizontal */
+    /* These help ensure it stays within flow for margin:auto */
+    left: 0;
+    right: 0;
+    /* We don't use top/transform like the original .modalForm */
 }
 
-/* Adjustments within the CME Claim Modal */
+/* Adjustments within the CME Claim Modal (Keep these from previous attempt) */
 #cmeClaimModal h2 {
   margin-top: 10px;
-  margin-bottom: 20px; /* More space below title */
+  margin-bottom: 20px;
   color: #0056b3;
   text-align: center;
-  font-size: 1.5rem; /* Slightly larger title */
+  font-size: 1.5rem;
 }
-
 #cmeClaimModal .formGroup {
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px; /* More spacing between groups */
+  margin-bottom: 20px;
 }
-
  #cmeClaimModal .formGroup label {
-   font-size: 1rem; /* Slightly larger label */
+   font-size: 1rem;
    color: #333;
-   margin-bottom: 8px; /* More space below label */
-   font-weight: 500; /* Make labels slightly bolder */
+   margin-bottom: 8px;
+   font-weight: 500;
  }
-
- /* Ensure inputs inside don't overflow */
  #cmeClaimModal .formGroup input[type="number"],
  #cmeClaimModal .formGroup input[type="text"],
  #cmeClaimModal .formGroup textarea,
@@ -537,45 +530,41 @@ html, body {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 10px; /* Slightly more padding */
+    padding: 10px;
     font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 4px;
  }
- /* Specific width for credits input */
  #cmeClaimModal #creditsToClaimInput {
      max-width: 100px;
      display: inline-block;
      margin-left: 10px;
  }
- /* Style for radio/checkbox labels */
  #cmeClaimModal .radio-group label,
  #cmeClaimModal .checkbox-group label {
      font-weight: normal;
-     font-size: 0.95rem; /* Adjust size */
-     display: flex; /* Align checkbox/radio with text */
+     font-size: 0.95rem;
+     display: flex;
      align-items: center;
-     gap: 5px; /* Space between input and text */
+     gap: 5px;
  }
   #cmeClaimModal .radio-group input,
   #cmeClaimModal .checkbox-group input {
-      width: auto; /* Don't force inputs to full width */
-      margin-right: 5px; /* Space after input */
+      width: auto;
+      margin-right: 5px;
   }
-
-
 #cmeClaimModal .btnRow {
   display: flex;
   justify-content: flex-end;
-  margin-top: 25px; /* More space above buttons */
-  gap: 10px; /* Space between buttons */
+  margin-top: 25px;
+  gap: 10px;
 }
-
  #cmeClaimModal .btnRow button {
-   margin-left: 0; /* Remove default margin if using gap */
-   padding: 10px 20px; /* Larger buttons */
+   margin-left: 0;
+   padding: 10px 20px;
    font-size: 1rem;
    font-weight: 500;
+   /* ... other button styles ... */
    border: none;
    border-radius: 5px;
    cursor: pointer;
@@ -583,23 +572,17 @@ html, body {
    color: #fff;
    transition: background-color 0.2s ease;
  }
- #cmeClaimModal .btnRow button.cancel {
-    background-color: #aaa;
- }
- #cmeClaimModal .btnRow button:hover {
-    background-color: #004a95;
- }
- #cmeClaimModal .btnRow button.cancel:hover {
-    background-color: #888;
- }
-
+ #cmeClaimModal .btnRow button.cancel { background-color: #aaa; }
+ #cmeClaimModal .btnRow button:hover { background-color: #004a95; }
+ #cmeClaimModal .btnRow button.cancel:hover { background-color: #888; }
 
 /* Close button specific to this modal */
 #cmeClaimModal #closeCmeClaimModal {
-    position: absolute;
-    top: 12px; /* Adjust position slightly */
+    position: absolute; /* Position relative to modal-content-inner */
+    top: 12px;
     right: 12px;
     z-index: 10;
+    /* ... other close button styles ... */
     font-size: 1.8rem;
     padding: 5px;
     line-height: 1;
@@ -608,9 +591,7 @@ html, body {
     color: #999;
     cursor: pointer;
 }
- #cmeClaimModal #closeCmeClaimModal:hover {
-     color: #333;
- }
+ #cmeClaimModal #closeCmeClaimModal:hover { color: #333; }
 
 /* --- End of CSS Fix --- */
 
