@@ -282,6 +282,71 @@ if (modalStartCmeQuizBtn) {
 
 // --- End of Step 7 Code ---
 
+// --- Step 12a: Claim Modal Button Event Listeners ---
+
+const claimCmeBtn = document.getElementById("claimCmeBtn"); // Button on CME Dashboard
+const cmeClaimModal = document.getElementById("cmeClaimModal"); // The modal itself
+const closeCmeClaimModalBtn = document.getElementById("closeCmeClaimModal"); // Close (X) button
+const cancelCmeClaimBtn = document.getElementById("cancelCmeClaimBtn"); // Cancel button inside modal
+const cmeClaimForm = document.getElementById("cmeClaimForm"); // The form inside the modal
+const commercialBiasRadios = document.querySelectorAll('input[name="evalCommercialBias"]'); // Radios for bias question
+const commercialBiasCommentDiv = document.getElementById("commercialBiasCommentDiv"); // Comment div
+
+// Listener for the main "Claim CME Credit" button on the dashboard
+if (claimCmeBtn && cmeClaimModal) {
+    claimCmeBtn.addEventListener('click', function() {
+        // Only open if not disabled (which means credits >= 0.25)
+        if (!claimCmeBtn.disabled) {
+            console.log("Claim CME button clicked, opening modal.");
+            prepareClaimModal(); // Call helper to set available credits etc.
+            cmeClaimModal.style.display = 'block'; // Use 'block' or 'flex' based on your final CSS
+        } else {
+            console.log("Claim CME button clicked, but disabled (not enough credits).");
+        }
+    });
+} else {
+    console.error("Claim button or Claim modal not found.");
+}
+
+// Listener for the modal's Close (X) button
+if (closeCmeClaimModalBtn && cmeClaimModal) {
+    closeCmeClaimModalBtn.addEventListener('click', function() {
+        console.log("Close claim modal button clicked.");
+        cmeClaimModal.style.display = 'none';
+    });
+}
+
+// Listener for the modal's Cancel button
+if (cancelCmeClaimBtn && cmeClaimModal) {
+    cancelCmeClaimBtn.addEventListener('click', function() {
+        console.log("Cancel claim modal button clicked.");
+        cmeClaimModal.style.display = 'none';
+    });
+}
+
+// Listener for the Commercial Bias radio buttons to show/hide comment box
+if (commercialBiasRadios.length > 0 && commercialBiasCommentDiv) {
+    commercialBiasRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'No' && this.checked) {
+                commercialBiasCommentDiv.style.display = 'block'; // Show comment box
+            } else {
+                commercialBiasCommentDiv.style.display = 'none'; // Hide comment box
+                // Optionally clear the comment box when hiding
+                // const commentTextarea = document.getElementById('evalCommercialBiasComment');
+                // if (commentTextarea) commentTextarea.value = '';
+            }
+        });
+    });
+}
+
+// Listener for the Form Submission (Step 12b will handle the actual submission logic)
+if (cmeClaimForm) {
+    cmeClaimForm.addEventListener('submit', handleCmeClaimSubmission); // Call submission handler
+}
+
+// --- End of Step 12a ---
+  
 });
 
 // Function to show the login form modal
@@ -2656,6 +2721,124 @@ function showCmeDashboard() {
         console.error("CME Dashboard element (#cmeDashboardView) not found."); // Error if dashboard doesn't exist
     }
 }
+
+// --- Step 12b: Helper Function to Prepare Claim Modal ---
+
+async function prepareClaimModal() {
+    console.log("Preparing claim modal...");
+    const availableCreditsSpan = document.getElementById("claimModalAvailableCredits");
+    const creditsInput = document.getElementById("creditsToClaimInput");
+    const errorDiv = document.getElementById("claimModalError");
+    const form = document.getElementById("cmeClaimForm");
+    const biasCommentDiv = document.getElementById("commercialBiasCommentDiv");
+    const biasCommentTextarea = document.getElementById("evalCommercialBiasComment");
+    const loadingIndicator = document.getElementById('claimLoadingIndicator');
+    const submitButton = document.getElementById('submitCmeClaimBtn');
+
+    // Reset form elements and messages
+    if (form) form.reset(); // Clear previous entries
+    if (errorDiv) errorDiv.textContent = ''; // Clear errors
+    if (biasCommentDiv) biasCommentDiv.style.display = 'none'; // Hide bias comment initially
+    if (biasCommentTextarea) biasCommentTextarea.value = ''; // Clear bias comment
+    if (loadingIndicator) loadingIndicator.style.display = 'none'; // Hide loader
+    if (submitButton) submitButton.disabled = false; // Ensure submit button is enabled
+
+    // Fetch latest available credits
+    let availableCredits = 0.00;
+    if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
+        try {
+            const uid = window.authState.user.uid;
+            const userDocRef = window.doc(window.db, 'users', uid);
+            const userDocSnap = await window.getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const cmeStats = userDocSnap.data().cmeStats || {};
+                const earned = parseFloat(cmeStats.creditsEarned || 0);
+                const claimed = parseFloat(cmeStats.creditsClaimed || 0);
+                availableCredits = Math.max(0, earned - claimed);
+            }
+        } catch (error) {
+            console.error("Error fetching available credits for modal:", error);
+            if (errorDiv) errorDiv.textContent = "Error loading available credits.";
+        }
+    }
+
+    // Update display and input attributes
+    const formattedAvailable = availableCredits.toFixed(2);
+    if (availableCreditsSpan) {
+        availableCreditsSpan.textContent = formattedAvailable;
+    }
+    if (creditsInput) {
+        creditsInput.value = formattedAvailable; // Default input to max available
+        creditsInput.max = formattedAvailable; // Set max attribute dynamically
+        creditsInput.min = "0.25"; // Ensure min is set
+        creditsInput.step = "0.25"; // Ensure step is set
+    }
+
+    console.log(`Claim modal prepared. Available credits: ${formattedAvailable}`);
+}
+
+// --- End of Step 12b ---
+
+
+// --- Step 12c: Placeholder for Submission Handler (Outside DOMContentLoaded) ---
+// We will fill this in properly in the next step
+
+async function handleCmeClaimSubmission(event) {
+    event.preventDefault(); // Prevent default form submission
+    console.log("CME Claim Form submitted (placeholder).");
+
+    const errorDiv = document.getElementById("claimModalError");
+    const loadingIndicator = document.getElementById('claimLoadingIndicator');
+    const submitButton = document.getElementById('submitCmeClaimBtn');
+    const cancelButton = document.getElementById('cancelCmeClaimBtn');
+
+    // Clear previous errors
+    if (errorDiv) errorDiv.textContent = '';
+
+    // Show loader, disable buttons
+    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    if (submitButton) submitButton.disabled = true;
+    if (cancelButton) cancelButton.disabled = true;
+
+
+    // --- TODO: Add Validation and Firestore Update Logic Here (Step 13) ---
+    // 1. Get available credits again (server-side check is better, but client-side for now)
+    // 2. Get claimed amount from input, validate (>=0.25, <= available, multiple of 0.25)
+    // 3. Get evaluation answers
+    // 4. Perform Firestore transaction:
+    //    - Read user doc again inside transaction
+    //    - Verify available credits again
+    //    - Update cmeStats.creditsClaimed
+    //    - Add entry to cmeClaimHistory array
+    //    - Set updated data back
+    // 5. If successful:
+    //    - Simulate certificate generation call (console.log)
+    //    - Show success message to user
+    //    - Close modal after delay
+    //    - Refresh CME dashboard data
+    // 6. If error:
+    //    - Show error message in errorDiv
+    //    - Hide loader, re-enable buttons
+
+    // Placeholder logic for now:
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+    console.log("Placeholder: Claim processing finished.");
+    alert("Claim Submitted (Placeholder) - Certificate generation would happen now.");
+
+    // Hide loader, re-enable buttons (in real version, do this in finally block)
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    if (submitButton) submitButton.disabled = false;
+    if (cancelButton) cancelButton.disabled = false;
+
+     // Close modal (for now)
+     const cmeClaimModal = document.getElementById("cmeClaimModal");
+     if (cmeClaimModal) cmeClaimModal.style.display = 'none';
+
+     // Refresh dashboard
+     if(typeof loadCmeDashboardData === 'function') loadCmeDashboardData();
+
+}
+// --- End of Step 12c ---
 
 // --- Step 5b: Populate CME Category Dropdown ---
 
