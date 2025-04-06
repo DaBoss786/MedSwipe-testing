@@ -471,8 +471,6 @@ html, body {
 /* Target the specific modal ID - Outer full-screen background */
 #cmeClaimModal {
     position: fixed; /* Cover the whole screen */
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
@@ -499,8 +497,6 @@ html, body {
     /* --- Centering using margin auto and positioning hints --- */
     margin: 3vh auto; /* Vertical margin (e.g., 3% of viewport height) + auto horizontal */
     /* These help ensure it stays within flow for margin:auto */
-    left: 0;
-    right: 0;
     /* We don't use top/transform like the original .modalForm */
 }
 
