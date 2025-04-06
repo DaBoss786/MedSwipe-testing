@@ -2892,7 +2892,7 @@ async function handleCmeClaimSubmission(event) {
             };
 
             const newHistoryEntry = {
-                timestamp: window.serverTimestamp(), // Use server timestamp
+                timestamp: new Date(), // Use client-side timestamp
                 creditsClaimed: creditsToClaim,
                 evaluationData: evaluationData // Store the collected evaluation data
             };
