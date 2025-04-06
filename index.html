@@ -766,5 +766,151 @@
 
 </div> <!-- End of cmeQuizSetupModal -->
 
+<!-- ================================================== -->
+<!-- == CME Claim Modal (with Specific Evaluation) == -->
+<!-- ================================================== -->
+<div id="cmeClaimModal" class="modalForm" style="display: none; z-index: 2200; max-width: 550px;"> <!-- Increased max-width slightly -->
+    <button id="closeCmeClaimModal" class="auth-close-btn" style="position: absolute; top: 10px; right: 15px; z-index: 10;">×</button>
+    <h2>Claim CME Credits & Evaluate</h2>
+
+    <div id="claimModalError" class="auth-error" style="text-align: center; margin-bottom: 15px;"></div> <!-- For displaying errors -->
+
+    <div style="margin-bottom: 20px; text-align: center;">
+        Available Credits to Claim: <strong id="claimModalAvailableCredits" style="font-size: 1.2em;">0.00</strong>
+    </div>
+
+    <form id="cmeClaimForm">
+        <div class="formGroup">
+            <label for="creditsToClaimInput">Credits to Claim:</label>
+            <input type="number" id="creditsToClaimInput" value="0.25" min="0.25" step="0.25" required style="max-width: 100px; display: inline-block; margin-left: 10px;">
+            <small class="formHelper" style="display: block; margin-top: 5px;">Enter amount in increments of 0.25.</small>
+        </div>
+
+        <hr style="margin: 25px 0;">
+
+        <h3 style="text-align: center; color: #0056b3; margin-bottom: 20px;">Activity Evaluation</h3>
+
+        <!-- Question 1: Objectives Met -->
+        <div class="formGroup">
+            <label>1. The course objectives were met.</label>
+            <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Strongly Agree" required> Strongly Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Agree"> Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Disagree"> Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Strongly Disagree"> Strongly Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="N/A"> N/A</label>
+            </div>
+        </div>
+
+        <!-- Question 2: Confidence Improvement -->
+        <div class="formGroup">
+            <label>2. As a result of participating in this activity, I am confident I will improve my knowledge, competence, performance and/or patient outcomes.</label>
+             <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Strongly Agree" required> Strongly Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Agree"> Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Disagree"> Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Strongly Disagree"> Strongly Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="N/A"> N/A</label>
+            </div>
+        </div>
+
+        <!-- Question 3: Usefulness (Conditional Relevance) -->
+        <div class="formGroup">
+            <label>3. Please answer only if the course content relates directly to your current area of practice: “The content will be useful in my practice.”</label>
+             <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Strongly Agree"> Strongly Agree</label> <!-- Not required -->
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Agree"> Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Disagree"> Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Strongly Disagree"> Strongly Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="N/A"> N/A</label>
+             </div>
+             <small class="formHelper" style="display: block; margin-top: 5px;">Optional if content is not directly related to your practice.</small>
+        </div>
+
+        <!-- Question 4: Practice Change Areas (Checkboxes) -->
+        <div class="formGroup">
+            <label>4. What areas of practice will you change as a result of attending this course? (Select all that apply)</label>
+            <div class="checkbox-group" style="margin-top: 5px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 5px 15px;">
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Patient assessment"> Patient assessment</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Patient treatment planning or care delivery"> Patient treatment planning or care delivery</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Patient education"> Patient education</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Protocols, policies and/or procedures"> Protocols, policies and/or procedures</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Team-based care and/or team science"> Team-based care and/or team science</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Team communication"> Team communication</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Communication skills"> Communication skills</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Research and/or scholarly work"> Research and/or scholarly work</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Quality Improvement"> Quality Improvement</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="No change — validates current practice"> No change — validates current practice</label>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                     <label style="font-weight: normal; white-space: nowrap;"><input type="checkbox" name="evalPracticeChange" value="Other"> Other:</label>
+                     <input type="text" id="evalPracticeChangeOtherText" name="evalPracticeChangeOtherText" style="flex-grow: 1; padding: 4px;">
+                </div>
+            </div>
+             <small class="formHelper" style="display: block; margin-top: 5px;">Required: Select at least one option.</small>
+        </div>
+
+         <!-- Question 5: Implicit Bias Change Areas (Checkboxes) -->
+        <div class="formGroup">
+            <label>5. With respect to Implicit Bias and Cultural and Linguistic Competency what areas of practice will you change as a result of this course? (Select all that apply)</label>
+            <div class="checkbox-group" style="margin-top: 5px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 5px 15px;">
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Patient assessment"> Patient assessment</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Patient treatment planning or care delivery"> Patient treatment planning or care delivery</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Patient education"> Patient education</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Protocols, policies and/or procedures"> Protocols, policies and/or procedures</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Team-based care and/or team science"> Team-based care and/or team science</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Communication skills"> Communication skills</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Research and/or scholarly work"> Research and/or scholarly work</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Quality Improvement"> Quality Improvement</label>
+                 <div style="display: flex; align-items: center; gap: 5px;">
+                     <label style="font-weight: normal; white-space: nowrap;"><input type="checkbox" name="evalBiasChange" value="Other"> Other:</label>
+                     <input type="text" id="evalBiasChangeOtherText" name="evalBiasChangeOtherText" style="flex-grow: 1; padding: 4px;">
+                </div>
+            </div>
+             <small class="formHelper" style="display: block; margin-top: 5px;">Required: Select at least one option.</small>
+        </div>
+
+        <!-- Question 6: Delivery Method -->
+        <div class="formGroup">
+            <label>6. The educational delivery method selected was effective.</label>
+             <div class="radio-group" style="margin-top: 5px;">
+                <label style="font-weight: normal; margin-right: 15px;"><input type="radio" name="evalDelivery" value="Yes" required> Yes</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalDelivery" value="No"> No</label>
+            </div>
+        </div>
+
+        <!-- Question 7: Commercial Bias -->
+        <div class="formGroup">
+            <label>7. This activity was free of commercial bias.</label>
+             <div class="radio-group" style="margin-top: 5px;">
+                <label style="font-weight: normal; margin-right: 15px;"><input type="radio" name="evalCommercialBias" value="Yes" required> Yes</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalCommercialBias" value="No"> No</label>
+             </div>
+             <div id="commercialBiasCommentDiv" style="margin-top: 8px; display: none;"> <!-- Hidden initially -->
+                 <label for="evalCommercialBiasComment" style="font-weight: normal; font-size: 0.9em;">If no, please comment:</label>
+                 <textarea id="evalCommercialBiasComment" name="evalCommercialBiasComment" rows="2" style="width: 100%; margin-top: 3px;"></textarea>
+             </div>
+        </div>
+
+        <!-- Additional Comments -->
+         <div class="formGroup">
+            <label for="evalAdditionalComments">Additional Comments (Optional):</label>
+            <textarea id="evalAdditionalComments" name="evalAdditionalComments" rows="3" placeholder="Any other feedback about the activity?"></textarea>
+        </div>
+
+
+        <div class="btnRow" style="margin-top: 25px;">
+            <button type="button" id="cancelCmeClaimBtn" class="cancel">Cancel</button>
+            <button type="submit" id="submitCmeClaimBtn">Submit Claim & Get Certificate</button>
+        </div>
+    </form>
+
+    <!-- Loading Indicator -->
+    <div id="claimLoadingIndicator" style="display: none; text-align: center; margin-top: 15px;">
+         <div class="spinner" style="margin: 0 auto 10px;"></div> <!-- Assuming you have .spinner CSS -->
+         <p style="color: #0C72D3;">Processing claim...</p>
+    </div>
+
+</div> <!-- End of cmeClaimModal -->
+ 
 </body>
 </html>
