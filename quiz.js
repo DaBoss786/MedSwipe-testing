@@ -496,7 +496,7 @@ function addOptionListeners() {
 
 
                 // --- Set up the final explanation slide content ---
-                AnswerSlide.querySelector('.card').innerHTML = `
+                answerSlide.querySelector('.card').innerHTML = `
                     <div class="answer">
                         <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
                         Correct Answer: ${correct}<br>
@@ -513,11 +513,11 @@ function addOptionListeners() {
                     <!-- No "Swipe next" hint or "Loading Summary" button here initially -->
                 `;
                 // Add difficulty button listeners for the last question
-                addDifficultyListeners(AnswerSlide, qId, isCorrect); // Use helper function
+                addDifficultyListeners(answerSlide, qId, isCorrect); // Use helper function
 
 
                 // --- Add the correct FINAL ACTION BUTTON based on quiz type ---
-                const lastCard = AnswerSlide.querySelector('.card');
+                const lastCard = answerSlide.querySelector('.card');
                 if (lastCard) {
                     if (currentQuizType === 'cme') {
                         // --- CME Quiz End Action ---
