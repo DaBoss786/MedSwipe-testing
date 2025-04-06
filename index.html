@@ -769,15 +769,13 @@
 <!-- ================================================== -->
 <!-- == CME Claim Modal (with Specific Evaluation) == -->
 <!-- ================================================== -->
-<div id="cmeClaimModal" class="modalForm" style="display: none; z-index: 2200; max-width: 550px;"> <!-- Increased max-width slightly -->
-    <button id="closeCmeClaimModal" class="auth-close-btn" style="position: absolute; top: 10px; right: 15px; z-index: 10;">×</button>
-    <h2>Claim CME Credits & Evaluate</h2>
+<div id="cmeClaimModal" class="modalForm" style="display: none; /* Other styles removed by CSS override */">
+    <div class="modal-content-inner"> <!-- <<< ADD THIS WRAPPER DIV -->
 
-    <div id="claimModalError" class="auth-error" style="text-align: center; margin-bottom: 15px;"></div> <!-- For displaying errors -->
+        <button id="closeCmeClaimModal" class="auth-close-btn" style="position: absolute; top: 10px; right: 15px; z-index: 10;">×</button>
+        <h2>Claim CME Credits & Evaluate</h2>
 
-    <div style="margin-bottom: 20px; text-align: center;">
-        Available Credits to Claim: <strong id="claimModalAvailableCredits" style="font-size: 1.2em;">0.00</strong>
-    </div>
+        <div id="claimModalError" class="auth-error" style="text-align: center; margin-bottom: 15px;"></div>
 
     <form id="cmeClaimForm">
         <div class="formGroup">
@@ -909,7 +907,7 @@
          <div class="spinner" style="margin: 0 auto 10px;"></div> <!-- Assuming you have .spinner CSS -->
          <p style="color: #0C72D3;">Processing claim...</p>
     </div>
-
+</div> <!-- <<< CLOSE THE WRAPPER DIV HERE -->
 </div> <!-- End of cmeClaimModal -->
  
 </body>
