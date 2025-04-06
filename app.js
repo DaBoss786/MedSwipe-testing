@@ -3084,15 +3084,66 @@ async function loadCmeDashboardData() {
             claimButton.textContent = "Claim CME Credits"; // Reset text
         }
 
-        // --- Update History Card (Initial - will be refined in Step 13) ---
-        if (cmeHistory.length > 0) {
-             // Basic display for now, will format better later
-             historyContent.innerHTML = cmeHistory.map(claim =>
-                 `<p>Claimed ${parseFloat(claim.creditsClaimed || 0).toFixed(2)} credits on ${claim.timestamp ? new Date(claim.timestamp.seconds * 1000).toLocaleDateString() : 'Unknown Date'}</p>`
-             ).join('');
-        } else {
-            historyContent.innerHTML = "<p>No credits claimed yet.</p>";
-        }
+            // --- Update History Card (Formatted Display) ---
+    if (cmeHistory.length > 0) {
+        // Sort history newest first (assuming timestamps are reliable enough)
+        cmeHistory.sort((a, b) => {
+            const timeA = a.timestamp?.seconds ?? 0; // Use seconds if available
+            const timeB = b.timestamp?.seconds ?? 0;
+            return timeB - timeA; // Descending order
+        });
+
+        // Generate HTML for a simple table
+        let historyHtml = `
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #ddd; text-align: left;">
+                        <th style="padding: 8px 5px;">Date Claimed</th>
+                        <th style="padding: 8px 5px; text-align: right;">Credits</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        cmeHistory.forEach(claim => {
+            const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
+            let claimDate = 'Unknown Date';
+            // Check if timestamp is a Firestore Timestamp object (has seconds)
+            // or if it's a JS Date object (from the client-side fix)
+            if (claim.timestamp) {
+                 if (typeof claim.timestamp.toDate === 'function') {
+                     // It's likely a Firestore Timestamp object
+                     claimDate = claim.timestamp.toDate().toLocaleDateString();
+                 } else if (claim.timestamp instanceof Date) {
+                     // It's likely a JS Date object (from client-side save)
+                     claimDate = claim.timestamp.toLocaleDateString();
+                 } else {
+                      // Attempt to parse if it's maybe a string or number
+                      try {
+                           claimDate = new Date(claim.timestamp).toLocaleDateString();
+                           if (claimDate === "Invalid Date") claimDate = "Invalid Date";
+                      } catch (e) { /* Keep 'Unknown Date' */ }
+                 }
+            }
+
+            historyHtml += `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 5px;">${claimDate}</td>
+                    <td style="padding: 8px 5px; text-align: right;">${credits}</td>
+                </tr>
+            `;
+        });
+
+        historyHtml += `
+                </tbody>
+            </table>
+        `;
+        historyContent.innerHTML = historyHtml;
+
+    } else {
+        historyContent.innerHTML = "<p style='text-align: center; color: #666;'>No credits claimed yet.</p>";
+    }
+    // --- End of History Card Update ---
 
         console.log("CME dashboard data loaded and displayed.");
 
