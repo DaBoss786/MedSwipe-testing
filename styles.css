@@ -449,6 +449,146 @@ html, body {
   background-color: #aaa;
 }
 
+/* Keep your existing .modalForm rules as they are for other modals */
+.modalForm {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px; /* Keep original padding */
+  z-index: 2100; /* Keep original z-index or increase if needed */
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  width: 90%;
+  max-width: 400px; /* Keep original max-width for other modals */
+  /* DO NOT add max-height or overflow here by default */
+}
+
+/* --- Overrides and Additions for the CME Claim Modal --- */
+
+/* Target the specific modal ID */
+#cmeClaimModal {
+    /* Override positioning for scrollable behavior */
+    position: fixed;
+    top: 0; /* Align to top */
+    left: 0; /* Align to left */
+    width: 100%; /* Full width for background */
+    height: 100%; /* Full height for background */
+    transform: none; /* Remove the translate transform */
+    padding: 20px 10px; /* Padding for the outer container */
+    display: none; /* Keep hidden */
+    align-items: center; /* Center content box vertically */
+    justify-content: center; /* Center content box horizontally */
+    background-color: rgba(0, 0, 0, 0.5); /* Add a semi-transparent background */
+    z-index: 2200; /* Ensure it's above other elements */
+    overflow-y: auto; /* Allow outer container to scroll on tiny screens */
+}
+
+/* Style the inner content box specifically for the claim modal */
+#cmeClaimModal .modal-content-inner { /* Add a new inner div in HTML or target direct child */
+    background: #fff;
+    padding: 25px; /* Padding inside the box */
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    width: 90%; /* Control width */
+    max-width: 550px; /* Increased max-width for CME form */
+    max-height: 85vh; /* Limit height */
+    overflow-y: auto; /* Make the CONTENT scrollable */
+    position: relative; /* For the close button */
+    margin: auto; /* Ensure centering */
+}
+
+/* Adjustments within the CME Claim Modal */
+#cmeClaimModal h2 {
+  margin-top: 10px; /* Space below potential close button */
+  margin-bottom: 15px;
+  color: #0056b3;
+  text-align: center;
+}
+
+#cmeClaimModal .formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px; /* Consistent spacing */
+}
+
+ #cmeClaimModal .formGroup label {
+   font-size: 0.9rem;
+   color: #333;
+   margin-bottom: 5px;
+ }
+
+ /* Ensure inputs inside don't overflow */
+ #cmeClaimModal .formGroup input[type="number"],
+ #cmeClaimModal .formGroup input[type="text"],
+ #cmeClaimModal .formGroup textarea,
+ #cmeClaimModal .formGroup select {
+    width: 100%;
+    max-width: 100%; /* Prevent potential overflow */
+    box-sizing: border-box; /* Include padding/border in width */
+    padding: 8px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+ }
+ /* Specific width for credits input */
+ #cmeClaimModal #creditsToClaimInput {
+     max-width: 100px;
+     display: inline-block;
+     margin-left: 10px;
+ }
+
+
+#cmeClaimModal .btnRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+ #cmeClaimModal .btnRow button {
+   margin-left: 10px;
+   padding: 8px 15px;
+   font-size: 1rem;
+   border: none;
+   border-radius: 4px;
+   cursor: pointer;
+   background-color: #0056b3;
+   color: #fff;
+   transition: background-color 0.2s ease;
+ }
+ #cmeClaimModal .btnRow button.cancel {
+    background-color: #aaa;
+ }
+ #cmeClaimModal .btnRow button:hover {
+    background-color: #004a95;
+ }
+ #cmeClaimModal .btnRow button.cancel:hover {
+    background-color: #888;
+ }
+
+
+/* Close button specific to this modal */
+#cmeClaimModal #closeCmeClaimModal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    z-index: 10;
+    font-size: 1.8rem;
+    padding: 5px;
+    line-height: 1;
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+}
+ #cmeClaimModal #closeCmeClaimModal:hover {
+     color: #333;
+ }
+
+/* --- End of CSS Fix --- */
+
 /* Performance View */
 #performanceView {
   display: none;
