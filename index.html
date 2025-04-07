@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Mobile Optimization Meta Tags -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#E6F0FA">
+  <title>MedSwipe</title>
+  
+  <!-- Google Fonts: Roboto -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+  
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+  <!-- Splash Screen Container -->
+<div id="splashScreen" class="splash-screen">
+  <div class="splash-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="splash-logo">
+    <div class="splash-loader">
+      <div class="loading-bar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Welcome Screen Container -->
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="welcome-logo">
+    <h1 class="welcome-tagline">Swipe. Learn. Master Medicine.</h1>
+    <div class="welcome-buttons">
+      <button id="startLearningBtn" class="welcome-primary-btn">Start Learning</button>
+      <button id="existingAccountBtn" class="welcome-secondary-btn">I Already Have an Account</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Onboarding Loading Screen -->
+<div id="onboardingLoadingScreen" class="loading-screen">
+  <div class="loading-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="loading-logo">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Curating your first three questions...</p>
+  </div>
+</div>
+
+  <!-- Login Screen Container -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-content">
+    <div class="login-header">
+      <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="login-logo">
+      <h1 class="login-title">Welcome Back</h1>
+    </div>
+
+    <form id="loginScreenForm" class="login-form">
+      <div class="form-group">
+        <label for="loginScreenEmail">Email</label>
+        <input type="email" id="loginScreenEmail" required autocomplete="email">
+        <div class="form-error" id="emailError"></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="loginScreenPassword">Password</label>
+        <div class="password-container">
+          <input type="password" id="loginScreenPassword" required autocomplete="current-password">
+          <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+            <i class="eye-icon">👁️</i>
+          </button>
+        </div>
+        <div class="form-error" id="passwordError"></div>
+      </div>
+      
+      <div class="login-actions">
+        <button type="submit" id="loginScreenSubmit" class="login-button" disabled>Log In</button>
+        <a href="#" id="forgotPasswordLink" class="login-link">Forgot Password?</a>
+      </div>
+    </form>
+    
+    <div class="login-divider">
+      <span>or</span>
+    </div>
+    
+    <div class="login-alternative-options">
+      <button id="createAccountBtn" class="secondary-button">Create Account</button>
+      <button id="continueAsGuestBtn" class="auth-secondary-btn" onclick="document.getElementById('registrationBenefitsModal').style.display='none'; document.getElementById('mainOptions').style.display='flex';">Continue as Guest</button>
+    </div>
+    
+    <div id="loginScreenError" class="login-error-message"></div>
+  </div>
+  
+  <div class="login-loader" id="loginLoader">
+    <div class="spinner"></div>
+    <p>Logging in...</p>
+  </div>
+</div>
+  
+  <!-- Top Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="menu-button" id="menuToggle">&#9776;</button>
+    </div>
+    <div class="toolbar-center">
+      <div class="logo" id="logoClick">
+        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo">
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <!-- XP Display -->
+      <div id="xpDisplay">0 XP</div>
+      <!-- Level with Progress Circle (replaces the score circle) -->
+      <div class="level-circle-container">
+        <div class="level-progress-circle">
+          <div class="level-circle-background"></div>
+          <div class="level-circle-progress" id="levelCircleProgress"></div>
+          <div class="level-number clickable" id="scoreCircle">1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Options -->
+<!-- Dashboard View with Fixed Spacing and Centered Button -->
+<div id="mainOptions" class="dashboard-container">
+  <!-- Modified margin-top to move button down so it's fully visible -->
+  <div class="dashboard-start-section" style="display: flex; justify-content: center; width: 100%; margin-top: 55px;">
+    <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
+    <button id="cmeModuleBtn" class="start-quiz-btn">CME Module</button>
+  </div>
+  
+  <!-- First Row: Progress and Stats Cards -->
+  <div class="dashboard-cards-row">
+    <!-- User Progress Card -->
+    <div class="dashboard-card user-progress-card" id="userProgressCard">
+      <div class="card-header">
+        <h3>Your Progress</h3>
+      </div>
+      <div class="card-content">
+        <div class="level-progress-container">
+          <div class="level-progress-circle dashboard-level">
+            <div class="level-circle-background"></div>
+            <div class="level-circle-progress" id="dashboardLevelProgress"></div>
+            <div class="level-number" id="dashboardLevel">1</div>
+          </div>
+          <div class="level-info">
+            <p class="level-xp" id="dashboardXP">0 XP</p>
+            <p class="level-next" id="dashboardNextLevel">30 XP to Level 2</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>View Details</span>
+        <span class="arrow-icon">→</span>
+      </div>
+    </div>
+    
+    <!-- Quick Stats Card -->
+    <div class="dashboard-card stats-card" id="quickStatsCard">
+      <div class="card-header">
+        <h3>Quick Stats</h3>
+      </div>
+      <div class="card-content">
+        <div class="quick-stats-container">
+          <div class="stats-item">
+            <div class="stats-value" id="dashboardAnswered">0</div>
+            <div class="stats-label">Questions Answered</div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-value" id="dashboardAccuracy">0%</div>
+            <div class="stats-label">Accuracy</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>View Details</span>
+        <span class="arrow-icon">→</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Review Queue Card (full width) -->
+  <div class="dashboard-card review-queue-card" id="reviewQueueCard" style="width: 100%; margin-bottom: 20px;">
+    <div class="card-header">
+      <h3>Review Queue</h3>
+    </div>
+    <div class="card-content">
+      <div id="reviewQueueContent" class="review-queue-content">
+        <div class="review-stats">
+          <div class="review-count" id="reviewCount">0</div>
+          <div class="review-label">questions due for review</div>
+        </div>
+        <div class="review-progress-container">
+          <div class="review-progress-bar" id="reviewProgressBar"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span>Start Review</span>
+      <span class="arrow-icon">→</span>
+    </div>
+  </div>
+  
+  <!-- Second Row: Leaderboard Preview Card (full width) -->
+  <div class="dashboard-card leaderboard-card" id="leaderboardPreviewCard" style="width: 100%; margin-bottom: 20px;">
+    <div class="card-header">
+      <h3>Leaderboard</h3>
+    </div>
+    <div class="card-content">
+      <div id="leaderboardPreview">
+        <!-- Loading state -->
+        <div class="leaderboard-loading">Loading top users...</div>
+        <!-- Entries will be populated by JavaScript -->
+      </div>
+    </div>
+    <div class="card-footer">
+      <span>View Full Leaderboard</span>
+      <span class="arrow-icon">→</span>
+    </div>
+  </div>
+  
+  <!-- Third Row: Streak Calendar Card (Full Width) -->
+  <div class="dashboard-card streak-card">
+    <div class="card-header">
+      <h3>Activity Streak</h3>
+      <div class="streak-count">
+        <span id="currentStreak">0</span>
+        <span class="streak-flame">🔥</span>
+      </div>
+    </div>
+    <div class="card-content">
+      <div class="streak-calendar">
+        <div class="day-labels">
+          <span>M</span>
+          <span>T</span>
+          <span>W</span>
+          <span>T</span>
+          <span>F</span>
+          <span>S</span>
+          <span>S</span>
+        </div>
+        <div class="day-circles" id="streakCalendar">
+          <!-- Days will be filled in by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Quiz Setup Modal -->
+<div id="quizSetupModal" class="modalForm">
+  <h2>Set Up Your Quiz</h2>
+  <div class="formGroup">
+    <label for="modalCategorySelect">Select Category</label>
+    <select id="modalCategorySelect">
+      <option value="">All Categories</option>
+      <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+      <option value="Otology">Otology</option>
+      <option value="Laryngology">Laryngology</option>
+      <option value="Rhinology">Rhinology</option>
+      <option value="Pediatric ENT">Pediatric ENT</option>
+      <option value="Facial Plastics">Facial Plastics</option>
+    </select>
+  </div>
+  <div class="formGroup">
+    <label for="modalNumQuestions">Number of Questions</label>
+    <input type="number" id="modalNumQuestions" min="1" value="10">
+  </div>
+  <div class="formGroup">
+  <label>
+    <input type="checkbox" id="modalIncludeAnswered">
+    Include answered questions
+  </label>
+</div>
+  <div class="formGroup">
+  <label>
+    <input type="checkbox" id="modalSpacedRepetition">
+    Enable Spaced Repetition
+  </label>
+  <p class="formHelper">Mix new questions with questions due for review</p>
+</div>
+  <div class="btnRow">
+    <button id="modalStartQuiz">Start Quiz</button>
+    <button id="modalCancelQuiz" class="cancel">Cancel</button>
+  </div>
+</div>
+  
+  <!-- Remaining HTML is unchanged -->
+  <!-- Swiper Container for Quiz -->
+  <div class="swiper">
+    <div class="swiper-wrapper" id="quizSlides"></div>
+  </div>
+  
+  <!-- Bottom Toolbar for Quiz -->
+  <div id="bottomToolbar" style="display: none;">
+    <div id="progressBarContainer">
+      <div id="progressBar"></div>
+    </div>
+    <div id="questionProgress">0 / 0</div>
+    <div id="scoreDisplay">Score: 0</div>
+  </div>
+  
+  <!-- Performance View -->
+  <div id="performanceView" style="display: none;"></div>
+  
+  <!-- Leaderboard View -->
+  <div id="leaderboardView"></div>
+  
+  <!-- FAQ View -->
+  <div id="faqView"></div>
+  
+  <!-- About Us View -->
+  <div id="aboutView"></div>
+  
+  <!-- Side Menu with Close Button (Left) -->
+  <div id="sideMenu">
+    <div id="menuHeader">
+      <span id="menuTitle">Menu</span>
+      <span id="menuClose" style="cursor:pointer;">&times;</span>
+    </div>
+    <ul id="menuList">
+      <li id="startNewQuiz">Start New Quiz</li>
+      <li id="leaderboardItem">Leaderboard</li>
+      <li id="faqItem">FAQ</li>
+      <li id="aboutItem">About Us</li>
+      <li id="contactItem">Contact Us</li>
+    </ul>
+  </div>
+  
+  <!-- User Menu with Close Button (Right) -->
+  <div id="userMenu">
+    <div id="userMenuHeader">
+      <span id="menuTitle">Profile</span>
+      <span id="userMenuClose" style="cursor:pointer;">&times;</span>
+    </div>
+    <div id="userInfoSection">
+      <h3 id="usernameDisplay">Username</h3>
+      <div class="user-score-container">
+        <p>Level</p>
+        <div class="level-progress-circle">
+          <div class="level-circle-background"></div>
+          <div class="level-circle-progress" id="userLevelProgress"></div>
+          <div class="level-number clickable" id="userScoreCircle">1</div>
+        </div>
+        <div id="userXpDisplay">0/30 XP</div>
+        <div class="level-progress-bar-container">
+          <div class="level-progress-bar" id="levelProgressBar"></div>
+        </div>
+      </div>
+    </div>
+    <ul id="userMenuList">
+      <li id="performanceItemUser">Performance</li>
+      <li><a href="#" id="bookmarksFilterUser">Bookmarks</a></li>
+      <li><a href="#" id="resetProgressUser">Reset Progress</a></li>
+    </ul>
+  </div>
+  
+  <!-- Menu Overlay -->
+  <div id="menuOverlay"></div>
+  
+  <!-- Icon Bar (Favorite & Feedback) -->
+  <div id="iconBar" style="display: none;">
+    <button id="favoriteButton">☆</button>
+    <button id="feedbackButton">💬</button>
+  </div>
+  
+  <!-- Custom Quiz Modal Form -->
+  <div id="customQuizForm" class="modalForm">
+    <h2>Custom Quiz Options</h2>
+    <div class="formGroup">
+      <label for="categorySelect">Select Category</label>
+      <select id="categorySelect">
+        <option value="">All</option>
+        <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+        <option value="Otology">Otology</option>
+        <option value="Laryngology">Laryngology</option>
+        <option value="Rhinology">Rhinology</option>
+        <option value="Pediatric ENT">Pediatric ENT</option>
+        <option value="Facial Plastics">Facial Plastics</option>
+      </select>
+    </div>
+    <div class="formGroup">
+      <label for="customNumQuestions">Number of Questions</label>
+      <input type="number" id="customNumQuestions" min="1" value="10">
+    </div>
+    <div class="formGroup">
+      <label>
+        <input type="checkbox" id="includeAnsweredCheckbox">
+        Include answered questions
+      </label>
+    </div>
+    <div class="btnRow">
+      <button id="startCustomQuiz">Start Quiz</button>
+      <button id="cancelCustomQuiz" class="cancel">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Random Quiz Modal Form -->
+  <div id="randomQuizForm" class="modalForm">
+    <h2>Random Quiz Options</h2>
+    <div class="formGroup">
+      <label for="randomNumQuestions">Number of Questions</label>
+      <input type="number" id="randomNumQuestions" min="1" value="10">
+    </div>
+    <div class="formGroup">
+      <label>
+        <input type="checkbox" id="includeAnsweredRandomCheckbox">
+        Include answered questions
+      </label>
+    </div>
+    <div class="btnRow">
+      <button id="startRandomQuiz">Start Quiz</button>
+      <button id="cancelRandomQuiz" class="cancel">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
+    <div style="background: #fff; padding: 20px; border-radius: 6px; width: 90%; max-width: 400px;">
+      <h3>Feedback</h3>
+      <p id="feedbackQuestionInfo" style="font-size:0.9rem; color:#333;"></p>
+      <textarea id="feedbackText" placeholder="Enter your feedback here" style="width:100%; height:100px;"></textarea>
+      <br>
+      <button id="submitFeedback">Submit Feedback</button>
+      <button id="closeFeedbackModal">Close</button>
+    </div>
+  </div>
+  
+  <!-- Contact Us Modal -->
+  <div id="contactModal">
+    <div>
+      <h3>Contact Us</h3>
+      <p>Please let us know your thoughts or any issues you're experiencing with MedSwipe.</p>
+      <label for="contactEmail">Your Email (Optional):</label>
+      <input type="email" id="contactEmail" placeholder="you@example.com">
+      <textarea id="contactMessage" placeholder="Enter your message here" style="height:100px;"></textarea>
+      <br>
+      <button id="submitContact">Submit</button>
+      <button id="closeContactModal">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- PapaParse for CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  
+  <!-- Firebase SDK -->
+<script type="module" src="firebase-config.js"></script>
+
+<!-- Auth Scripts - Must be loaded after Firebase -->
+<script src="auth.js"></script>
+<script src="user-profile.js"></script>
+
+<!-- Include Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+
+<!-- Chart.js for the doughnut chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- App Scripts -->
+<script src="utils.js"></script>
+<script src="user.js"></script>
+<script src="quiz.js"></script>
+<script src="stats.js"></script>
+<script src="ui.js"></script>
+<script src="login-screen.js"></script>
+<script src="app.js"></script>
+<script src="tos-privacy.js"></script>  
+  <script>
+  // Register the service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/pwabuilder-sw.js')
+        .then(function(registration) {
+          console.log('Service Worker registered successfully with scope: ', registration.scope);
+        })
+        .catch(function(err) {
+          console.log('Service Worker registration failed: ', err);
+        });
+    });
+  }
+</script>
+<!-- Terms of Service Modal -->
+<div id="termsOfServiceModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Terms of Use – MedSwipe</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Effective Date: March 2025</p>
+      <p>By using MedSwipe, you agree to the following terms:</p>
+      
+      <h3>Use of the App</h3>
+      <ul>
+        <li>MedSwipe is an educational tool for healthcare professionals. It does not provide medical advice.</li>
+        <li>You are responsible for keeping your login credentials secure.</li>
+      </ul>
+      
+      <h3>Intellectual Property</h3>
+      <ul>
+        <li>All app content (questions, explanations, analytics) is owned by MedSwipe and may not be copied, redistributed, or used for commercial purposes without permission.</li>
+      </ul>
+      
+      <h3>CME Disclaimer</h3>
+      <ul>
+        <li>CME credits are only available to registered users through eligible, accredited modules.</li>
+      </ul>
+      
+      <h3>Termination</h3>
+      <ul>
+        <li>We may suspend access to users who violate these terms or misuse the platform.</li>
+      </ul>
+      
+      <h3>Limitation of Liability</h3>
+      <ul>
+        <li>MedSwipe is not liable for decisions made based on app content. Always refer to professional guidelines and clinical judgment.</li>
+      </ul>
+      
+      <p>Contact us: <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div id="privacyPolicyModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Privacy Policy – MedSwipe</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Effective Date: March 2025</p>
+      <p>MedSwipe ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our app.</p>
+      
+      <h3>Information We Collect</h3>
+      <ul>
+        <li><strong>Personal Information:</strong> When you register or sign in using Apple, Google, or email, we collect your name (if provided), email address, and authentication token.</li>
+        <li><strong>Usage Data:</strong> We collect anonymous data on how you interact with the app (e.g., questions answered, categories used) to improve the user experience.</li>
+      </ul>
+      
+      <h3>How We Use Your Information</h3>
+      <ul>
+        <li>To create and manage your account</li>
+        <li>To track your learning progress and analytics</li>
+        <li>To improve app functionality and content</li>
+        <li>To communicate with you about app updates, features, or educational resources (you may unsubscribe at any time)</li>
+      </ul>
+      
+      <h3>Sharing</h3>
+      <ul>
+        <li>We do not sell or share your personal information with third parties, except trusted service providers like Firebase and analytics tools, solely for the purpose of delivering our services.</li>
+      </ul>
+      
+      <h3>Data Security</h3>
+      <ul>
+        <li>We use secure technologies and best practices to protect your data.</li>
+      </ul>
+      
+      <h3>Your Rights</h3>
+      <ul>
+        <li>You may request to access, modify, or delete your data by contacting us at <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a>.</li>
+      </ul>
+      
+      <h3>Changes to This Policy</h3>
+      <ul>
+        <li>We may update this policy periodically. Continued use of the app constitutes acceptance of any changes.</li>
+      </ul>
+      
+      <p>Contact us: <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a></p>
+    </div>
+  </div>
+</div>
+
+ <!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Reset Password</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Enter your email address below and we'll send you a link to reset your password.</p>
+      
+      <form id="forgotPasswordForm">
+        <div class="form-group">
+          <label for="resetEmail">Email Address</label>
+          <input type="email" id="resetEmail" required placeholder="Enter your email">
+          <div class="form-error" id="resetEmailError"></div>
+        </div>
+        
+        <div id="resetMessage" class="reset-message"></div>
+        
+        <div class="form-buttons">
+          <button type="submit" id="sendResetLinkBtn" class="auth-primary-btn">Send Reset Link</button>
+          <button type="button" id="cancelResetBtn" class="auth-secondary-btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 
+
+<!-- Registration Benefits Modal -->
+<div id="registrationBenefitsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Unlock More with a Free Account</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>You're just getting started! Create a free account in seconds to unlock these benefits:</p>
+      
+      <div class="benefits-list">
+        <div class="benefit-item">
+          <div class="benefit-icon">🏆</div>
+          <div class="benefit-text">
+            <h3>Leaderboards & Rankings</h3>
+            <p>Compare your progress with other medical professionals</p>
+          </div>
+        </div>
+        
+        <div class="benefit-item">
+          <div class="benefit-icon">🔄</div>
+          <div class="benefit-text">
+            <h3>Spaced Repetition Learning</h3>
+            <p>Optimize your learning with our intelligent review system</p>
+          </div>
+        </div>
+        
+        <div class="benefit-item">
+          <div class="benefit-icon">📊</div>
+          <div class="benefit-text">
+            <h3>Subject-Specific Analytics</h3>
+            <p>Track your performance across different subspecialties</p>
+          </div>
+        </div>
+        
+        <div class="benefit-item">
+          <div class="benefit-icon">💾</div>
+          <div class="benefit-text">
+            <h3>Save Your Progress</h3>
+            <p>Never lose your progress, even when switching devices</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="registration-options">
+        <button id="createAccountBenefitsBtn" class="auth-primary-btn">Create Free Account</button>
+        <button id="continueAsGuestBtn" class="auth-secondary-btn" onclick="document.getElementById('registrationBenefitsModal').style.display='none'; document.getElementById('mainOptions').style.display='flex';">Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================== -->
+<!-- == CME Dashboard View == -->
+<!-- ========================== -->
+<div id="cmeDashboardView" style="display: none; padding: 20px; margin-top: 60px; max-width: 600px; margin-left: auto; margin-right: auto;"> <!-- Start hidden, centered -->
+    <h2 style="text-align: center; color: #0056b3; margin-bottom: 20px;">CME Dashboard</h2>
+
+    <!-- Start CME Quiz Button -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <!-- Using start-quiz-btn class for consistency, adjust if needed -->
+        <button id="startCmeQuizBtn" class="start-quiz-btn">Start CME Quiz</button>
+    </div>
+
+    <!-- CME Tracker Card -->
+    <div id="cmeTrackerCard" class="dashboard-card" style="width: 100%; margin-bottom: 20px;">
+        <div class="card-header">
+            <h3>CME Tracker</h3>
+        </div>
+        <div class="card-content" id="cmeTrackerContent" style="padding: 15px;">
+            <!-- Stats will be loaded here by JS -->
+            <p>Loading tracker data...</p>
+        </div>
+        <div class="card-footer" style="justify-content: center;">
+             <!-- Using auth-primary-btn for styling, adjust if needed -->
+             <button id="claimCmeBtn" class="auth-primary-btn" style="padding: 8px 15px;" disabled>Claim CME Credits</button>
+        </div>
+    </div>
+
+    <!-- CME Credit History Card -->
+    <div id="cmeHistoryCard" class="dashboard-card" style="width: 100%; margin-bottom: 20px;">
+        <div class="card-header">
+            <h3>CME Credit History</h3>
+        </div>
+        <div class="card-content" id="cmeHistoryContent" style="padding: 15px; max-height: 200px; overflow-y: auto;">
+            <!-- History will be loaded here by JS -->
+            <p>No credits claimed yet.</p>
+        </div>
+         <div class="card-footer">
+            <span>View Past Claims</span>
+            <span class="arrow-icon">→</span>
+        </div>
+    </div>
+
+    <!-- How CME Credits Work Card -->
+    <div id="cmeInfoCard" class="dashboard-card" style="width: 100%; margin-bottom: 20px;">
+        <div class="card-header">
+            <h3>How CME Credits Work</h3>
+        </div>
+        <div class="card-content" style="padding: 15px; font-size: 0.9rem; line-height: 1.5;">
+            <ul>
+                <li>Answer CME-eligible questions within the CME Module.</li>
+                <li>Score at least 70% overall on questions attempted for CME credit.</li>
+                <li>Every <strong>12 questions</strong> answered (with >=70% accuracy) earns <strong>1 CME credit</strong>.</li>
+                <li>You can claim credits in increments of 0.25 (i.e., after every 3 questions meeting the criteria).</li>
+                <li>Claim available credits anytime using the "Claim CME Credits" button.</li>
+                <li>A short evaluation is required before generating your certificate.</li>
+                <li>Certificates are downloadable and emailed to you.</li>
+            </ul>
+        </div>
+    </div>
+
+     <!-- Back Button -->
+     <div style="text-align: center; margin-top: 20px;">
+          <!-- Using start-quiz-btn class for consistency, adjust if needed -->
+          <button id="cmeDashboardBackBtn" class="start-quiz-btn">Back to Main Dashboard</button>
+     </div>
+
+</div> <!-- End of cmeDashboardView -->
+
+<!-- ========================== -->
+<!-- == CME Quiz Setup Modal == -->
+<!-- ========================== -->
+<div id="cmeQuizSetupModal" class="modalForm" style="display: none; z-index: 2150;"> <!-- Start hidden, ensure high z-index -->
+    <h2>CME Quiz Setup</h2>
+    <p style="font-size: 0.9rem; color: #555; text-align: center; margin-bottom: 15px;">Only questions marked as CME-eligible will be included.</p>
+
+    <div class="formGroup">
+        <label for="cmeCategorySelect">Select Category (Optional):</label>
+        <select id="cmeCategorySelect">
+            <option value="">All CME Questions</option>
+            <!-- Options will be populated by JS later -->
+        </select>
+        <small class="formHelper">Leave as "All" to include questions from any category.</small>
+    </div>
+
+    <div class="formGroup">
+        <label for="cmeNumQuestions">Number of Questions:</label>
+        <input type="number" id="cmeNumQuestions" value="12" min="1" max="50" step="1">
+         <small class="formHelper">Choose between 1 and 50 questions (12 questions = 1 credit).</small>
+    </div>
+
+    <div class="formGroup">
+         <div class="terms-checkbox" style="margin-top: 10px;"> <!-- Reusing terms-checkbox style for layout -->
+             <input type="checkbox" id="cmeIncludeAnsweredCheckbox">
+             <label for="cmeIncludeAnsweredCheckbox">Include previously answered CME questions</label>
+        </div>
+         <small class="formHelper">Check this to review questions you've already answered in the CME module.</small>
+    </div>
+
+    <!-- Spaced Repetition Option is EXCLUDED as requested -->
+
+    <div class="btnRow" style="margin-top: 20px;">
+        <button type="button" id="modalCancelCmeQuizBtn" class="cancel">Cancel</button>
+        <button type="button" id="modalStartCmeQuizBtn">Start CME Quiz</button>
+    </div>
+
+    <!-- Optional: Add a close button if your modalForm style doesn't include one -->
+    <!-- <button id="closeCmeSetupModal" class="auth-close-btn" style="position: absolute; top: 10px; right: 15px;">×</button> -->
+
+</div> <!-- End of cmeQuizSetupModal -->
+
+<!-- ================================================== -->
+<!-- == CME Claim Modal (with Specific Evaluation) == -->
+<!-- ================================================== -->
+<div id="cmeClaimModal" class="modalForm" style="display: none; /* Other styles removed by CSS override */">
+    <div class="modal-content-inner"> <!-- <<< ADD THIS WRAPPER DIV -->
+
+        <button id="closeCmeClaimModal" class="auth-close-btn" style="position: absolute; top: 10px; right: 15px; z-index: 10;">×</button>
+        <h2>Claim CME Credits & Evaluate</h2>
+
+        <div id="claimModalError" class="auth-error" style="text-align: center; margin-bottom: 15px;"></div>
+
+    <form id="cmeClaimForm">
+
+      <div class="formGroup">
+                <label for="certificateFullName">Full Name (for Certificate):</label>
+                <input type="text" id="certificateFullName" name="certificateFullName" required placeholder="Enter your full name as you want it on the certificate">
+                <small class="formHelper" style="display: block; margin-top: 5px;">This name will appear on your CME certificate.</small>
+            </div>
+        <div class="formGroup">
+            <label for="creditsToClaimInput">Credits to Claim:</label>
+            <input type="number" id="creditsToClaimInput" value="0.25" min="0.25" step="0.25" required style="max-width: 100px; display: inline-block; margin-left: 10px;">
+            <small class="formHelper" style="display: block; margin-top: 5px;">Enter amount in increments of 0.25.</small>
+        </div>
+
+        <hr style="margin: 25px 0;">
+
+        <h3 style="text-align: center; color: #0056b3; margin-bottom: 20px;">Activity Evaluation</h3>
+
+        <!-- Question 1: Objectives Met -->
+        <div class="formGroup">
+            <label>1. The course objectives were met.</label>
+            <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Strongly Agree" required> Strongly Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Agree"> Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Disagree"> Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Strongly Disagree"> Strongly Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="N/A"> N/A</label>
+            </div>
+        </div>
+
+        <!-- Question 2: Confidence Improvement -->
+        <div class="formGroup">
+            <label>2. As a result of participating in this activity, I am confident I will improve my knowledge, competence, performance and/or patient outcomes.</label>
+             <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Strongly Agree" required> Strongly Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Agree"> Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Disagree"> Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Strongly Disagree"> Strongly Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="N/A"> N/A</label>
+            </div>
+        </div>
+
+        <!-- Question 3: Usefulness (Conditional Relevance) -->
+        <div class="formGroup">
+            <label>3. Please answer only if the course content relates directly to your current area of practice: “The content will be useful in my practice.”</label>
+             <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Strongly Agree"> Strongly Agree</label> <!-- Not required -->
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Agree"> Agree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Disagree"> Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Strongly Disagree"> Strongly Disagree</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="N/A"> N/A</label>
+             </div>
+             <small class="formHelper" style="display: block; margin-top: 5px;">Optional if content is not directly related to your practice.</small>
+        </div>
+
+        <!-- Question 4: Practice Change Areas (Checkboxes) -->
+        <div class="formGroup">
+            <label>4. What areas of practice will you change as a result of attending this course? (Select all that apply)</label>
+            <div class="checkbox-group" style="margin-top: 5px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 5px 15px;">
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Patient assessment"> Patient assessment</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Patient treatment planning or care delivery"> Patient treatment planning or care delivery</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Patient education"> Patient education</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Protocols, policies and/or procedures"> Protocols, policies and/or procedures</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Team-based care and/or team science"> Team-based care and/or team science</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Team communication"> Team communication</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Communication skills"> Communication skills</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Research and/or scholarly work"> Research and/or scholarly work</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="Quality Improvement"> Quality Improvement</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalPracticeChange" value="No change — validates current practice"> No change — validates current practice</label>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                     <label style="font-weight: normal; white-space: nowrap;"><input type="checkbox" name="evalPracticeChange" value="Other"> Other:</label>
+                     <input type="text" id="evalPracticeChangeOtherText" name="evalPracticeChangeOtherText" style="flex-grow: 1; padding: 4px;">
+                </div>
+            </div>
+             <small class="formHelper" style="display: block; margin-top: 5px;">Required: Select at least one option.</small>
+        </div>
+
+         <!-- Question 5: Implicit Bias Change Areas (Checkboxes) -->
+        <div class="formGroup">
+            <label>5. With respect to Implicit Bias and Cultural and Linguistic Competency what areas of practice will you change as a result of this course? (Select all that apply)</label>
+            <div class="checkbox-group" style="margin-top: 5px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 5px 15px;">
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Patient assessment"> Patient assessment</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Patient treatment planning or care delivery"> Patient treatment planning or care delivery</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Patient education"> Patient education</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Protocols, policies and/or procedures"> Protocols, policies and/or procedures</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Team-based care and/or team science"> Team-based care and/or team science</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Communication skills"> Communication skills</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Research and/or scholarly work"> Research and/or scholarly work</label>
+                <label style="font-weight: normal;"><input type="checkbox" name="evalBiasChange" value="Quality Improvement"> Quality Improvement</label>
+                 <div style="display: flex; align-items: center; gap: 5px;">
+                     <label style="font-weight: normal; white-space: nowrap;"><input type="checkbox" name="evalBiasChange" value="Other"> Other:</label>
+                     <input type="text" id="evalBiasChangeOtherText" name="evalBiasChangeOtherText" style="flex-grow: 1; padding: 4px;">
+                </div>
+            </div>
+             <small class="formHelper" style="display: block; margin-top: 5px;">Required: Select at least one option.</small>
+        </div>
+
+        <!-- Question 6: Delivery Method -->
+        <div class="formGroup">
+            <label>6. The educational delivery method selected was effective.</label>
+             <div class="radio-group" style="margin-top: 5px;">
+                <label style="font-weight: normal; margin-right: 15px;"><input type="radio" name="evalDelivery" value="Yes" required> Yes</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalDelivery" value="No"> No</label>
+            </div>
+        </div>
+
+        <!-- Question 7: Commercial Bias -->
+        <div class="formGroup">
+            <label>7. This activity was free of commercial bias.</label>
+             <div class="radio-group" style="margin-top: 5px;">
+                <label style="font-weight: normal; margin-right: 15px;"><input type="radio" name="evalCommercialBias" value="Yes" required> Yes</label>
+                <label style="font-weight: normal;"><input type="radio" name="evalCommercialBias" value="No"> No</label>
+             </div>
+             <div id="commercialBiasCommentDiv" style="margin-top: 8px; display: none;"> <!-- Hidden initially -->
+                 <label for="evalCommercialBiasComment" style="font-weight: normal; font-size: 0.9em;">If no, please comment:</label>
+                 <textarea id="evalCommercialBiasComment" name="evalCommercialBiasComment" rows="2" style="width: 100%; margin-top: 3px;"></textarea>
+             </div>
+        </div>
+
+        <!-- Additional Comments -->
+         <div class="formGroup">
+            <label for="evalAdditionalComments">Additional Comments (Optional):</label>
+            <textarea id="evalAdditionalComments" name="evalAdditionalComments" rows="3" placeholder="Any other feedback about the activity?"></textarea>
+        </div>
+
+
+        <div class="btnRow" style="margin-top: 25px;">
+            <button type="button" id="cancelCmeClaimBtn" class="cancel">Cancel</button>
+            <button type="submit" id="submitCmeClaimBtn">Submit Claim & Get Certificate</button>
+        </div>
+    </form>
+
+    <!-- Loading Indicator -->
+    <div id="claimLoadingIndicator" style="display: none; text-align: center; margin-top: 15px;">
+         <div class="spinner" style="margin: 0 auto 10px;"></div> <!-- Assuming you have .spinner CSS -->
+         <p style="color: #0C72D3;">Processing claim...</p>
+    </div>
+</div> <!-- <<< CLOSE THE WRAPPER DIV HERE -->
+</div> <!-- End of cmeClaimModal -->
+ 
+</body>
+</html>
