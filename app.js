@@ -2925,12 +2925,31 @@ async function handleCmeClaimSubmission(event) {
           console.log("Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
       });
 
+      // --- Force token refresh BEFORE calling function ---
+      console.log("Attempting to get fresh ID token...");
+      if (window.auth && window.auth.currentUser && window.getIdToken) {
+          try {
+              // Force refresh the token
+              const idToken = await window.getIdToken(window.auth.currentUser, /* forceRefresh */ true);
+              console.log("Successfully obtained fresh ID token (length):", idToken ? idToken.length : 'null');
+              // The act of getting the token might refresh the SDK's internal auth state
+          } catch (tokenError) {
+              console.error("Error forcing ID token refresh:", tokenError);
+              // Throw error to prevent function call if token refresh fails critically
+              throw new Error("Could not refresh authentication token. Please try again.");
+          }
+      } else {
+           console.warn("Auth or getIdToken not available for token refresh. Proceeding without forced refresh.");
+           // If this happens, the original 401 error might persist
+      }
+      // --- End token refresh ---
+
       // --- 3. Call Certificate Generation Cloud Function ---
       console.log("Calling 'generateCmeCertificate' Cloud Function...");
       if (!window.httpsCallable || !window.functions) {
            throw new Error("Firebase Functions client SDK not properly initialized.");
       }
-      const currentFunctionsInstance = window.getFunctions ? window.getFunctions() : window.functions;
+      
       const generateCertificate = window.httpsCallable(window.functions, 'generateCmeCertificate');
 
       const functionData = {
