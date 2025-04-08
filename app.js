@@ -2917,40 +2917,84 @@ async function handleCmeClaimSubmission(event) {
 
             // --- 3. Post-Transaction Actions ---
 
-    // --- Certificate Generation Simulation ---
-    console.log("------------------------------------");
-    console.log("--- CERTIFICATE GENERATION START (SIMULATION) ---");
-    console.log(`User ID: ${uid}`);
-    let userEmail = window.authState.user.email || 'No Email'; // Get email
-    console.log(`Certificate Name: ${certificateFullName}`); // <<<--- LOG CERTIFICATE NAME  
-    console.log(`User Email: ${userEmail}`);
-    console.log(`Credits Claimed: ${creditsToClaim.toFixed(2)}`);
-    const claimDate = new Date(); // Use current client date for simulation
-    console.log(`Claim Date: ${claimDate.toISOString()}`);
-    console.log("Evaluation Data:", evaluationData); // Log evaluation data submitted
-    console.log("Accreditation Statement: [Your Official Accreditation Statement Would Go Here]"); // Add your actual statement text
-
-    // TODO: Replace this section with an actual call to your backend function
-    // Example:
-    // try {
-    //   const backendResult = await callBackendCertificateFunction({
-    //      userId: uid,
-    //      userName: userName,
-    //      userEmail: userEmail,
-    //      credits: creditsToClaim.toFixed(2),
-    //      claimDate: claimDate.toISOString(),
-    //      evaluation: evaluationData,
-    //      accreditationStatement: "Your actual statement..."
-    //   });
-    //   console.log("Backend certificate function response:", backendResult);
-    //   // Show success based on backend result
-    // } catch (backendError) {
-    //   console.error("Error calling backend certificate function:", backendError);
-    //   // Handle backend error - maybe revert claim or notify user?
-    // }
-    console.log("--- CERTIFICATE GENERATION END (SIMULATION) ---");
-    console.log("------------------------------------");
-    // --- End of Simulation ---
+        // --- 3. Call Certificate Generation Cloud Function ---
+        let functionResult; // To store the result from the function
+        try {
+            console.log("Calling 'generateCmeCertificate' Cloud Function...");
+            // Ensure firebase functions are available via window.firebase.functions() or similar
+            // Assuming you have initialized functions correctly in firebase-config or elsewhere
+            // and made 'https' callable functions accessible.
+    
+            // Get a reference to the callable function
+            // NOTE: Ensure 'functions' is initialized and available. This might need adjustment
+            // based on how you initialized Firebase Functions SDK for the client.
+            // If using modular SDK directly:
+            // import { getFunctions, httpsCallable } from "firebase/functions";
+            // const functions = getFunctions(); // Get functions instance
+            // const generateCertificate = httpsCallable(functions, 'generateCmeCertificate');
+    
+            // Assuming 'window.httpsCallable' and 'window.functions' are set up:
+            if (!window.httpsCallable || !window.functions) {
+                 throw new Error("Firebase Functions client SDK not properly initialized on window object.");
+            }
+            const generateCertificate = window.httpsCallable(window.functions, 'generateCmeCertificate');
+    
+            // Prepare data payload to send to the function
+            const functionData = {
+                creditsClaimed: creditsToClaim,
+                claimTimestamp: new Date().toISOString(), // Send current client time as ISO string
+                evaluationData: evaluationData,
+                certificateName: certificateFullName // Send name collected from form
+            };
+    
+            // Call the function with the data
+            functionResult = await generateCertificate(functionData);
+            console.log("Cloud Function 'generateCmeCertificate' response:", functionResult);
+    
+            // Check the result from the function
+            if (!functionResult || !functionResult.data || !functionResult.data.success) {
+                throw new Error(functionResult?.data?.message || "Certificate function call failed.");
+            }
+    
+            // --- Show Success Message (using data from function result if needed) ---
+            const successMessageDiv = document.getElementById("claimModalError");
+            if (successMessageDiv) {
+                successMessageDiv.textContent = functionResult.data.message || `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Certificate processing initiated.`;
+                // ... (styling for success message) ...
+                successMessageDiv.style.color = '#28a745';
+                successMessageDiv.style.border = '1px solid #c3e6cb';
+                successMessageDiv.style.backgroundColor = '#d4edda';
+                successMessageDiv.style.padding = '10px';
+                successMessageDiv.style.borderRadius = '5px';
+            } else {
+                alert(functionResult.data.message || "Claim successful! Certificate processing initiated.");
+            }
+    
+            // --- Cleanup and Refresh ---
+            cleanup(false); // Keep buttons disabled
+    
+            setTimeout(() => {
+                 if (cmeClaimModal) cmeClaimModal.style.display = 'none';
+                 if (successMessageDiv) { /* Reset styles */ }
+            }, 4000);
+    
+            if(typeof loadCmeDashboardData === 'function') {
+                 loadCmeDashboardData();
+            }
+    
+        } catch (error) {
+            // This catches errors from the Cloud Function call itself (e.g., network, permissions, thrown errors)
+            console.error("Error calling 'generateCmeCertificate' Cloud Function:", error);
+            if (errorDiv) {
+                 // Display specific error from function if available, otherwise generic message
+                 errorDiv.textContent = `Claim failed: ${error.message || 'Could not initiate certificate generation.'}`;
+            } else {
+                 alert(`Claim failed: ${error.message || 'Could not initiate certificate generation.'}`);
+            }
+            cleanup(true); // Re-enable buttons on error
+            // Do NOT close modal on error, let user see the message
+        }
+        // --- End of Cloud Function Call Logic ---
 
 
     // --- User Feedback ---
