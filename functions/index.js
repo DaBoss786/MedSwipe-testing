@@ -61,14 +61,26 @@ try { admin.initializeApp(); } catch (e) { console.log("Admin SDK already initia
  * Called from the frontend after a successful claim transaction.
  */
 exports.generateCmeCertificate = functions.https.onCall(async (data, context) => {
+  // --- DETAILED LOGGING FOR AUTH ---
+  logger.info("--- generateCmeCertificate function invoked ---");
+  logger.info("Raw context object:", context); // Log the entire context
+  logger.info("Context.auth object:", context.auth); // Log the auth part specifically
+  if (context.auth) {
+      logger.info("Context.auth.uid:", context.auth.uid); // Log UID if auth exists
+      logger.info("Context.auth.token details:", context.auth.token); // Log token details
+  } else {
+      logger.warn("Context.auth is NULL or UNDEFINED.");
+  }
+  // --- END DETAILED LOGGING ---
+  
   // --- 1. Authentication Check ---
   // Ensure the user calling this function is authenticated.
   if (!context.auth) {
     logger.error("Certificate generation called by unauthenticated user.");
-    throw new functions.https.HttpsError('unauthenticated', 'You must be logged in to generate a certificate.');
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication context is missing or invalid. Please ensure you are logged in.');
   }
-  const uid = context.auth.uid;
-  logger.info(`Certificate generation requested by user: ${uid}`);
+  const uid = context.auth.uid; // Proceed only if uid exists
+  logger.info(`Certificate generation authenticated for user: ${uid}`);
 
   // --- 2. Data Validation ---
   // Expecting data like: { creditsClaimed: 1.00, claimTimestamp: "ISO_string_or_millis", evaluationData: {...}, certificateName: "User Name" }
