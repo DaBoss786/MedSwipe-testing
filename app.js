@@ -2782,271 +2782,224 @@ async function prepareClaimModal() {
 
 // --- Step 13: Implement CME Claim Submission Logic ---
 
+// --- Step 13 (Complete & Corrected): Handle CME Claim Submission ---
+
 async function handleCmeClaimSubmission(event) {
-    event.preventDefault(); // Prevent default form submission
-    console.log("CME Claim Form submitted - processing...");
+  event.preventDefault(); // Prevent default form submission
+  console.log("CME Claim Form submitted - processing...");
 
-    const errorDiv = document.getElementById("claimModalError");
-    const loadingIndicator = document.getElementById('claimLoadingIndicator');
-    const submitButton = document.getElementById('submitCmeClaimBtn');
-    const cancelButton = document.getElementById('cancelCmeClaimBtn');
-    const form = document.getElementById('cmeClaimForm');
-    const creditsInput = document.getElementById('creditsToClaimInput');
-    const cmeClaimModal = document.getElementById("cmeClaimModal");
+  // Get elements needed throughout the function
+  const errorDiv = document.getElementById("claimModalError");
+  const loadingIndicator = document.getElementById('claimLoadingIndicator');
+  const submitButton = document.getElementById('submitCmeClaimBtn');
+  const cancelButton = document.getElementById('cancelCmeClaimBtn');
+  const form = document.getElementById('cmeClaimForm');
+  const creditsInput = document.getElementById('creditsToClaimInput');
+  const cmeClaimModal = document.getElementById("cmeClaimModal");
 
-    // --- Helper function for cleanup ---
-    const cleanup = (enableButtons = true) => {
-        if (loadingIndicator) loadingIndicator.style.display = 'none';
-        if (submitButton) submitButton.disabled = !enableButtons;
-        if (cancelButton) cancelButton.disabled = !enableButtons;
-    };
+  // --- Helper function for cleanup ---
+  const cleanup = (enableButtons = true) => {
+      if (loadingIndicator) loadingIndicator.style.display = 'none';
+      if (submitButton) submitButton.disabled = !enableButtons;
+      if (cancelButton) cancelButton.disabled = !enableButtons;
+  };
 
-    // --- Clear previous errors & Show Loader ---
-    if (errorDiv) errorDiv.textContent = '';
-    if (loadingIndicator) loadingIndicator.style.display = 'block';
-    if (submitButton) submitButton.disabled = true;
-    if (cancelButton) cancelButton.disabled = true;
+  // --- Clear previous errors & Show Loader ---
+  if (errorDiv) errorDiv.textContent = '';
+  if (loadingIndicator) loadingIndicator.style.display = 'block';
+  if (submitButton) submitButton.disabled = true;
+  if (cancelButton) cancelButton.disabled = true;
 
-    // --- Ensure user is still valid ---
-    if (!window.authState || !window.authState.user || window.authState.user.isAnonymous) {
-        if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
-        cleanup();
-        return;
-    }
-    const uid = window.authState.user.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
+  // --- Ensure user is still valid & GET USER INFO ---
+  // Check auth object and user *before* proceeding
+  if (!window.auth || !window.auth.currentUser || window.auth.currentUser.isAnonymous) {
+      if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
+      cleanup(); // Re-enable buttons
+      return; // Stop execution
+  }
+  const uid = window.auth.currentUser.uid;
+  const userEmail = window.auth.currentUser.email || 'your-default-email@example.com'; // Define userEmail here
+  // Consider adding a check here if email is mandatory for certificates
 
-    try {
-        // --- 1. Get Form Data & Validate ---
-        const formData = new FormData(form);
-        const creditsToClaim = parseFloat(creditsInput.value);
-        const certificateFullName = formData.get('certificateFullName').trim(); // <<<--- GET FULL NAME
+  // --- Main Processing Block ---
+  let functionResult; // To store result from cloud function
+  try {
+      // --- 1. Get Form Data & Validate ---
+      const formData = new FormData(form);
+      const creditsToClaim = parseFloat(creditsInput.value);
+      const certificateFullName = formData.get('certificateFullName')?.trim() || ''; // Use optional chaining and default
 
-        // Basic validation
-        if (!certificateFullName) { // <<<--- VALIDATE FULL NAME
-            throw new Error("Please enter your full name for the certificate.");
-        }
-        if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
-            throw new Error("Invalid credits amount. Must be a positive multiple of 0.25.");
-        }
+      // Validation for Full Name
+      if (!certificateFullName) {
+          throw new Error("Please enter your full name for the certificate.");
+      }
+      // Validation for Credits
+      if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
+          throw new Error("Invalid credits amount. Must be a positive multiple of 0.25.");
+      }
 
-        // Evaluation data extraction
-        const evaluationData = {
-            certificateFullName: certificateFullName,
-            objectivesMet: formData.get('evalObjectivesMet'),
-            confidence: formData.get('evalConfidence'),
-            usefulness: formData.get('evalUsefulness') || 'N/A', // Default if not answered
-            practiceChange: formData.getAll('evalPracticeChange'), // Gets all checked values
-            practiceChangeOtherText: formData.get('evalPracticeChangeOtherText').trim(),
-            biasChange: formData.getAll('evalBiasChange'), // Gets all checked values
-            biasChangeOtherText: formData.get('evalBiasChangeOtherText').trim(),
-            delivery: formData.get('evalDelivery'),
-            commercialBias: formData.get('evalCommercialBias'),
-            commercialBiasComment: formData.get('evalCommercialBiasComment').trim(),
-            additionalComments: formData.get('evalAdditionalComments').trim()
-        };
+      // Evaluation data extraction
+      const evaluationData = {
+          certificateFullName: certificateFullName,
+          objectivesMet: formData.get('evalObjectivesMet'),
+          confidence: formData.get('evalConfidence'),
+          usefulness: formData.get('evalUsefulness') || 'N/A',
+          practiceChange: formData.getAll('evalPracticeChange'),
+          practiceChangeOtherText: formData.get('evalPracticeChangeOtherText')?.trim() || '',
+          biasChange: formData.getAll('evalBiasChange'),
+          biasChangeOtherText: formData.get('evalBiasChangeOtherText')?.trim() || '',
+          delivery: formData.get('evalDelivery'),
+          commercialBias: formData.get('evalCommercialBias'),
+          commercialBiasComment: formData.get('evalCommercialBiasComment')?.trim() || '',
+          additionalComments: formData.get('evalAdditionalComments')?.trim() || ''
+      };
 
-        // Required evaluation validation (add more checks as needed)
-        if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) {
-             throw new Error("Please complete all required evaluation questions (1, 2, 6, 7).");
-        }
-         if (evaluationData.practiceChange.length === 0) {
-             throw new Error("Please select at least one option for Practice Change Areas (Question 4).");
-         }
-         if (evaluationData.biasChange.length === 0) {
-             throw new Error("Please select at least one option for Implicit Bias Change Areas (Question 5).");
-         }
-        if (evaluationData.commercialBias === 'No' && !evaluationData.commercialBiasComment) {
-            throw new Error("Please provide a comment if you indicated commercial bias was present.");
-        }
-        // Clean up other text if 'Other' wasn't selected
-        if (!evaluationData.practiceChange.includes('Other')) {
-            evaluationData.practiceChangeOtherText = '';
-        }
-         if (!evaluationData.biasChange.includes('Other')) {
-            evaluationData.biasChangeOtherText = '';
-        }
-
-
-        // --- 2. Firestore Transaction ---
-        await window.runTransaction(window.db, async (transaction) => {
-            console.log("Starting Firestore transaction for claim...");
-            const userDoc = await transaction.get(userDocRef);
-            if (!userDoc.exists()) {
-                throw new Error("User data not found.");
-            }
-
-            const data = userDoc.data();
-            const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
-            const currentEarned = parseFloat(cmeStats.creditsEarned || 0);
-            const currentClaimed = parseFloat(cmeStats.creditsClaimed || 0);
-            const currentAvailable = Math.max(0, currentEarned - currentClaimed);
-
-            console.log(`Credits check inside transaction: Available=${currentAvailable.toFixed(2)}, Attempting to claim=${creditsToClaim.toFixed(2)}`);
-
-            // Verify available credits again inside transaction
-            if (creditsToClaim > currentAvailable) {
-                throw new Error(`Insufficient credits. You only have ${currentAvailable.toFixed(2)} available.`);
-            }
-
-            // Prepare updated stats and history
-            const newCreditsClaimed = currentClaimed + creditsToClaim;
-            const updatedCmeStats = {
-                ...cmeStats, // Keep existing stats
-                creditsClaimed: parseFloat(newCreditsClaimed.toFixed(2)) // Ensure precision
-            };
-
-            const newHistoryEntry = {
-                timestamp: new Date(), // Use client-side timestamp
-                creditsClaimed: creditsToClaim,
-                evaluationData: evaluationData // Store the collected evaluation data
-            };
-
-            // Get existing history or initialize empty array
-            const existingHistory = data.cmeClaimHistory || [];
-            const updatedHistory = [...existingHistory, newHistoryEntry];
-
-            // Update the document
-            transaction.set(userDocRef, {
-                cmeStats: updatedCmeStats,
-                cmeClaimHistory: updatedHistory
-            }, { merge: true }); // Merge to avoid overwriting other fields
-
-            console.log("Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
-        });
-
-            // --- 3. Post-Transaction Actions ---
-
-        // --- 3. Call Certificate Generation Cloud Function ---
-        let functionResult; // To store the result from the function
-        try {
-            console.log("Calling 'generateCmeCertificate' Cloud Function...");
-            // Ensure firebase functions are available via window.firebase.functions() or similar
-            // Assuming you have initialized functions correctly in firebase-config or elsewhere
-            // and made 'https' callable functions accessible.
-    
-            // Get a reference to the callable function
-            // NOTE: Ensure 'functions' is initialized and available. This might need adjustment
-            // based on how you initialized Firebase Functions SDK for the client.
-            // If using modular SDK directly:
-            // import { getFunctions, httpsCallable } from "firebase/functions";
-            // const functions = getFunctions(); // Get functions instance
-            // const generateCertificate = httpsCallable(functions, 'generateCmeCertificate');
-    
-            // Assuming 'window.httpsCallable' and 'window.functions' are set up:
-            if (!window.httpsCallable || !window.functions) {
-                 throw new Error("Firebase Functions client SDK not properly initialized on window object.");
-            }
-            const generateCertificate = window.httpsCallable(window.functions, 'generateCmeCertificate');
-    
-            // Prepare data payload to send to the function
-            const functionData = {
-                creditsClaimed: creditsToClaim,
-                claimTimestamp: new Date().toISOString(), // Send current client time as ISO string
-                evaluationData: evaluationData,
-                certificateName: certificateFullName // Send name collected from form
-            };
-    
-            // Call the function with the data
-            functionResult = await generateCertificate(functionData);
-            console.log("Cloud Function 'generateCmeCertificate' response:", functionResult);
-    
-            // Check the result from the function
-            if (!functionResult || !functionResult.data || !functionResult.data.success) {
-                throw new Error(functionResult?.data?.message || "Certificate function call failed.");
-            }
-    
-            // --- Show Success Message (using data from function result if needed) ---
-            const successMessageDiv = document.getElementById("claimModalError");
-            if (successMessageDiv) {
-                successMessageDiv.textContent = functionResult.data.message || `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Certificate processing initiated.`;
-                // ... (styling for success message) ...
-                successMessageDiv.style.color = '#28a745';
-                successMessageDiv.style.border = '1px solid #c3e6cb';
-                successMessageDiv.style.backgroundColor = '#d4edda';
-                successMessageDiv.style.padding = '10px';
-                successMessageDiv.style.borderRadius = '5px';
-            } else {
-                alert(functionResult.data.message || "Claim successful! Certificate processing initiated.");
-            }
-    
-            // --- Cleanup and Refresh ---
-            cleanup(false); // Keep buttons disabled
-    
-            setTimeout(() => {
-                 if (cmeClaimModal) cmeClaimModal.style.display = 'none';
-                 if (successMessageDiv) { /* Reset styles */ }
-            }, 4000);
-    
-            if(typeof loadCmeDashboardData === 'function') {
-                 loadCmeDashboardData();
-            }
-    
-        } catch (error) {
-            // This catches errors from the Cloud Function call itself (e.g., network, permissions, thrown errors)
-            console.error("Error calling 'generateCmeCertificate' Cloud Function:", error);
-            if (errorDiv) {
-                 // Display specific error from function if available, otherwise generic message
-                 errorDiv.textContent = `Claim failed: ${error.message || 'Could not initiate certificate generation.'}`;
-            } else {
-                 alert(`Claim failed: ${error.message || 'Could not initiate certificate generation.'}`);
-            }
-            cleanup(true); // Re-enable buttons on error
-            // Do NOT close modal on error, let user see the message
-        }
-        // --- End of Cloud Function Call Logic ---
+      // Required evaluation validation
+      if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) {
+           throw new Error("Please complete all required evaluation questions (1, 2, 6, 7).");
+      }
+       if (evaluationData.practiceChange.length === 0) {
+           throw new Error("Please select at least one option for Practice Change Areas (Question 4).");
+       }
+       if (evaluationData.biasChange.length === 0) {
+           throw new Error("Please select at least one option for Implicit Bias Change Areas (Question 5).");
+       }
+      if (evaluationData.commercialBias === 'No' && !evaluationData.commercialBiasComment) {
+          throw new Error("Please provide a comment if you indicated commercial bias was present.");
+      }
+      // Clean up other text if 'Other' wasn't selected
+      if (!evaluationData.practiceChange.includes('Other')) {
+          evaluationData.practiceChangeOtherText = '';
+      }
+       if (!evaluationData.biasChange.includes('Other')) {
+          evaluationData.biasChangeOtherText = '';
+      }
 
 
-    // --- User Feedback ---
-    // Use a more persistent message instead of just an alert
-    const successMessageDiv = document.getElementById("claimModalError"); // Reuse error div for success message
-    if (successMessageDiv) {
-        successMessageDiv.textContent = `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Your certificate is being processed and will be emailed to ${userEmail}. You can also view past claims in your history.`;
-        successMessageDiv.style.color = '#28a745'; // Green color for success
-        successMessageDiv.style.border = '1px solid #c3e6cb';
-        successMessageDiv.style.backgroundColor = '#d4edda';
-        successMessageDiv.style.padding = '10px';
-        successMessageDiv.style.borderRadius = '5px';
-    } else {
-         // Fallback alert if the div isn't found
-         alert(`Successfully claimed ${creditsToClaim.toFixed(2)} credits! Certificate processing simulated.`);
-    }
+      // --- 2. Firestore Transaction ---
+      const userDocRef = window.doc(window.db, 'users', uid); // Define userDocRef here
+      await window.runTransaction(window.db, async (transaction) => {
+          console.log("Starting Firestore transaction for claim...");
+          const userDoc = await transaction.get(userDocRef);
+          if (!userDoc.exists()) {
+              throw new Error("User data not found.");
+          }
 
-    // --- Cleanup and Refresh ---
-    // Hide loader, keep buttons disabled until modal closes
-    cleanup(false); // Keep buttons disabled
+          const data = userDoc.data();
+          const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
+          const currentEarned = parseFloat(cmeStats.creditsEarned || 0);
+          const currentClaimed = parseFloat(cmeStats.creditsClaimed || 0);
+          const currentAvailable = Math.max(0, currentEarned - currentClaimed);
 
-    // Close modal after a longer delay so user can read the message
-    setTimeout(() => {
-         if (cmeClaimModal) cmeClaimModal.style.display = 'none';
-         // Reset message style after closing
-         if (successMessageDiv) {
-             successMessageDiv.textContent = '';
-             successMessageDiv.style.color = ''; // Reset color
-             successMessageDiv.style.border = '';
-             successMessageDiv.style.backgroundColor = '';
-             successMessageDiv.style.padding = '';
-             successMessageDiv.style.borderRadius = '';
-         }
-    }, 4000); // 4 second delay
+          console.log(`Credits check inside transaction: Available=${currentAvailable.toFixed(2)}, Attempting to claim=${creditsToClaim.toFixed(2)}`);
 
-    // Refresh the CME dashboard data immediately after transaction success
-    if(typeof loadCmeDashboardData === 'function') {
-         loadCmeDashboardData();
-    }
+          // Verify available credits again inside transaction
+          if (creditsToClaim > currentAvailable) {
+              // Use toFixed(2) for comparing currency/credit values reliably
+              if (creditsToClaim.toFixed(2) > currentAvailable.toFixed(2)) {
+                   throw new Error(`Insufficient credits. You only have ${currentAvailable.toFixed(2)} available.`);
+              }
+          }
 
-    } catch (error) {
-        console.error("Error processing CME claim:", error);
-        if (errorDiv) errorDiv.textContent = `Claim failed: ${error.message}`;
-        cleanup(true); // Re-enable buttons on error
-    } finally {
-         // Ensure cleanup runs even if closing modal early, but only re-enable if not successful
-         // The success path handles closing and refreshing separately.
-         // cleanup(true); // Moved cleanup call to error block only
-    }
+          // Prepare updated stats and history
+          const newCreditsClaimed = currentClaimed + creditsToClaim;
+          const updatedCmeStats = {
+              ...cmeStats,
+              creditsClaimed: parseFloat(newCreditsClaimed.toFixed(2))
+          };
+
+          const newHistoryEntry = {
+              timestamp: new Date(), // Use client-side timestamp
+              creditsClaimed: creditsToClaim,
+              evaluationData: evaluationData
+          };
+
+          const existingHistory = data.cmeClaimHistory || [];
+          const updatedHistory = [...existingHistory, newHistoryEntry];
+
+          transaction.set(userDocRef, {
+              cmeStats: updatedCmeStats,
+              cmeClaimHistory: updatedHistory
+          }, { merge: true });
+
+          console.log("Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
+      });
+
+      // --- 3. Call Certificate Generation Cloud Function ---
+      console.log("Calling 'generateCmeCertificate' Cloud Function...");
+      if (!window.httpsCallable || !window.functions) {
+           throw new Error("Firebase Functions client SDK not properly initialized.");
+      }
+      const generateCertificate = window.httpsCallable(window.functions, 'generateCmeCertificate');
+
+      const functionData = {
+          creditsClaimed: creditsToClaim,
+          claimTimestamp: new Date().toISOString(), // Send timestamp when claim was processed client-side
+          evaluationData: evaluationData,
+          certificateName: certificateFullName
+      };
+
+      functionResult = await generateCertificate(functionData);
+      console.log("Cloud Function 'generateCmeCertificate' response:", functionResult);
+
+      if (!functionResult || !functionResult.data || !functionResult.data.success) {
+          // If function failed, maybe log error but don't necessarily revert Firestore transaction?
+          // Or potentially add logic here to revert the claim if certificate fails critically.
+          // For now, we proceed but log the function failure.
+          console.error("Certificate function call indicated failure:", functionResult?.data?.message);
+          throw new Error(functionResult?.data?.message || "Certificate function call failed.");
+      }
+
+      // --- User Feedback (Success) ---
+      if (errorDiv) { // Reuse error div for success message
+          errorDiv.textContent = functionResult.data.message || `Successfully claimed ${creditsToClaim.toFixed(2)} credits for ${certificateFullName}! Certificate processing initiated. Check email: ${userEmail}`;
+          errorDiv.style.color = '#28a745';
+          errorDiv.style.border = '1px solid #c3e6cb';
+          errorDiv.style.backgroundColor = '#d4edda';
+          errorDiv.style.padding = '10px';
+          errorDiv.style.borderRadius = '5px';
+      } else {
+          alert(functionResult.data.message || "Claim successful! Certificate processing initiated.");
+      }
+
+      // --- Cleanup and Refresh (Success) ---
+      cleanup(false); // Keep buttons disabled while showing success
+
+      setTimeout(() => {
+           if (cmeClaimModal) cmeClaimModal.style.display = 'none';
+           if (errorDiv) { // Reset message style after closing
+               errorDiv.textContent = '';
+               errorDiv.style.color = '';
+               errorDiv.style.border = '';
+               errorDiv.style.backgroundColor = '';
+               errorDiv.style.padding = '';
+               errorDiv.style.borderRadius = '';
+           }
+      }, 4000); // 4 second delay
+
+      if(typeof loadCmeDashboardData === 'function') {
+           loadCmeDashboardData(); // Refresh dashboard in background
+      }
+
+  } catch (error) {
+      // --- Error Handling ---
+      console.error("Error processing CME claim:", error);
+      if (errorDiv) {
+           errorDiv.textContent = `Claim failed: ${error.message}`;
+           // Reset specific error styles if needed
+           errorDiv.style.color = '#dc3545'; // Ensure error color
+           errorDiv.style.border = '1px solid #f5c6cb';
+           errorDiv.style.backgroundColor = '#f8d7da';
+           errorDiv.style.padding = '10px';
+           errorDiv.style.borderRadius = '5px';
+      } else {
+           alert(`Claim failed: ${error.message || 'Could not process claim.'}`);
+      }
+      cleanup(true); // Re-enable buttons on error
+  }
 }
 
-// --- End of Step 13 Code ---
+// --- End of Complete handleCmeClaimSubmission Function ---
 
 // --- Step 5b: Populate CME Category Dropdown ---
 
