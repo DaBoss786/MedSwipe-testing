@@ -2930,6 +2930,7 @@ async function handleCmeClaimSubmission(event) {
       if (!window.httpsCallable || !window.functions) {
            throw new Error("Firebase Functions client SDK not properly initialized.");
       }
+      const currentFunctionsInstance = window.getFunctions ? window.getFunctions() : window.functions;
       const generateCertificate = window.httpsCallable(window.functions, 'generateCmeCertificate');
 
       const functionData = {
