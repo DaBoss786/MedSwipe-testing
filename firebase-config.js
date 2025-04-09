@@ -25,19 +25,6 @@ const auth = getAuth(app);
 
 console.log("Firebase initialized successfully");
 
-// Once Firebase is fully initialized, initialize the auth module
-document.addEventListener('DOMContentLoaded', function() {
-  // Make sure auth.js has loaded
-  setTimeout(function() {
-    if (window.initAuthModule) {
-      console.log("Initializing auth module");
-      window.initAuthModule();
-    } else {
-      console.error("Auth module not loaded yet");
-    }
-  }, 500);
-});
-
 // --- Add this near the end, after initializing db, auth, etc. ---
 const functions = getFunctions(app); // Pass the initialized app
 

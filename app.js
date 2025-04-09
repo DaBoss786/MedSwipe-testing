@@ -1865,23 +1865,6 @@ async function loadSpecificQuestions(questionIds) {
     }
   });
 }
-// Add this helper function at the end of app.js
-function ensureEventListenersAttached() {
-  // This function makes sure key event listeners are attached
-  // Call this whenever dashboard is shown
-  
-  // Start Quiz button
-  const startQuizBtn = document.getElementById("startQuizBtn");
-  if (startQuizBtn && !startQuizBtn._hasEventListener) {
-    startQuizBtn.addEventListener("click", function() {
-      document.getElementById("quizSetupModal").style.display = "block";
-    });
-    startQuizBtn._hasEventListener = true;
-  }
-  
-  // Check other important buttons
-  setupDashboardEvents();
-}
 
 // Then call this function when showing the dashboard after auth
 // in the auth state change listener
