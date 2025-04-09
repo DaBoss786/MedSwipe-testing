@@ -965,3 +965,16 @@ async function recordFinalAnswer(qId, category, isCorrect, timeSpent) {
     }
 }
 // --- End of recordFinalAnswer Helper Function ---
+
+// quiz.js - ADD THIS AT THE VERY BOTTOM (or merge with existing export)
+
+export {
+  loadQuestions,
+  initializeQuiz, // Export if needed elsewhere, maybe not
+  // Add other functions from quiz.js if they need to be called from other files
+  fetchQuestionBank, // Export if called from elsewhere (e.g. stats.js)
+  updateBookmarkIcon, // Export if called from elsewhere
+  addOptionListeners, // Likely internal, probably don't need to export
+  prepareSummary, // Likely internal
+  showSummary // Likely internal
+};
