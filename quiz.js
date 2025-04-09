@@ -3,7 +3,6 @@ import { csvUrl, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { auth, db, doc, getDoc } from './firebase-config.js'; // Adjust path if needed
 import {
   fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
-  fetchCmeAnsweredIds,        // Keep this if you added it earlier
   recordAnswer,               // Needed for regular quizzes
   recordCmeAnswer,            // Needed for CME quizzes
   updateQuestionStats,        // Needed for regular quizzes
