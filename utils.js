@@ -72,3 +72,15 @@ async function updateFavoriteIcon() {
     favoriteButton.style.color = "";
   }
 }
+// utils.js - BOTTOM OF FILE
+export {
+  csvUrl, // <<<--- EXPORT THE URL VARIABLE
+  shuffleArray, // Export other utils if needed
+  getCurrentQuestionId, // Export other utils if needed
+  getStartOfWeek, // Export other utils if needed
+  leaderboardTabsHTML, // Export other utils if needed
+  closeSideMenu, // Export other utils if needed
+  closeUserMenu, // Export other utils if needed
+  updateFavoriteIcon // Export other utils if needed
+  // Add any other functions/variables from utils.js needed elsewhere
+};

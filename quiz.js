@@ -1,4 +1,5 @@
 // app.js - TOP OF FILE
+import { csvUrl, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { auth, db, doc, getDoc } from './firebase-config.js'; // Adjust path if needed
 
 // Quiz management variables
