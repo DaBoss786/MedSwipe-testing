@@ -1,3 +1,8 @@
+// app.js - Top of file
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, addDoc, collection, getDocs, functions, httpsCallable, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
+
+// ... rest of your app.js code ...
+
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
@@ -620,7 +625,7 @@ window.addEventListener('load', function() {
   
   // Initialize user menu with username
   const checkAuthAndInit = function() {
-    if (window.auth && window.auth.currentUser) {
+    if (auth && auth.currentUser) {
       // Initialize user menu with username
       window.updateUserMenu();
     } else {
@@ -694,15 +699,15 @@ window.addEventListener('load', function() {
       const confirmReset = confirm("Are you sure you want to reset all progress?");
       if (!confirmReset) return;
       
-      if (!window.auth || !window.auth.currentUser) {
+      if (!auth || !auth.currentUser) {
         alert("User not authenticated. Please try again later.");
         return;
       }
       
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
+      const uid = auth.currentUser.uid;
+      const userDocRef = doc(db, 'users', uid);
       try {
-        await window.runTransaction(window.db, async (transaction) => {
+        await runTransaction(db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
           if (userDoc.exists()) {
             let data = userDoc.data();
@@ -1033,11 +1038,11 @@ window.addEventListener('load', function() {
       }
       
       try {
-        await window.addDoc(window.collection(window.db, "feedback"), {
+        await Doc(collection(db, "feedback"), {
           questionId: currentFeedbackQuestionId,
           questionText: currentFeedbackQuestionText,
           feedback: feedbackText.value.trim(),
-          timestamp: window.serverTimestamp()
+          timestamp: serverTimestamp()
         });
         alert("Thank you for your feedback!");
         
@@ -1090,16 +1095,16 @@ window.addEventListener('load', function() {
       }
       
       try {
-        if (!window.auth || !window.auth.currentUser) {
+        if (!auth || !auth.currentUser) {
           alert("User not authenticated. Please try again later.");
           return;
         }
         
-        await window.addDoc(window.collection(window.db, "contact"), {
+        await Doc(collection(db, "contact"), {
           email: email,
           message: message,
-          timestamp: window.serverTimestamp(),
-          userId: window.auth.currentUser.uid
+          timestamp: serverTimestamp(),
+          userId: auth.currentUser.uid
         });
         alert("Thank you for contacting us!");
         
@@ -1161,7 +1166,7 @@ function updateLevelProgress(percent) {
 window.addEventListener('load', function() {
   // Call after Firebase auth is initialized
   setTimeout(() => {
-    if (window.auth && window.auth.currentUser) {
+    if (auth && auth.currentUser) {
       if (typeof updateUserXP === 'function') {
         updateUserXP();
       } else if (typeof window.updateUserXP === 'function') {
@@ -1173,16 +1178,16 @@ window.addEventListener('load', function() {
 
 // Function to check if a user's streak should be reset due to inactivity
 async function checkAndUpdateStreak() {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("User not authenticated yet");
     return;
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
     
-    await window.runTransaction(window.db, async (transaction) => {
+    await runTransaction(db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       if (!userDoc.exists()) return;
       
@@ -1220,7 +1225,7 @@ async function checkAndUpdateStreak() {
 
 // Function to load leaderboard preview data - fixed for desktop view
 async function loadLeaderboardPreview() {
-  if (!window.auth || !window.auth.currentUser || !window.db) {
+  if (!auth || !auth.currentUser || !db) {
     console.log("Auth or DB not initialized for leaderboard preview");
     return;
   }
@@ -1229,7 +1234,7 @@ async function loadLeaderboardPreview() {
   if (!leaderboardPreview) return;
   
   // Check if user is anonymous (guest)
-  const isAnonymous = window.auth.currentUser.isAnonymous;
+  const isAnonymous = auth.currentUser.isAnonymous;
   
   // For guest users, show registration prompt instead of leaderboard
   if (isAnonymous) {
@@ -1267,8 +1272,8 @@ async function loadLeaderboardPreview() {
   
    // For registered users, continue with normal leaderboard preview
   try {
-    const currentUid = window.auth.currentUser.uid;
-    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    const currentUid = auth.currentUser.uid;
+    const querySnapshot = await getDocs(collection(db, 'users'));
     let leaderboardEntries = [];
     
     querySnapshot.forEach(docSnap => {
@@ -1344,16 +1349,16 @@ async function loadLeaderboardPreview() {
 
 // Dashboard initialization and functionality
 async function initializeDashboard() {
-  if (!window.auth || !window.auth.currentUser || !window.db) {
+  if (!auth || !auth.currentUser || !db) {
     console.log("Auth or DB not initialized for dashboard");
     setTimeout(initializeDashboard, 1000);
     return;
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getdoc(userDocRef);
     
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -1432,15 +1437,15 @@ async function initializeDashboard() {
 
 // Function to count questions due for review today
 async function countDueReviews() {
-  if (!window.auth || !window.auth.currentUser || !window.db) {
+  if (!auth || !auth.currentUser || !db) {
     console.log("Auth or DB not initialized for counting reviews");
     return { dueCount: 0, nextReviewDate: null };
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getdoc(userDocRef);
     
     if (!userDocSnap.exists()) {
       return { dueCount: 0, nextReviewDate: null };
@@ -1495,7 +1500,7 @@ async function updateReviewQueue() {
   if (!reviewCount || !reviewQueueContent || !reviewProgressBar) return;
   
   // Check if user is anonymous/guest
-  const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+  const isAnonymous = auth && auth.currentUser && auth.currentUser.isAnonymous;
   
   if (isAnonymous) {
     // Guest user - show registration prompt
@@ -1571,7 +1576,7 @@ const startQuizBtn = document.getElementById("startQuizBtn");
 if (startQuizBtn) {
   startQuizBtn.addEventListener("click", function() {
     // Check if user is anonymous before showing the modal
-    const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+    const isAnonymous = auth && auth.currentUser && auth.currentUser.isAnonymous;
     
     // Show or hide the spaced repetition option based on user status
     const spacedRepetitionContainer = document.querySelector('#modalSpacedRepetition').closest('.formGroup');
@@ -1652,7 +1657,7 @@ const reviewQueueCard = document.getElementById("reviewQueueCard");
 if (reviewQueueCard) {
   reviewQueueCard.addEventListener("click", async function() {
     // Check if user is anonymous/guest
-    const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
+    const isAnonymous = auth && auth.currentUser && auth.currentUser.isAnonymous;
     
     if (isAnonymous) {
       console.log("Guest user attempted to access review queue");
@@ -1754,7 +1759,7 @@ function fixStreakCalendar(streaks) {
 window.addEventListener('load', function() {
   // Check streak after Firebase auth is initialized
   const checkAuthAndInitAll = function() {
-    if (window.auth && window.auth.currentUser) {
+    if (auth && auth.currentUser) {
       checkAndUpdateStreak();
       setupDashboardEvents();
       initializeDashboard();
@@ -1776,14 +1781,14 @@ window.addEventListener('load', function() {
 
 // Function to get IDs of questions due for review
 async function getDueQuestionIds() {
-  if (!window.auth || !window.auth.currentUser || !window.db) {
+  if (!auth || !auth.currentUser || !db) {
     return [];
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getdoc(userDocRef);
     
     if (!userDocSnap.exists()) {
       return [];
@@ -1906,7 +1911,7 @@ function forceReinitializeDashboard() {
   ensureAllScreensHidden();
   
   // IMPORTANT: Reset all user data displays based on current auth state
-  const isAnonymous = window.auth.currentUser && window.auth.currentUser.isAnonymous;
+  const isAnonymous = auth.currentUser && auth.currentUser.isAnonymous;
   if (isAnonymous) {
     // For anonymous users, ensure stats display 0/blank
     cleanupOnLogout();
@@ -2381,7 +2386,7 @@ async function handlePasswordReset(e) {
   
   try {
     // Send password reset email using Firebase
-    await window.sendPasswordResetEmail(window.auth, email);
+    await sendPasswordResetEmail(auth, email);
     
     // Show success message
     if (resetMessage) {
@@ -2543,7 +2548,7 @@ window.guestQuestionsAnswered = 0;
 // Function to check if registration prompt should be shown
 function checkRegistrationPrompt() {
   // Only show prompts for anonymous users
-  if (!window.auth || !window.auth.currentUser || !window.auth.currentUser.isAnonymous) {
+  if (!auth || !auth.currentUser || !auth.currentUser.isAnonymous) {
     return;
   }
   
@@ -2614,8 +2619,8 @@ async function checkUserCmeSubscriptionStatus() {
     
     if (window.authState && window.authState.user && !window.authState.user.isAnonymous) { // Ensure user is logged in and not guest
         try {
-            const userDocRef = window.doc(window.db, 'users', window.authState.user.uid);
-            const userDocSnap = await window.getDoc(userDocRef);
+            const userDocRef = doc(db, 'users', window.authState.user.uid);
+            const userDocSnap = await getdoc(userDocRef);
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
                 // --- Replace this line with your actual check ---
@@ -2748,8 +2753,8 @@ async function prepareClaimModal() {
     if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
         try {
             const uid = window.authState.user.uid;
-            const userDocRef = window.doc(window.db, 'users', uid);
-            const userDocSnap = await window.getDoc(userDocRef);
+            const userDocRef = doc(db, 'users', uid);
+            const userDocSnap = await getdoc(userDocRef);
             if (userDocSnap.exists()) {
                 const cmeStats = userDocSnap.data().cmeStats || {};
                 const earned = parseFloat(cmeStats.creditsEarned || 0);
@@ -2812,13 +2817,13 @@ async function handleCmeClaimSubmission(event) {
 
   // --- Ensure user is still valid & GET USER INFO ---
   // Check auth object and user *before* proceeding
-  if (!window.auth || !window.auth.currentUser || window.auth.currentUser.isAnonymous) {
+  if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
       if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
       cleanup(); // Re-enable buttons
       return; // Stop execution
   }
-  const uid = window.auth.currentUser.uid;
-  const userEmail = window.auth.currentUser.email || 'your-default-email@example.com'; // Define userEmail here
+  const uid = auth.currentUser.uid;
+  const userEmail = auth.currentUser.email || 'your-default-email@example.com'; // Define userEmail here
   // Consider adding a check here if email is mandatory for certificates
 
   // --- Main Processing Block ---
@@ -2877,8 +2882,8 @@ async function handleCmeClaimSubmission(event) {
 
 
       // --- 2. Firestore Transaction ---
-      const userDocRef = window.doc(window.db, 'users', uid); // Define userDocRef here
-      await window.runTransaction(window.db, async (transaction) => {
+      const userDocRef = doc(db, 'users', uid); // Define userDocRef here
+      await runTransaction(db, async (transaction) => {
           console.log("Starting Firestore transaction for claim...");
           const userDoc = await transaction.get(userDocRef);
           if (!userDoc.exists()) {
@@ -2927,10 +2932,10 @@ async function handleCmeClaimSubmission(event) {
 
       // --- Force token refresh BEFORE calling function ---
       console.log("Attempting to get fresh ID token...");
-      if (window.auth && window.auth.currentUser && window.getIdToken) {
+      if (auth && auth.currentUser && getIdToken) {
           try {
               // Force refresh the token
-              const idToken = await window.getIdToken(window.auth.currentUser, /* forceRefresh */ true);
+              const idToken = await getIdToken(auth.currentUser, /* forceRefresh */ true);
               console.log("Successfully obtained fresh ID token (length):", idToken ? idToken.length : 'null');
               // The act of getting the token might refresh the SDK's internal auth state
           } catch (tokenError) {
@@ -2946,11 +2951,11 @@ async function handleCmeClaimSubmission(event) {
 
       // --- 3. Call Certificate Generation Cloud Function ---
       console.log("Calling 'generateCmeCertificate' Cloud Function...");
-      if (!window.httpsCallable || !window.functions) {
+      if (!httpsCallable || !functions) {
            throw new Error("Firebase Functions client SDK not properly initialized.");
       }
       
-      const generateCertificate = window.httpsCallable(window.functions, 'generateCmeCertificate');
+      const generateCertificate = httpsCallable(functions, 'generateCmeCertificate');
 
       const functionData = {
           creditsClaimed: creditsToClaim,
@@ -3097,10 +3102,10 @@ async function loadCmeDashboardData() {
     }
 
     const uid = window.authState.user.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocRef = doc(db, 'users', uid);
 
     try {
-        const userDocSnap = await window.getDoc(userDocRef);
+        const userDocSnap = await getdoc(userDocRef);
 
         if (!userDocSnap.exists()) {
             trackerContent.innerHTML = "<p>No CME data found for this user.</p>";

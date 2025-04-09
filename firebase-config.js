@@ -25,29 +25,6 @@ const auth = getAuth(app);
 
 console.log("Firebase initialized successfully");
 
-// Make Firestore functions globally available
-window.analytics = analytics;
-window.logEvent = logEvent;
-window.db = db;
-window.auth = auth;
-window.doc = doc;
-window.runTransaction = runTransaction;
-window.getDoc = getDoc;
-window.addDoc = addDoc;
-window.collection = collection;
-window.serverTimestamp = serverTimestamp;
-window.getDocs = getDocs;
-window.setDoc = setDoc;
-
-// Export Firebase auth methods for auth.js
-window.onAuthStateChanged = onAuthStateChanged;
-window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-window.signInAnonymously = signInAnonymously;
-window.signOut = signOut;
-window.updateProfile = updateProfile;
-window.sendPasswordResetEmail = sendPasswordResetEmail;
-
 // Once Firebase is fully initialized, initialize the auth module
 document.addEventListener('DOMContentLoaded', function() {
   // Make sure auth.js has loaded
@@ -64,9 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // --- Add this near the end, after initializing db, auth, etc. ---
 const functions = getFunctions(app); // Pass the initialized app
 
-// Make Functions client SDK features globally available for app.js
-window.functions = functions;
-window.httpsCallable = httpsCallable;
-window.getIdToken = getIdToken;
-
 console.log("Firebase Functions Client SDK initialized");
+
+// Export initialized services for other modules to import
+export { app, analytics, db, auth, functions, logEvent, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, httpsCallable };

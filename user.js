@@ -1,18 +1,21 @@
+// user.js - TOP OF FILE
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp } from './firebase-config.js'; // Adjust path if needed
+
 // Session tracking
 let questionStartTime = 0;
 let sessionStartTime = Date.now();
 
 // Fetch already answered questions from Firestore
 async function fetchPersistentAnsweredIds() {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("User not authenticated yet");
     return [];
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
     if (userDocSnap.exists()){
       let data = userDocSnap.data();
       return Object.keys(data.answeredQuestions || {});
@@ -25,21 +28,21 @@ async function fetchPersistentAnsweredIds() {
 
 // Record answer in Firestore with XP calculation
 async function recordAnswer(questionId, category, isCorrect, timeSpent) {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("User not authenticated, can't record answer");
     return;
   }
   
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
+  const uid = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', uid);
   
   try {
     let levelUp = false;
     let newLevel = 0;
     let totalXP = 0;
     
-    await window.runTransaction(window.db, async (transaction) => {
-      const userDoc = await window.getDoc(userDocRef);
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await getDoc(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
       
       // Initialize stats if needed
@@ -291,7 +294,7 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
     console.error("Error recording answer:", error);
   }
   // Check if registration prompt should be shown (for guest users)
-if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
   if (typeof window.checkRegistrationPrompt === 'function') {
     window.checkRegistrationPrompt();
   }
@@ -374,15 +377,15 @@ function getLevelInfo(level) {
 
 // Update question stats in Firestore
 async function updateQuestionStats(questionId, isCorrect) {
-  if (!window.db) {
+  if (!db) {
     console.log("Database not initialized");
     return;
   }
   
   console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
-  const questionStatsRef = window.doc(window.db, "questionStats", questionId);
+  const questionStatsRef = doc(db, "questionStats", questionId);
   try {
-    await window.runTransaction(window.db, async (transaction) => {
+    await runTransaction(db, async (transaction) => {
       const statsDoc = await transaction.get(questionStatsRef);
       let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
       statsData.totalAttempts++;
@@ -399,15 +402,15 @@ async function updateQuestionStats(questionId, isCorrect) {
 
 // Update user XP display
 async function updateUserXP() {
-  if (!window.auth || !window.auth.currentUser || !window.db) {
+  if (!auth || !auth.currentUser || !db) {
     console.log("Auth or DB not initialized for updateUserXP");
     return;
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
       const xp = data.stats?.xp || 0;
@@ -464,7 +467,7 @@ async function updateUserXP() {
         showBonusMessages(lastBonusMessages);
         
         // Clear the messages after displaying them
-        await window.runTransaction(window.db, async (transaction) => {
+        await runTransaction(db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -542,7 +545,7 @@ function showBonusMessages(messages) {
 
 // Update the user menu with current username and score
 async function updateUserMenu() {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("Auth not initialized for updateUserMenu");
     return;
   }
@@ -563,19 +566,19 @@ async function updateUserMenu() {
 
 // Get or generate a username
 async function getOrGenerateUsername() {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     throw new Error("User not authenticated");
   }
   
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
+  const uid = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', uid);
+  const userDocSnap = await getDoc(userDocRef);
   let username;
   if (userDocSnap.exists() && userDocSnap.data().username) {
     username = userDocSnap.data().username;
   } else {
     username = generateRandomName();
-    await window.runTransaction(window.db, async (transaction) => {
+    await runTransaction(db, async (transaction) => {
       const docSnap = await transaction.get(userDocRef);
       let data = docSnap.exists() ? docSnap.data() : {};
       data.username = username;
@@ -597,15 +600,15 @@ function generateRandomName() {
 
 // Bookmark functions - enhanced for toggling
 async function getBookmarks() {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("User not authenticated for getBookmarks");
     return [];
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
     if(userDocSnap.exists()){
       const data = userDocSnap.data();
       return data.bookmarks || [];
@@ -618,16 +621,16 @@ async function getBookmarks() {
 
 // Toggle a bookmark (add if not present, remove if present)
 async function toggleBookmark(questionId) {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("User not authenticated for toggleBookmark");
     return false;
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
     
-    await window.runTransaction(window.db, async (transaction) => {
+    await runTransaction(db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
       let bookmarks = data.bookmarks || [];
@@ -803,16 +806,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to update spaced repetition data for a question
 async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval) {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("User not authenticated, can't update spaced repetition data");
     return;
   }
   
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
+  const uid = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', uid);
   
   try {
-    await window.runTransaction(window.db, async (transaction) => {
+    await runTransaction(db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
       
@@ -851,15 +854,15 @@ window.updateSpacedRepetitionData = updateSpacedRepetitionData;
 
 // Function to fetch user's spaced repetition data
 async function fetchSpacedRepetitionData() {
-  if (!window.auth || !window.auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     console.log("User not authenticated yet");
     return null;
   }
   
   try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
     
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -879,18 +882,18 @@ window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
 
 async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
     // Ensure user is logged in and not anonymous
-    if (!window.auth || !window.auth.currentUser || window.auth.currentUser.isAnonymous) {
+    if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
         console.log("User not authenticated or is guest, cannot record CME answer.");
         return;
     }
 
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
 
     console.log(`Recording CME Answer for Q: ${questionId}, Correct: ${isCorrect}`);
 
     try {
-        await window.runTransaction(window.db, async (transaction) => {
+        await runTransaction(db, async (transaction) => {
             const userDoc = await transaction.get(userDocRef);
             if (!userDoc.exists()) {
                 console.error("User document not found for recording CME answer.");
@@ -933,7 +936,7 @@ async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
             if (data.cmeAnsweredQuestions[questionId]) {
                  console.log(`CME Question ${questionId} already answered, skipping stat update.`);
                  // Even if answered before, update the timestamp
-                 data.cmeAnsweredQuestions[questionId] = window.serverTimestamp();
+                 data.cmeAnsweredQuestions[questionId] = serverTimestamp();
                  transaction.set(userDocRef, { cmeAnsweredQuestions: data.cmeAnsweredQuestions }, { merge: true });
                  return; // Don't update stats again if already answered
             }
@@ -946,7 +949,7 @@ async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
             }
 
             // Add to the list of answered CME questions with a timestamp
-            data.cmeAnsweredQuestions[questionId] = window.serverTimestamp();
+            data.cmeAnsweredQuestions[questionId] = serverTimestamp();
 
             // --- Calculate CME Credit Eligibility ---
             // Calculate current overall CME accuracy

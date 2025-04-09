@@ -1,3 +1,5 @@
+import { auth, db, doc, getDoc, collection } from './firebase-config.js'; // Adjust path if needed
+
 // Make functions globally available
 window.displayPerformance = displayPerformance;
 window.loadOverallData = loadOverallData;
@@ -16,9 +18,9 @@ async function displayPerformance() {
   document.getElementById("faqView").style.display = "none";
   document.getElementById("performanceView").style.display = "block";
   
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
+  const uid = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', uid);
+  const userDocSnap = await getDoc(userDocRef);
   console.log("User document exists:", userDocSnap.exists());
   
   if (!userDocSnap.exists()) {
@@ -67,7 +69,7 @@ async function displayPerformance() {
   let categoryBreakdown = "";
 
   // Only show detailed category breakdown for registered users
-  if (window.auth && window.auth.currentUser && !window.auth.currentUser.isAnonymous) {
+  if (auth && auth.currentUser && !auth.currentUser.isAnonymous) {
     if (stats.categories) {
       categoryBreakdown = Object.keys(stats.categories).map(cat => {
         const c = stats.categories[cat];
@@ -196,9 +198,9 @@ async function displayPerformance() {
 // Load XP Rankings leaderboard with weekly/all-time toggle
 async function loadOverallData() {
   console.log(`Loading XP rankings leaderboard data`);
-  const currentUid = window.auth.currentUser.uid;
+  const currentUid = auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+  const querySnapshot = await collection(collection(db, 'users'));
   let leaderboardEntries = [];
   
   querySnapshot.forEach(docSnap => {
@@ -307,9 +309,9 @@ async function loadOverallData() {
 
 // Load Streaks leaderboard (no time range tabs)
 async function loadStreaksData() {
-  const currentUid = window.auth.currentUser.uid;
+  const currentUid = auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+  const querySnapshot = await collection(collection(db, 'users'));
   let streakEntries = [];
   
   querySnapshot.forEach(docSnap => {
@@ -409,10 +411,10 @@ async function loadStreaksData() {
 
 // Load Total Answered leaderboard (no time range tabs)
 async function loadTotalAnsweredData() {
-  const currentUid = window.auth.currentUser.uid;
+  const currentUid = auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
   const weekStart = getStartOfWeek();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+  const querySnapshot = await collection(collection(db, 'users'));
   let answeredEntries = [];
   
   querySnapshot.forEach(docSnap => {
@@ -522,7 +524,7 @@ async function loadTotalAnsweredData() {
 // Default function to show leaderboard
 function showLeaderboard() {
   // Check if user is registered
-  if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+  if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
     // Show registration benefits modal instead for guest users
     if (typeof window.showRegistrationBenefitsModal === 'function') {
       window.showRegistrationBenefitsModal();

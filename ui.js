@@ -1,7 +1,9 @@
+import { auth } from './firebase-config.js'; 
+
 // Show leaderboard view
 function showLeaderboard() {
   // Check if user is registered
-  if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+  if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
     // Show registration benefits modal instead for guest users
     if (typeof window.showRegistrationBenefitsModal === 'function') {
       window.showRegistrationBenefitsModal();

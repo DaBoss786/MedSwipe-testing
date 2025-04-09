@@ -1,3 +1,6 @@
+// app.js - TOP OF FILE
+import { auth, db, doc, getDoc } from './firebase-config.js'; // Adjust path if needed
+
 // Quiz management variables
 let allQuestions = [];
 let selectedCategory = "";
@@ -160,15 +163,15 @@ async function loadQuestions(options = {}) {
 
 async function fetchCmeAnsweredIds() {
     // Return empty array if user not logged in or is guest
-    if (!window.auth || !window.auth.currentUser || window.auth.currentUser.isAnonymous) {
+    if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
         console.log("User not authenticated or is guest, cannot fetch CME answered IDs.");
         return [];
     }
 
     try {
-        const uid = window.auth.currentUser.uid;
-        const userDocRef = window.doc(window.db, 'users', uid);
-        const userDocSnap = await window.getDoc(userDocRef);
+        const uid = auth.currentUser.uid;
+        const userDocRef = doc(db, 'users', uid);
+        const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
             const data = userDocSnap.data();
@@ -189,7 +192,7 @@ async function fetchCmeAnsweredIds() {
 async function loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds) {
   try {
     // Check if the user is anonymous/guest
-    if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+    if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
       console.log("Guest user attempted to use spaced repetition");
       
       // Disable spaced repetition for guest users
@@ -297,10 +300,10 @@ async function initializeQuiz(questions, quizType = 'regular') {
   try {
     const isOnboardingQuiz = window.isOnboardingQuiz || false;
     console.log("Initializing quiz, isOnboarding:", isOnboardingQuiz);
-    if (window.auth && window.auth.currentUser) {
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      const userDocSnap = await window.getDoc(userDocRef);
+    if (auth && auth.currentUser) {
+      const uid = auth.currentUser.uid;
+      const userDocRef = doc(db, 'users', uid);
+      const userDocSnap = await getDoc(userDocRef);
       
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
@@ -450,8 +453,8 @@ function addOptionListeners() {
       const selected = this.getAttribute('data-option');
       const isCorrect = (selected === correct);
       const timeSpent = Date.now() - questionStartTime;
-      if (window.analytics && window.logEvent) {
-        window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
+      if (analytics && logEvent) {
+        logEvent(analytics, 'question_answered', { questionId: qId, isCorrect });
       }
       options.forEach(option => {
         option.disabled = true;
@@ -654,10 +657,10 @@ async function prepareSummary() {
     let currentXP = 0;
     let levelProgress = 0; // Added for level progress calculation
     
-    if (window.auth && window.auth.currentUser) {
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      const userDocSnap = await window.getDoc(userDocRef);
+    if (auth && auth.currentUser) {
+      const uid = auth.currentUser.uid;
+      const userDocRef = doc(db, 'users', uid);
+      const userDocSnap = await getDoc(userDocRef);
       
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
