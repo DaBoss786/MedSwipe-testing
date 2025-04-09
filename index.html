@@ -452,8 +452,8 @@
 <script type="module" src="firebase-config.js"></script>
 
 <!-- Auth Scripts - Must be loaded after Firebase -->
-<script src="auth.js"></script>
-<script src="user-profile.js"></script>
+<script type="module" src="auth.js"></script>
+<script type="module" src="user-profile.js"></script>
 
 <!-- Include Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
@@ -462,14 +462,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- App Scripts -->
-<script src="utils.js"></script>
-<script src="user.js"></script>
-<script src="quiz.js"></script>
-<script src="stats.js"></script>
-<script src="ui.js"></script>
-<script src="login-screen.js"></script>
-<script src="app.js"></script>
-<script src="tos-privacy.js"></script>  
+<script type="module" src="utils.js"></script>
+<script type="module" src="user.js"></script>
+<script type="module" src="quiz.js"></script>
+<script type="module" src="stats.js"></script>
+<script type="module" src="ui.js"></script>
+<script type="module" src="app.js"></script>
+<script type="module" src="main.js"></script>
+<script type="module" src="login-screen.js"></script>
+<script src="tos-privacy.js"></script>
   <script>
   // Register the service worker
   if ('serviceWorker' in navigator) {
