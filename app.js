@@ -1,7 +1,7 @@
 // app.js - Top of file
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, functions, httpsCallable, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
-import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, updateUserMenu, toggleBookmark } from './user.js';
+import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 
 
 // Add splash screen, welcome screen, and authentication-based routing
