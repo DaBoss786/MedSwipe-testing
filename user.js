@@ -998,3 +998,28 @@ async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
 }
 
 // --- End of Step 8 Code ---
+
+// user.js - ADD THIS AT THE VERY BOTTOM OF THE FILE
+
+export {
+  fetchPersistentAnsweredIds,
+  recordAnswer,
+  calculateLevel,
+  calculateLevelProgress,
+  getLevelInfo,
+  updateQuestionStats, // Although maybe only called internally or from quiz.js? Include if needed elsewhere.
+  updateUserXP,
+  showBonusMessages,
+  updateUserMenu,
+  getOrGenerateUsername,
+  generateRandomName, // Usually internal, but export if needed elsewhere
+  getBookmarks,
+  toggleBookmark,
+  showLevelUpAnimation,
+  hideLevelUpModal,
+  createConfetti,
+  updateSpacedRepetitionData,
+  fetchSpacedRepetitionData,
+  recordCmeAnswer // <<<--- Make sure to include the CME function we added!
+  // Add any other functions from user.js that need to be called from other files.
+};

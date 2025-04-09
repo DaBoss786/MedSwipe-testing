@@ -1,7 +1,8 @@
 // app.js - Top of file
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp, addDoc, collection, getDocs, functions, httpsCallable, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, functions, httpsCallable, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
+// Import needed functions from user.js
+import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, updateUserMenu, toggleBookmark } from './user.js';
 
-// ... rest of your app.js code ...
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
@@ -1358,7 +1359,7 @@ async function initializeDashboard() {
   try {
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
-    const userDocSnap = await getdoc(userDocRef);
+    const userDocSnap = await getDoc(userDocRef);
     
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -1445,7 +1446,7 @@ async function countDueReviews() {
   try {
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
-    const userDocSnap = await getdoc(userDocRef);
+    const userDocSnap = await getDoc(userDocRef);
     
     if (!userDocSnap.exists()) {
       return { dueCount: 0, nextReviewDate: null };
@@ -1788,7 +1789,7 @@ async function getDueQuestionIds() {
   try {
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
-    const userDocSnap = await getdoc(userDocRef);
+    const userDocSnap = await getDoc(userDocRef);
     
     if (!userDocSnap.exists()) {
       return [];
@@ -2603,7 +2604,7 @@ async function checkUserCmeSubscriptionStatus() {
     if (window.authState && window.authState.user && !window.authState.user.isAnonymous) { // Ensure user is logged in and not guest
         try {
             const userDocRef = doc(db, 'users', window.authState.user.uid);
-            const userDocSnap = await getdoc(userDocRef);
+            const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
                 // --- Replace this line with your actual check ---
@@ -2737,7 +2738,7 @@ async function prepareClaimModal() {
         try {
             const uid = window.authState.user.uid;
             const userDocRef = doc(db, 'users', uid);
-            const userDocSnap = await getdoc(userDocRef);
+            const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists()) {
                 const cmeStats = userDocSnap.data().cmeStats || {};
                 const earned = parseFloat(cmeStats.creditsEarned || 0);
@@ -3088,7 +3089,7 @@ async function loadCmeDashboardData() {
     const userDocRef = doc(db, 'users', uid);
 
     try {
-        const userDocSnap = await getdoc(userDocRef);
+        const userDocSnap = await getDoc(userDocRef);
 
         if (!userDocSnap.exists()) {
             trackerContent.innerHTML = "<p>No CME data found for this user.</p>";
