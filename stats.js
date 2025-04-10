@@ -1,6 +1,6 @@
-import { auth, db, doc, getDoc, collection, getDocs, getOrGenerateUsername, getStartOfWeek } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, collection } from './firebase-config.js'; // Adjust path if needed
 import {fetchQuestionBank} from './quiz.js';
-import { getOrGenerateUsername, getStartOfWeek } from './user.js';
+import { getOrGenerateUsername } from './user.js';
 
 // Make functions globally available
 window.displayPerformance = displayPerformance;
