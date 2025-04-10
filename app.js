@@ -1,6 +1,7 @@
 // app.js - Top of file
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, functions, httpsCallable, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
@@ -2938,11 +2939,11 @@ async function handleCmeClaimSubmission(event) {
 
       // --- 3. Call Certificate Generation Cloud Function ---
       console.log("Calling 'generateCmeCertificate' Cloud Function...");
-      if (!httpsCallable || !functions) {
-           throw new Error("Firebase Functions client SDK not properly initialized.");
-      }
-      
-      const generateCertificate = httpsCallable(functions, 'generateCmeCertificate');
+
+       // --- Initialize Functions and get callable HERE ---
+       const functionsInstance = getFunctions(); // Initialize/get instance NOW
+       const generateCertificate = httpsCallable(functionsInstance, 'generateCmeCertificate'); // Use the instance
+       // --- End Functions initialization ---
 
       const functionData = {
           creditsClaimed: creditsToClaim,

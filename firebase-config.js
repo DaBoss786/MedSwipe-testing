@@ -3,8 +3,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebas
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
-
 
 // Firebase configuration
 const firebaseConfig = {
@@ -25,8 +23,6 @@ const auth = getAuth(app);
 
 console.log("Firebase initialized successfully");
 
-// --- Add this near the end, after initializing db, auth, etc. ---
-const functions = getFunctions(app); // Pass the initialized app
 
 console.log("Firebase Functions Client SDK initialized");
 
