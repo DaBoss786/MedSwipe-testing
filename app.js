@@ -2,7 +2,7 @@
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, functions, httpsCallable, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
-import { loadQuestions, initializeQuiz } from './quiz.js';
+import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { csvUrl, closeSideMenu, closeUserMenu /*, add others if needed */ } from './utils.js';
 import { displayPerformance } from './stats.js';
