@@ -4,7 +4,7 @@ import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, get
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
-import { csvUrl, closeSideMenu, closeUserMenu /*, add others if needed */ } from './utils.js';
+import { csvUrl, closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
 
 // Add splash screen, welcome screen, and authentication-based routing

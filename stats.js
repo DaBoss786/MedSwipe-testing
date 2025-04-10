@@ -1,4 +1,4 @@
-import { auth, db, doc, getDoc, collection } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, collection, getDocs } from './firebase-config.js'; // Adjust path if needed
 import {fetchQuestionBank} from './quiz.js';
 import { getOrGenerateUsername } from './user.js';
 
@@ -202,7 +202,7 @@ async function loadOverallData() {
   console.log(`Loading XP rankings leaderboard data`);
   const currentUid = auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
-  const querySnapshot = await getDoc(collection(db, 'users'));
+  const querySnapshot = await getDocs(collection(db, 'users'));
   let leaderboardEntries = [];
   
   querySnapshot.forEach(docSnap => {
@@ -313,7 +313,7 @@ async function loadOverallData() {
 async function loadStreaksData() {
   const currentUid = auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
-  const querySnapshot = await getDoc(collection(db, 'users'));
+  const querySnapshot = await getDocs(collection(db, 'users'));
   let streakEntries = [];
   
   querySnapshot.forEach(docSnap => {
@@ -416,7 +416,7 @@ async function loadTotalAnsweredData() {
   const currentUid = auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
   const weekStart = getStartOfWeek();
-  const querySnapshot = await getDoc(collection(db, 'users'));
+  const querySnapshot = await getDocs(collection(db, 'users'));
   let answeredEntries = [];
   
   querySnapshot.forEach(docSnap => {
