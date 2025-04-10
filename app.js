@@ -1,5 +1,5 @@
 // app.js - Top of file
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, functions, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
