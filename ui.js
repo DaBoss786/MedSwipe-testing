@@ -145,3 +145,7 @@ function showFAQ() {
 function showContactModal() {
   document.getElementById("contactModal").style.display = "flex";
 }
+
+export {
+  showLeaderboard, showAbout, showFAQ, showContactModal
+  };
