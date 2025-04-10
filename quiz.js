@@ -21,6 +21,7 @@ let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
+let questionStartTime = 0;
 let currentQuizType = 'regular';
 
 // Fetch questions from CSV
@@ -306,6 +307,7 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
 async function initializeQuiz(questions, quizType = 'regular') {
     console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
   currentQuizType = quizType; 
+  questionStartTime = Date.now();
   // Get starting XP before the quiz begins
   try {
     const isOnboardingQuiz = window.isOnboardingQuiz || false;
@@ -421,7 +423,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
   document.getElementById("iconBar").style.display = "flex";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
-  ensureEventListenersAttached(); // Add this line
 }
 
 // Update the bookmark icon based on the current question's bookmark status
