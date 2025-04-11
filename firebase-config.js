@@ -21,10 +21,10 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
 
 console.log("Firebase initialized successfully");
 console.log("Firebase Functions Client SDK initialized");
-
 
 // Export initialized services for other modules to import
 export { 
@@ -32,7 +32,7 @@ export {
   analytics, 
   db, 
   auth, 
-  functions,
+  functionsInstance as functions, // Export as "functions" to match expected naming
   logEvent, 
   doc, 
   runTransaction, 
@@ -50,5 +50,5 @@ export {
   updateProfile, 
   sendPasswordResetEmail, 
   getIdToken,
-  httpsCallable  // Export httpsCallable
+  httpsCallable
 };
