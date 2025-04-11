@@ -2936,28 +2936,52 @@ async function handleCmeClaimSubmission(event) {
       }
 
       // --- 4. Call the Cloud Function ---
-      console.log("Initializing Cloud Function call with fresh auth context...");
-      
-      // Use the functions instance and httpsCallable imported at the top of the file
-      const generateCertificate = window.callCloudFunction(window.functionsSdk, 'generateCmeCertificate');
+      console.log("Setting up Cloud Function call with explicit authentication...");
 
-      const functionData = {
-          creditsClaimed: creditsToClaim,
-          claimTimestamp: new Date().toISOString(),
-          evaluationData: evaluationData,
-          certificateName: certificateFullName
-      };
+// Get current user and check authentication state
+if (!auth.currentUser) {
+  throw new Error("User is not authenticated. Please log in again.");
+}
 
-      // Log right before the call
-      console.log("Calling 'generateCmeCertificate' Cloud Function with fresh auth context...");
-      
-      functionResult = await generateCertificate(functionData);
-      console.log("Cloud Function 'generateCmeCertificate' response:", functionResult);
+// First explicitly refresh the auth token
+try {
+  console.log("Forcing authentication token refresh...");
+  await getIdToken(auth.currentUser, true); // Force token refresh
+  console.log("Authentication token successfully refreshed");
+  
+  // Brief delay to ensure token propagation
+  await new Promise(resolve => setTimeout(resolve, 500));
+} catch (tokenError) {
+  console.error("Error refreshing authentication token:", tokenError);
+  throw new Error("Failed to refresh authentication. Please try again or log out and back in.");
+}
 
-      if (!functionResult || !functionResult.data || !functionResult.data.success) {
-          console.error("Certificate function call indicated failure:", functionResult?.data?.message);
-          throw new Error(functionResult?.data?.message || "Certificate function call failed.");
-      }
+// Create a fresh Functions instance for this specific call
+console.log("Creating fresh Functions instance with latest auth context...");
+const freshFunctionsInstance = getFunctions();
+
+// Create the callable function with the fresh instance
+const generateCertificate = httpsCallable(freshFunctionsInstance, 'generateCmeCertificate');
+
+// Prepare function data
+const functionData = {
+  creditsClaimed: creditsToClaim,
+  claimTimestamp: new Date().toISOString(),
+  evaluationData: evaluationData,
+  certificateName: certificateFullName,
+  // Add a timestamp to help prevent caching issues
+  requestTimestamp: Date.now()
+};
+
+// Log info right before the call
+console.log("Calling Cloud Function with fresh authentication context...");
+console.log("User ID:", auth.currentUser.uid);
+console.log("User email:", auth.currentUser.email);
+console.log("Anonymous:", auth.currentUser.isAnonymous);
+
+// Make the function call
+functionResult = await generateCertificate(functionData);
+console.log("Cloud Function response:", functionResult);
 
       // --- User Feedback (Success) ---
       if (errorDiv) {
