@@ -2932,7 +2932,9 @@ async function handleCmeClaimSubmission(event) {
       console.log("Initializing Cloud Function call with fresh auth context...");
       
       // Use the functions instance and httpsCallable imported at the top of the file
-      const generateCertificate = httpsCallable(functions, 'generateCmeCertificate');
+      import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
+const functionsInstance = getFunctions(); // Get a fresh instance
+const generateCertificate = httpsCallable(functionsInstance, 'generateCmeCertificate');
       
       const functionData = {
           creditsClaimed: creditsToClaim,
