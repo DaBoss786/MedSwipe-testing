@@ -2928,11 +2928,10 @@ async function handleCmeClaimSubmission(event) {
           throw new Error("Failed to refresh authentication. Please try again or log out and back in.");
       }
 
-      // --- 4. Initialize Functions and generate certificate ---
-      console.log("Initializing Cloud Functions client with fresh auth context...");
+      // --- 4. Call the Cloud Function ---
+      console.log("Initializing Cloud Function call with fresh auth context...");
       
-      // Use the imported functions instance and httpsCallable from firebase-config
-      // This ensures we're using the same app instance as the rest of Firebase services
+      // Use the functions instance and httpsCallable imported at the top of the file
       const generateCertificate = httpsCallable(functions, 'generateCmeCertificate');
       
       const functionData = {

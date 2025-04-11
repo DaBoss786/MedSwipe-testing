@@ -3,6 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebas
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js"; // Added Functions import
 
 // Firebase configuration
 const firebaseConfig = {
@@ -22,9 +23,32 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 console.log("Firebase initialized successfully");
-
-
 console.log("Firebase Functions Client SDK initialized");
 
+
 // Export initialized services for other modules to import
-export { app, analytics, db, auth, logEvent, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, getFunctions, httpsCallable };
+export { 
+  app, 
+  analytics, 
+  db, 
+  auth, 
+  functions,
+  logEvent, 
+  doc, 
+  runTransaction, 
+  getDoc, 
+  addDoc, 
+  collection, 
+  serverTimestamp, 
+  getDocs, 
+  setDoc, 
+  onAuthStateChanged, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signInAnonymously, 
+  signOut, 
+  updateProfile, 
+  sendPasswordResetEmail, 
+  getIdToken,
+  httpsCallable  // Export httpsCallable
+};
