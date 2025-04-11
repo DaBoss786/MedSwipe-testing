@@ -6,12 +6,19 @@ import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { csvUrl, closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
+
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
   const splashScreen = document.getElementById('splashScreen');
   const welcomeScreen = document.getElementById('welcomeScreen');
   const mainOptions = document.getElementById('mainOptions');
+
+    // ADD THIS CODE HERE - Firebase Functions global setup
+    window.functionsSdk = getFunctions();
+    window.callCloudFunction = httpsCallable;
+    console.log("Firebase Functions SDK initialized globally");
   
   // Immediately hide the dashboard to prevent it from being visible at any point
   if (mainOptions) {
@@ -2932,10 +2939,8 @@ async function handleCmeClaimSubmission(event) {
       console.log("Initializing Cloud Function call with fresh auth context...");
       
       // Use the functions instance and httpsCallable imported at the top of the file
-      import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
-const functionsInstance = getFunctions(); // Get a fresh instance
-const generateCertificate = httpsCallable(functionsInstance, 'generateCmeCertificate');
-      
+      const generateCertificate = window.callCloudFunction(window.functionsSdk, 'generateCmeCertificate');
+
       const functionData = {
           creditsClaimed: creditsToClaim,
           claimTimestamp: new Date().toISOString(),
