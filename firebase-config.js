@@ -27,4 +27,4 @@ console.log("Firebase initialized successfully");
 console.log("Firebase Functions Client SDK initialized");
 
 // Export initialized services for other modules to import
-export { app, analytics, db, auth, logEvent, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken };
+export { app, analytics, db, auth, logEvent, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, getFunctions, httpsCallable };

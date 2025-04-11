@@ -1,7 +1,6 @@
 // app.js - Top of file
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, httpsCallable, getFunctions } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
@@ -2803,16 +2802,15 @@ async function handleCmeClaimSubmission(event) {
   if (submitButton) submitButton.disabled = true;
   if (cancelButton) cancelButton.disabled = true;
 
-  // --- Ensure user is still valid & GET USER INFO ---
-  // Check auth object and user *before* proceeding
+  // --- Ensure user is still valid ---
   if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
       if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
       cleanup(); // Re-enable buttons
       return; // Stop execution
   }
+  
   const uid = auth.currentUser.uid;
-  const userEmail = auth.currentUser.email || 'your-default-email@example.com'; // Define userEmail here
-  // Consider adding a check here if email is mandatory for certificates
+  const userEmail = auth.currentUser.email || 'no-email@example.com';
 
   // --- Main Processing Block ---
   let functionResult; // To store result from cloud function
@@ -2820,7 +2818,7 @@ async function handleCmeClaimSubmission(event) {
       // --- 1. Get Form Data & Validate ---
       const formData = new FormData(form);
       const creditsToClaim = parseFloat(creditsInput.value);
-      const certificateFullName = formData.get('certificateFullName')?.trim() || ''; // Use optional chaining and default
+      const certificateFullName = formData.get('certificateFullName')?.trim() || '';
 
       // Validation for Full Name
       if (!certificateFullName) {
@@ -2868,9 +2866,8 @@ async function handleCmeClaimSubmission(event) {
           evaluationData.biasChangeOtherText = '';
       }
 
-
       // --- 2. Firestore Transaction ---
-      const userDocRef = doc(db, 'users', uid); // Define userDocRef here
+      const userDocRef = doc(db, 'users', uid);
       await runTransaction(db, async (transaction) => {
           console.log("Starting Firestore transaction for claim...");
           const userDoc = await transaction.get(userDocRef);
@@ -2918,54 +2915,48 @@ async function handleCmeClaimSubmission(event) {
           console.log("Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
       });
 
-      // --- Force token refresh BEFORE calling function ---
-      console.log("Attempting to get fresh ID token...");
-      if (auth && auth.currentUser && getIdToken) {
-          try {
-              // Force refresh the token
-              const idToken = await getIdToken(auth.currentUser, /* forceRefresh */ true);
-              console.log("Successfully obtained fresh ID token (length):", idToken ? idToken.length : 'null');
-              // The act of getting the token might refresh the SDK's internal auth state
-          } catch (tokenError) {
-              console.error("Error forcing ID token refresh:", tokenError);
-              // Throw error to prevent function call if token refresh fails critically
-              throw new Error("Could not refresh authentication token. Please try again.");
-          }
-      } else {
-           console.warn("Auth or getIdToken not available for token refresh. Proceeding without forced refresh.");
-           // If this happens, the original 401 error might persist
+      // --- 3. Force token refresh BEFORE calling function ---
+      console.log("Forcing auth token refresh before calling cloud function...");
+      let freshIdToken;
+      
+      try {
+          // Explicitly force refresh token and store it for potential debugging
+          freshIdToken = await getIdToken(auth.currentUser, true);
+          console.log("Successfully obtained fresh ID token (length):", freshIdToken.length);
+      } catch (tokenError) {
+          console.error("Error forcing ID token refresh:", tokenError);
+          throw new Error("Failed to refresh authentication. Please try again or log out and back in.");
       }
-      // --- End token refresh ---
 
-      // --- 3. Call Certificate Generation Cloud Function ---
-      console.log("Calling 'generateCmeCertificate' Cloud Function...");
-
-       // --- Initialize Functions and get callable HERE ---
-       const functionsInstance = getFunctions(); // Initialize/get instance NOW
-       const generateCertificate = httpsCallable(functionsInstance, 'generateCmeCertificate'); // Use the instance
-       // --- End Functions initialization ---
-
+      // --- 4. Initialize Functions and generate certificate ---
+      console.log("Initializing Cloud Functions client with fresh auth context...");
+      
+      // Use the imported functions instance and httpsCallable from firebase-config
+      // This ensures we're using the same app instance as the rest of Firebase services
+      const generateCertificate = httpsCallable(functions, 'generateCmeCertificate');
+      
       const functionData = {
           creditsClaimed: creditsToClaim,
-          claimTimestamp: new Date().toISOString(), // Send timestamp when claim was processed client-side
+          claimTimestamp: new Date().toISOString(),
           evaluationData: evaluationData,
           certificateName: certificateFullName
       };
 
+      // Log right before the call
+      console.log("Calling 'generateCmeCertificate' Cloud Function with fresh auth context...");
+      
       functionResult = await generateCertificate(functionData);
       console.log("Cloud Function 'generateCmeCertificate' response:", functionResult);
 
       if (!functionResult || !functionResult.data || !functionResult.data.success) {
-          // If function failed, maybe log error but don't necessarily revert Firestore transaction?
-          // Or potentially add logic here to revert the claim if certificate fails critically.
-          // For now, we proceed but log the function failure.
           console.error("Certificate function call indicated failure:", functionResult?.data?.message);
           throw new Error(functionResult?.data?.message || "Certificate function call failed.");
       }
 
       // --- User Feedback (Success) ---
-      if (errorDiv) { // Reuse error div for success message
-          errorDiv.textContent = functionResult.data.message || `Successfully claimed ${creditsToClaim.toFixed(2)} credits for ${certificateFullName}! Certificate processing initiated. Check email: ${userEmail}`;
+      if (errorDiv) {
+          errorDiv.textContent = functionResult.data.message || 
+            `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Certificate processing initiated. Check email: ${userEmail}`;
           errorDiv.style.color = '#28a745';
           errorDiv.style.border = '1px solid #c3e6cb';
           errorDiv.style.backgroundColor = '#d4edda';
