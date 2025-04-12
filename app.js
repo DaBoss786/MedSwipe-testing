@@ -2785,7 +2785,7 @@ async function submitCmeDataToExternalService(claimData) {
   const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/17016153/20gtgtx/';
   // Example: 'https://hooks.zapier.com/hooks/catch/123456/abcdef/'
 
-  if (ZAPIER_WEBHOOK_URL === 'https://hooks.zapier.com/hooks/catch/17016153/20gtgtx/') {
+  if (ZAPIER_WEBHOOK_URL === 'YOUR_ZAPIER_WEBHOOK_URL_HERE') {
     console.warn("Zapier Webhook URL not set in submitCmeDataToExternalService. Skipping external submission.");
     // You could optionally alert the user here in a real scenario if needed,
     // but for now, we'll just log a warning.
