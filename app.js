@@ -2782,7 +2782,7 @@ async function prepareClaimModal() {
 // Sends CME claim data to an external service (e.g., Zapier Webhook)
 async function submitCmeDataToExternalService(claimData) {
   // !!! IMPORTANT: Replace this URL with your actual Zapier Webhook URL !!!
-  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxcTEN_JKn8O1R3CW1Ecy9hVlrDUN5SsaMUitk-pE1yosTKOB1GBZJKRmtvH2iI4Dsr/exec';
+  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlhh7Hj8wXvFiYTOwIzbwMba9fv6jgxOUAlWouBB5ApzOPl-OrxFJZblZGcAojbOUg/exec';
   // Example: 'https://hooks.zapier.com/hooks/catch/123456/abcdef/'
 
   if (GOOGLE_SCRIPT_WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
