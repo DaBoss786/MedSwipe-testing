@@ -2800,9 +2800,6 @@ async function submitCmeDataToExternalService(claimData) {
     const response = await fetch(ZAPIER_WEBHOOK_URL, {
       method: 'POST',
       // Zapier Webhooks typically expect JSON data
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(claimData), // Send all the collected data
       mode: 'cors' // Important for cross-origin requests, Zapier usually handles this
     });
