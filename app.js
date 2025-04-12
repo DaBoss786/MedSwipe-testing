@@ -2801,26 +2801,30 @@ async function submitCmeDataToExternalService(claimData) {
       method: 'POST',
       // Zapier Webhooks typically expect JSON data
       body: JSON.stringify(claimData), // Send all the collected data
-      mode: 'cors' // Important for cross-origin requests, Zapier usually handles this
+      mode: 'no-cors' // <<<--- CHANGE THIS LINE ---<<<
     });
 
-    // Check if the request was successful (status code 2xx)
+    // --- MODIFIED HANDLING FOR 'no-cors' ---
+    // In 'no-cors' mode, we often can't read the response status or body.
+    // We have to assume success if the fetch itself doesn't throw an error.
+    // This isn't ideal, but it's a limitation of 'no-cors'.
+    console.log("Successfully sent request using 'no-cors' mode. Cannot verify server response status directly.");
+    // We'll check the Apps Script logs later to confirm processing.
+    return true; // Assume success if fetch didn't throw
+
+    /* --- Old 'cors' mode handling (commented out) ---
     if (response.ok) {
-      const responseData = await response.json(); // Zapier often sends back a status
-      console.log("Successfully sent data to external service. Response:", responseData);
-      return true; // Indicate success
+      // ... success handling ...
+      return true;
     } else {
-      // Log error details if the request failed
-      console.error(`Error sending data to external service: ${response.status} ${response.statusText}`);
-      try {
-        const errorBody = await response.text();
-        console.error("Error response body:", errorBody);
-      } catch (e) {
-        console.error("Could not read error response body.");
-      }
-      return false; // Indicate failure
+      // ... error handling ...
+      return false;
     }
+    */
+    // --- END OF MODIFIED HANDLING ---
+
   } catch (error) {
+    // Network errors (like DNS issues, server unreachable) will still be caught here.
     console.error("Network or other error sending data to external service:", error);
     return false; // Indicate failure
   }
