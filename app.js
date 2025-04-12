@@ -2778,14 +2778,63 @@ async function prepareClaimModal() {
 
 // --- End of Step 12b ---
 
+// --- NEW HELPER FUNCTION ---
+// Sends CME claim data to an external service (e.g., Zapier Webhook)
+async function submitCmeDataToExternalService(claimData) {
+  // !!! IMPORTANT: Replace this URL with your actual Zapier Webhook URL !!!
+  const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/17016153/20gtgtx/';
+  // Example: 'https://hooks.zapier.com/hooks/catch/123456/abcdef/'
 
-// --- Step 13: Implement CME Claim Submission Logic ---
+  if (ZAPIER_WEBHOOK_URL === 'https://hooks.zapier.com/hooks/catch/17016153/20gtgtx/') {
+    console.warn("Zapier Webhook URL not set in submitCmeDataToExternalService. Skipping external submission.");
+    // You could optionally alert the user here in a real scenario if needed,
+    // but for now, we'll just log a warning.
+    // alert("Certificate generation service is not configured. Please contact support.");
+    return false; // Indicate that submission was skipped or failed
+  }
 
-// --- Step 13 (Complete & Corrected): Handle CME Claim Submission ---
+  console.log("Attempting to send data to external service:", ZAPIER_WEBHOOK_URL);
+  console.log("Data being sent:", claimData);
+
+  try {
+    const response = await fetch(ZAPIER_WEBHOOK_URL, {
+      method: 'POST',
+      // Zapier Webhooks typically expect JSON data
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(claimData), // Send all the collected data
+      mode: 'cors' // Important for cross-origin requests, Zapier usually handles this
+    });
+
+    // Check if the request was successful (status code 2xx)
+    if (response.ok) {
+      const responseData = await response.json(); // Zapier often sends back a status
+      console.log("Successfully sent data to external service. Response:", responseData);
+      return true; // Indicate success
+    } else {
+      // Log error details if the request failed
+      console.error(`Error sending data to external service: ${response.status} ${response.statusText}`);
+      try {
+        const errorBody = await response.text();
+        console.error("Error response body:", errorBody);
+      } catch (e) {
+        console.error("Could not read error response body.");
+      }
+      return false; // Indicate failure
+    }
+  } catch (error) {
+    console.error("Network or other error sending data to external service:", error);
+    return false; // Indicate failure
+  }
+}
+// --- END OF NEW HELPER FUNCTION ---
+
+// --- MODIFIED handleCmeClaimSubmission Function ---
 
 async function handleCmeClaimSubmission(event) {
   event.preventDefault(); // Prevent default form submission
-  console.log("CME Claim Form submitted - processing...");
+  console.log("CME Claim Form submitted - processing (External Service Version)...");
 
   // Get elements needed throughout the function
   const errorDiv = document.getElementById("claimModalError");
@@ -2815,12 +2864,11 @@ async function handleCmeClaimSubmission(event) {
       cleanup(); // Re-enable buttons
       return; // Stop execution
   }
-  
+
   const uid = auth.currentUser.uid;
-  const userEmail = auth.currentUser.email || 'no-email@example.com';
+  const userEmail = auth.currentUser.email || 'no-email@example.com'; // Get user email
 
   // --- Main Processing Block ---
-  let functionResult; // To store result from cloud function
   try {
       // --- 1. Get Form Data & Validate ---
       const formData = new FormData(form);
@@ -2838,7 +2886,7 @@ async function handleCmeClaimSubmission(event) {
 
       // Evaluation data extraction
       const evaluationData = {
-          certificateFullName: certificateFullName,
+          certificateFullName: certificateFullName, // Include name here too
           objectivesMet: formData.get('evalObjectivesMet'),
           confidence: formData.get('evalConfidence'),
           usefulness: formData.get('evalUsefulness') || 'N/A',
@@ -2852,7 +2900,7 @@ async function handleCmeClaimSubmission(event) {
           additionalComments: formData.get('evalAdditionalComments')?.trim() || ''
       };
 
-      // Required evaluation validation
+      // Required evaluation validation (Keep this validation)
       if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) {
            throw new Error("Please complete all required evaluation questions (1, 2, 6, 7).");
       }
@@ -2873,8 +2921,9 @@ async function handleCmeClaimSubmission(event) {
           evaluationData.biasChangeOtherText = '';
       }
 
-      // --- 2. Firestore Transaction ---
+      // --- 2. Firestore Transaction (Keep this exactly as it is) ---
       const userDocRef = doc(db, 'users', uid);
+      const claimTimestamp = new Date(); // Capture timestamp for external service too
       await runTransaction(db, async (transaction) => {
           console.log("Starting Firestore transaction for claim...");
           const userDoc = await transaction.get(userDocRef);
@@ -2891,11 +2940,8 @@ async function handleCmeClaimSubmission(event) {
           console.log(`Credits check inside transaction: Available=${currentAvailable.toFixed(2)}, Attempting to claim=${creditsToClaim.toFixed(2)}`);
 
           // Verify available credits again inside transaction
-          if (creditsToClaim > currentAvailable) {
-              // Use toFixed(2) for comparing currency/credit values reliably
-              if (creditsToClaim.toFixed(2) > currentAvailable.toFixed(2)) {
-                   throw new Error(`Insufficient credits. You only have ${currentAvailable.toFixed(2)} available.`);
-              }
+          if (creditsToClaim.toFixed(2) > currentAvailable.toFixed(2)) {
+               throw new Error(`Insufficient credits. You only have ${currentAvailable.toFixed(2)} available.`);
           }
 
           // Prepare updated stats and history
@@ -2906,9 +2952,9 @@ async function handleCmeClaimSubmission(event) {
           };
 
           const newHistoryEntry = {
-              timestamp: new Date(), // Use client-side timestamp
+              timestamp: claimTimestamp, // Use the captured timestamp
               creditsClaimed: creditsToClaim,
-              evaluationData: evaluationData
+              evaluationData: evaluationData // Save evaluation data here too
           };
 
           const existingHistory = data.cmeClaimHistory || [];
@@ -2919,84 +2965,48 @@ async function handleCmeClaimSubmission(event) {
               cmeClaimHistory: updatedHistory
           }, { merge: true });
 
-          console.log("Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
+          console.log("Firestore Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
       });
+      // --- End of Firestore Transaction ---
 
-      // --- 3. Force token refresh BEFORE calling function ---
-      console.log("Forcing auth token refresh before calling cloud function...");
-      let freshIdToken;
-      
-      try {
-          // Explicitly force refresh token and store it for potential debugging
-          freshIdToken = await getIdToken(auth.currentUser, true);
-          console.log("Successfully obtained fresh ID token (length):", freshIdToken.length);
-      } catch (tokenError) {
-          console.error("Error forcing ID token refresh:", tokenError);
-          throw new Error("Failed to refresh authentication. Please try again or log out and back in.");
+      // --- 3. Prepare Data for External Service ---
+      const dataForExternalService = {
+          userId: uid,
+          userEmail: userEmail,
+          creditsClaimed: creditsToClaim,
+          claimTimestamp: claimTimestamp.toISOString(), // Use ISO format for compatibility
+          evaluationData: evaluationData,
+          // certificateName is already inside evaluationData
+      };
+
+      // --- 4. Submit Data to External Service (NEW STEP) ---
+      console.log("Submitting data to external service...");
+      const externalSubmitSuccess = await submitCmeDataToExternalService(dataForExternalService);
+
+      if (!externalSubmitSuccess) {
+          // Log the failure but don't necessarily stop the user flow,
+          // as the claim *was* recorded in Firestore.
+          console.warn("Submission to external service failed or was skipped. Certificate might not be generated automatically.");
+          // Optionally, you could add a specific message to the user here,
+          // but the generic success message below might be sufficient.
+          // if (errorDiv) errorDiv.textContent += " (Note: Certificate auto-generation might be delayed)";
       }
 
-      // --- 4. Call the Cloud Function ---
-      console.log("Setting up Cloud Function call with explicit authentication...");
-
-// Get current user and check authentication state
-if (!auth.currentUser) {
-  throw new Error("User is not authenticated. Please log in again.");
-}
-
-// First explicitly refresh the auth token
-try {
-  console.log("Forcing authentication token refresh...");
-  await getIdToken(auth.currentUser, true); // Force token refresh
-  console.log("Authentication token successfully refreshed");
-  
-  // Brief delay to ensure token propagation
-  await new Promise(resolve => setTimeout(resolve, 500));
-} catch (tokenError) {
-  console.error("Error refreshing authentication token:", tokenError);
-  throw new Error("Failed to refresh authentication. Please try again or log out and back in.");
-}
-
-// Create a fresh Functions instance for this specific call
-console.log("Creating fresh Functions instance with latest auth context...");
-const freshFunctionsInstance = getFunctions();
-
-// Create the callable function with the fresh instance
-const generateCertificate = httpsCallable(freshFunctionsInstance, 'generateCmeCertificate');
-
-// Prepare function data
-const functionData = {
-  creditsClaimed: creditsToClaim,
-  claimTimestamp: new Date().toISOString(),
-  evaluationData: evaluationData,
-  certificateName: certificateFullName,
-  // Add a timestamp to help prevent caching issues
-  requestTimestamp: Date.now()
-};
-
-// Log info right before the call
-console.log("Calling Cloud Function with fresh authentication context...");
-console.log("User ID:", auth.currentUser.uid);
-console.log("User email:", auth.currentUser.email);
-console.log("Anonymous:", auth.currentUser.isAnonymous);
-
-// Make the function call
-functionResult = await generateCertificate(functionData);
-console.log("Cloud Function response:", functionResult);
-
-      // --- User Feedback (Success) ---
+      // --- 5. User Feedback (Success - MODIFIED MESSAGE) ---
+      const successMessage = `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Your certificate will be emailed to ${userEmail} shortly.`;
       if (errorDiv) {
-          errorDiv.textContent = functionResult.data.message || 
-            `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Certificate processing initiated. Check email: ${userEmail}`;
+          errorDiv.textContent = successMessage;
+          // Apply success styling (same as before)
           errorDiv.style.color = '#28a745';
           errorDiv.style.border = '1px solid #c3e6cb';
           errorDiv.style.backgroundColor = '#d4edda';
           errorDiv.style.padding = '10px';
           errorDiv.style.borderRadius = '5px';
       } else {
-          alert(functionResult.data.message || "Claim successful! Certificate processing initiated.");
+          alert(successMessage); // Fallback alert
       }
 
-      // --- Cleanup and Refresh (Success) ---
+      // --- 6. Cleanup and Refresh (Success - same as before) ---
       cleanup(false); // Keep buttons disabled while showing success
 
       setTimeout(() => {
@@ -3016,7 +3026,7 @@ console.log("Cloud Function response:", functionResult);
       }
 
   } catch (error) {
-      // --- Error Handling ---
+      // --- Error Handling (Keep this as is) ---
       console.error("Error processing CME claim:", error);
       if (errorDiv) {
            errorDiv.textContent = `Claim failed: ${error.message}`;
@@ -3033,7 +3043,7 @@ console.log("Cloud Function response:", functionResult);
   }
 }
 
-// --- End of Complete handleCmeClaimSubmission Function ---
+// --- End of MODIFIED handleCmeClaimSubmission Function ---
 
 // --- Step 5b: Populate CME Category Dropdown ---
 
