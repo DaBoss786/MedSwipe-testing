@@ -2781,7 +2781,7 @@ async function prepareClaimModal() {
 // --- NEW HELPER FUNCTION ---
 // Sends CME claim data to an external service (e.g., Zapier Webhook)
 async function submitCmeDataToExternalService(claimData) {
-  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlhh7Hj8wXvFiYTOwIzbwMba9fv6jgxOUAlWouBB5ApzOPl-OrxFJZblZGcAojbOUg/exec'; // Your Script URL
+  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ2M9avMNlNjhfhNLE-DbYRaXw1-Bg1CFPt3y-9CV7q0naJTb_LkMZ1aErA3LA9tW7/exec'; // Your Script URL
 
   if (GOOGLE_SCRIPT_WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
     console.warn("Google Apps Script URL not set. Skipping external submission.");
