@@ -2782,22 +2782,22 @@ async function prepareClaimModal() {
 // Sends CME claim data to an external service (e.g., Zapier Webhook)
 async function submitCmeDataToExternalService(claimData) {
   // !!! IMPORTANT: Replace this URL with your actual Zapier Webhook URL !!!
-  const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/17016153/20gtgtx/';
+  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxcTEN_JKn8O1R3CW1Ecy9hVlrDUN5SsaMUitk-pE1yosTKOB1GBZJKRmtvH2iI4Dsr/exec';
   // Example: 'https://hooks.zapier.com/hooks/catch/123456/abcdef/'
 
-  if (ZAPIER_WEBHOOK_URL === 'YOUR_ZAPIER_WEBHOOK_URL_HERE') {
-    console.warn("Zapier Webhook URL not set in submitCmeDataToExternalService. Skipping external submission.");
+  if (GOOGLE_SCRIPT_WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    console.warn("Google Apps Script URL not set in submitCmeDataToExternalService. Skipping external submission.");
     // You could optionally alert the user here in a real scenario if needed,
     // but for now, we'll just log a warning.
     // alert("Certificate generation service is not configured. Please contact support.");
     return false; // Indicate that submission was skipped or failed
   }
 
-  console.log("Attempting to send data to external service:", ZAPIER_WEBHOOK_URL);
+  console.log("Attempting to send data to Google Apps Script:", GOOGLE_SCRIPT_WEB_APP_URL);
   console.log("Data being sent:", claimData);
 
   try {
-    const response = await fetch(ZAPIER_WEBHOOK_URL, {
+    const response = await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
       method: 'POST',
       // Zapier Webhooks typically expect JSON data
       body: JSON.stringify(claimData), // Send all the collected data
