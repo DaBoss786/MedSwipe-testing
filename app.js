@@ -2781,51 +2781,54 @@ async function prepareClaimModal() {
 // --- NEW HELPER FUNCTION ---
 // Sends CME claim data to an external service (e.g., Zapier Webhook)
 async function submitCmeDataToExternalService(claimData) {
-  // !!! IMPORTANT: Replace this URL with your actual Zapier Webhook URL !!!
-  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlhh7Hj8wXvFiYTOwIzbwMba9fv6jgxOUAlWouBB5ApzOPl-OrxFJZblZGcAojbOUg/exec';
-  // Example: 'https://hooks.zapier.com/hooks/catch/123456/abcdef/'
+  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlhh7Hj8wXvFiYTOwIzbwMba9fv6jgxOUAlWouBB5ApzOPl-OrxFJZblZGcAojbOUg/exec'; // Your Script URL
 
   if (GOOGLE_SCRIPT_WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
-    console.warn("Google Apps Script URL not set in submitCmeDataToExternalService. Skipping external submission.");
-    // You could optionally alert the user here in a real scenario if needed,
-    // but for now, we'll just log a warning.
-    // alert("Certificate generation service is not configured. Please contact support.");
-    return false; // Indicate that submission was skipped or failed
+    console.warn("Google Apps Script URL not set. Skipping external submission.");
+    return false;
   }
 
-  console.log("Attempting to send data to Google Apps Script:", GOOGLE_SCRIPT_WEB_APP_URL);
+  console.log("Attempting to send data to Google Apps Script (mode: cors - FOR DEBUGGING):", GOOGLE_SCRIPT_WEB_APP_URL);
   console.log("Data being sent:", claimData);
 
   try {
     const response = await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
       method: 'POST',
-      // Zapier Webhooks typically expect JSON data
-      body: JSON.stringify(claimData), // Send all the collected data
-      mode: 'no-cors' // <<<--- CHANGE THIS LINE ---<<<
+      // Keep headers commented out or removed
+      body: JSON.stringify(claimData),
+      mode: 'cors' // <<<--- CHANGE BACK TO 'cors' ---<<<
     });
 
-    // --- MODIFIED HANDLING FOR 'no-cors' ---
-    // In 'no-cors' mode, we often can't read the response status or body.
-    // We have to assume success if the fetch itself doesn't throw an error.
-    // This isn't ideal, but it's a limitation of 'no-cors'.
-    console.log("Successfully sent request using 'no-cors' mode. Cannot verify server response status directly.");
-    // We'll check the Apps Script logs later to confirm processing.
-    return true; // Assume success if fetch didn't throw
-
-    /* --- Old 'cors' mode handling (commented out) ---
-    if (response.ok) {
-      // ... success handling ...
+    // --- USE ORIGINAL 'cors' mode handling FOR DEBUGGING ---
+    if (response.ok) { // This might not be reached due to CORS block, but check console/network tab
+      try {
+        const responseData = await response.json();
+        console.log("Successfully sent data (CORS mode). Response:", responseData);
+      } catch (jsonError) {
+        console.log("Successfully sent data (CORS mode). Response was not JSON. Status:", response.status);
+         try {
+            const textResponse = await response.text();
+            console.log("Response text:", textResponse);
+         } catch(textError) {
+             console.warn("Could not read response text either.");
+         }
+      }
       return true;
     } else {
-      // ... error handling ...
-      return false;
+      // Log error details if the request failed
+      console.error(`Error sending data (CORS mode): ${response.status} ${response.statusText}`);
+      try {
+        const errorBody = await response.text(); // Attempt to read body even on error
+        console.error("Error response body (CORS mode):", errorBody);
+      } catch (e) {
+        console.error("Could not read error response body (CORS mode).");
+      }
+      return false; // Indicate failure
     }
-    */
-    // --- END OF MODIFIED HANDLING ---
+    // --- END OF ORIGINAL 'cors' mode handling ---
 
   } catch (error) {
-    // Network errors (like DNS issues, server unreachable) will still be caught here.
-    console.error("Network or other error sending data to external service:", error);
+    console.error("Network or other error sending data (CORS mode):", error);
     return false; // Indicate failure
   }
 }
