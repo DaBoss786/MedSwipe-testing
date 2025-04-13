@@ -2778,6 +2778,59 @@ async function prepareClaimModal() {
 
 // --- End of Step 12b ---
 
+// Function to request certificates from the Google Apps Script server
+async function requestCertificateFromServer(data) {
+  try {
+    // Show loading status
+    console.log("Requesting certificate from Google Apps Script server...");
+    
+    // The URL from your Google Apps Script deployment
+    const serverUrl = "https://script.google.com/macros/s/AKfycbz7M13m9TPqaddRFupWshFUR_MUNjY2SEw_AyfLnkMOcT2zHCE3T7NppFGnKBHQnsiO/exec"; // Replace with your actual deployed Apps Script URL
+    
+    // Make the request to the server
+    const response = await fetch(serverUrl, {
+      method: "POST",
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        credits: data.credits,
+        uid: data.uid
+      })
+    });
+    
+    // Handle potential network errors
+    if (!response.ok) {
+      console.error("Network error when contacting certificate server:", response.status, response.statusText);
+      return { 
+        error: `Server returned error: ${response.status} ${response.statusText}`
+      };
+    }
+    
+    // Parse the response
+    const result = await response.json();
+    
+    if (!result.success) {
+      console.error("Certificate server returned error:", result.error);
+      return { 
+        error: result.error || "Failed to generate certificate"
+      };
+    }
+    
+    // Return success data
+    return {
+      success: true,
+      certificateId: result.certificateId,
+      downloadUrl: result.downloadUrl,
+      verificationHash: result.verificationHash
+    };
+  } catch (error) {
+    console.error("Error requesting certificate:", error);
+    return { 
+      error: `Error requesting certificate: ${error.message}`
+    };
+  }
+}
+
 async function handleCmeClaimSubmission(event) {
   event.preventDefault(); // Prevent default form submission
   console.log("CME Claim Form submitted - processing (Generate & Download Link Version)...");
@@ -2930,20 +2983,16 @@ async function handleCmeClaimSubmission(event) {
       });
       // --- End of Firestore Transaction ---
 
-      // --- 3. Prepare Data for Apps Script ---
-      const dataForScript = {
-          userId: uid,
-          userEmail: userEmail,
-          creditsClaimed: creditsToClaim,
-          claimTimestamp: claimTimestampISO, // Send ISO string to script
-          evaluationData: evaluationData
-      };
-      console.log("Data prepared for Apps Script:", dataForScript);
+      // --- 3. Request Certificate from Google Apps Script ---
+if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...'; // Update loader text
 
-      // --- 4. Call Apps Script and Wait for Response ---
-      if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...'; // Update loader text
-      const scriptResult = await callCertificateGeneratorScript(dataForScript); // Assumes helper function exists
-
+// Call the requestCertificateFromServer function with the required data
+const scriptResult = await requestCertificateFromServer({
+    name: certificateFullName,
+    email: userEmail,
+    credits: creditsToClaim.toString(), // Convert to string for consistency
+    uid: uid
+});
       // --- 5. Handle Script Response AND Update Firestore with Link ---
       cleanup(false, false); // Hide loader, keep buttons disabled initially
 
