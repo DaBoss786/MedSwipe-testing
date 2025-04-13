@@ -2785,29 +2785,48 @@ async function requestCertificateFromServer(data) {
     console.log("Requesting certificate from Google Apps Script server...");
     
     // The URL from your Google Apps Script deployment
-    const serverUrl = "https://script.google.com/macros/s/AKfycbwVE2shol6qFILj3pJkeExHUEjfewdU1rDbUblk22ioRmLYfV7xVmdP92dCg9Ws1lcO/exec"; // Replace with your actual deployed Apps Script URL
+    const serverUrl = "https://script.google.com/macros/s/AKfycbzKPB9dEw5r4MM5i6sRD5BbYIryjVpYPkaqZCuxt3Knt7TuzY8Y-LSs233Ve5y3vykS/exec"; // Replace with your actual URL
+    
+    console.log("Using server URL:", serverUrl); // Add this for debugging
+    console.log("Sending data:", JSON.stringify(data)); // Add this for debugging
     
     // Make the request to the server
     const response = await fetch(serverUrl, {
       method: "POST",
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email,
-        credits: data.credits,
-        uid: data.uid
-      })
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json'  // Add this content-type header
+      }
     });
+    
+    // Log the full response
+    console.log("Response status:", response.status, response.statusText);
     
     // Handle potential network errors
     if (!response.ok) {
       console.error("Network error when contacting certificate server:", response.status, response.statusText);
+      const errorText = await response.text();
+      console.error("Error response body:", errorText);
       return { 
-        error: `Server returned error: ${response.status} ${response.statusText}`
+        error: `Server returned error: ${response.status} ${response.statusText} - ${errorText}`
       };
     }
     
-    // Parse the response
-    const result = await response.json();
+    // Parse the response and log it
+    const responseText = await response.text();
+    console.log("Response text:", responseText);
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Error parsing JSON response:", parseError);
+      return {
+        error: `Invalid response from server: ${responseText.substring(0, 100)}...`
+      };
+    }
+    
+    console.log("Parsed result:", result);
     
     if (!result.success) {
       console.error("Certificate server returned error:", result.error);
