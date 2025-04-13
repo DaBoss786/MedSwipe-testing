@@ -2785,7 +2785,7 @@ async function requestCertificateFromServer(data) {
     console.log("Requesting certificate from Google Apps Script server...");
     
     // The URL from your Google Apps Script deployment
-    const serverUrl = "https://script.google.com/macros/s/AKfycbz7M13m9TPqaddRFupWshFUR_MUNjY2SEw_AyfLnkMOcT2zHCE3T7NppFGnKBHQnsiO/exec"; // Replace with your actual deployed Apps Script URL
+    const serverUrl = "https://script.google.com/macros/s/AKfycbwVE2shol6qFILj3pJkeExHUEjfewdU1rDbUblk22ioRmLYfV7xVmdP92dCg9Ws1lcO/exec"; // Replace with your actual deployed Apps Script URL
     
     // Make the request to the server
     const response = await fetch(serverUrl, {
