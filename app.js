@@ -2778,67 +2778,56 @@ async function prepareClaimModal() {
 
 // --- End of Step 12b ---
 
-// --- NEW HELPER FUNCTION ---
-// Sends CME claim data to an external service (e.g., Zapier Webhook)
-async function submitCmeDataToExternalService(claimData) {
-  const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZ2M9avMNlNjhfhNLE-DbYRaXw1-Bg1CFPt3y-9CV7q0naJTb_LkMZ1aErA3LA9tW7/exec'; // Your Script URL
+// --- NEW HELPER FUNCTION to Call Apps Script & Get Download URL ---
+async function callCertificateGeneratorScript(claimData) {
+  // !!! IMPORTANT: Replace with YOUR Deployed Apps Script /exec URL !!!
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgkoyL5jhu6hbE-xC2aKlToo0wbL7C4F2tceTFLg4qCzEI9ABZFDzNGut1zlTKASgx/exec';
 
-  if (GOOGLE_SCRIPT_WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
-    console.warn("Google Apps Script URL not set. Skipping external submission.");
-    return false;
+  if (GOOGLE_SCRIPT_URL === 'YOUR_NEW_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    console.warn("Google Apps Script URL for cert generation not set.");
+    return { status: 'error', message: 'Certificate generation service not configured.' };
   }
 
-  console.log("Attempting to send data to Google Apps Script (mode: cors - FOR DEBUGGING):", GOOGLE_SCRIPT_WEB_APP_URL);
-  console.log("Data being sent:", claimData);
+  console.log("Calling Certificate Generation Apps Script:", GOOGLE_SCRIPT_URL);
+  console.log("Sending data:", claimData);
 
   try {
-    const response = await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
-      // Keep headers commented out or removed
-      body: JSON.stringify(claimData),
-      mode: 'cors' // <<<--- CHANGE BACK TO 'cors' ---<<<
+      mode: 'cors', // MUST use 'cors' to read the response
+      // No 'Content-Type' header needed if it worked before without it
+      body: JSON.stringify(claimData)
     });
 
-    // --- USE ORIGINAL 'cors' mode handling FOR DEBUGGING ---
-    if (response.ok) { // This might not be reached due to CORS block, but check console/network tab
-      try {
-        const responseData = await response.json();
-        console.log("Successfully sent data (CORS mode). Response:", responseData);
-      } catch (jsonError) {
-        console.log("Successfully sent data (CORS mode). Response was not JSON. Status:", response.status);
-         try {
-            const textResponse = await response.text();
-            console.log("Response text:", textResponse);
-         } catch(textError) {
-             console.warn("Could not read response text either.");
-         }
-      }
-      return true;
-    } else {
-      // Log error details if the request failed
-      console.error(`Error sending data (CORS mode): ${response.status} ${response.statusText}`);
-      try {
-        const errorBody = await response.text(); // Attempt to read body even on error
-        console.error("Error response body (CORS mode):", errorBody);
-      } catch (e) {
-        console.error("Could not read error response body (CORS mode).");
-      }
-      return false; // Indicate failure
+    // Check if the fetch itself was okay network-wise before parsing JSON
+    if (!response.ok) {
+       // Try to get more info from the response body if possible
+       let errorBody = `Server responded with status: ${response.status} ${response.statusText}`;
+       try {
+           errorBody = await response.text();
+       } catch (e) { /* Ignore if body can't be read */ }
+       console.error("Error response from Apps Script server:", errorBody);
+       throw new Error(`Certificate script request failed: ${response.status} ${response.statusText}`);
     }
-    // --- END OF ORIGINAL 'cors' mode handling ---
+
+    // Parse the JSON response from the Apps Script
+    const result = await response.json();
+    console.log("Received response from Apps Script:", result);
+    return result; // Should be { status: 'success'/'error', message: '...', downloadUrl: '...', fileName: '...' }
 
   } catch (error) {
-    console.error("Network or other error sending data (CORS mode):", error);
-    return false; // Indicate failure
+    console.error("Network or fetch error calling certificate script:", error);
+    // Return an error object consistent with the script's error format
+    return { status: 'error', message: `Failed to communicate with certificate service: ${error.message}` };
   }
 }
-// --- END OF NEW HELPER FUNCTION ---
+// --- END of Helper Function ---
 
-// --- MODIFIED handleCmeClaimSubmission Function ---
+// --- FINAL handleCmeClaimSubmission Function (Generate & Download Link Version) ---
 
 async function handleCmeClaimSubmission(event) {
   event.preventDefault(); // Prevent default form submission
-  console.log("CME Claim Form submitted - processing (External Service Version)...");
+  console.log("CME Claim Form submitted - processing (Generate & Download Link Version)...");
 
   // Get elements needed throughout the function
   const errorDiv = document.getElementById("claimModalError");
@@ -2850,29 +2839,48 @@ async function handleCmeClaimSubmission(event) {
   const cmeClaimModal = document.getElementById("cmeClaimModal");
 
   // --- Helper function for cleanup ---
-  const cleanup = (enableButtons = true) => {
-      if (loadingIndicator) loadingIndicator.style.display = 'none';
-      if (submitButton) submitButton.disabled = !enableButtons;
-      if (cancelButton) cancelButton.disabled = !enableButtons;
+  const cleanup = (enableButtons = true, showLoader = false) => {
+      if (loadingIndicator) loadingIndicator.style.display = showLoader ? 'block' : 'none';
+      // Only re-enable cancel if needed, submit stays disabled on success unless error occurs
+      if (submitButton) {
+          submitButton.disabled = !enableButtons || !showLoader;
+          submitButton.style.display = enableButtons ? 'inline-block' : 'none'; // Show/hide based on state
+      }
+      if (cancelButton) {
+          cancelButton.disabled = !enableButtons || !showLoader;
+          cancelButton.style.display = enableButtons ? 'inline-block' : 'none'; // Show/hide based on state
+      }
   };
 
   // --- Clear previous errors & Show Loader ---
-  if (errorDiv) errorDiv.textContent = '';
-  if (loadingIndicator) loadingIndicator.style.display = 'block';
-  if (submitButton) submitButton.disabled = true;
-  if (cancelButton) cancelButton.disabled = true;
+  if (errorDiv) {
+      errorDiv.textContent = '';
+      // Reset any previous styling
+      errorDiv.style.color = '';
+      errorDiv.style.border = '';
+      errorDiv.style.backgroundColor = '';
+      errorDiv.style.padding = '';
+      errorDiv.style.borderRadius = '';
+      errorDiv.innerHTML = ''; // Clear potential HTML content too
+  }
+  cleanup(false, true); // Disable buttons, show loader
+  if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Processing claim...'; // Initial loader text
 
   // --- Ensure user is still valid ---
   if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
       if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
-      cleanup(); // Re-enable buttons
+      cleanup(true, false); // Re-enable buttons, hide loader
       return; // Stop execution
   }
 
   const uid = auth.currentUser.uid;
   const userEmail = auth.currentUser.email || 'no-email@example.com'; // Get user email
+  const userDocRef = doc(db, 'users', uid); // Define userDocRef for use in multiple steps
 
-  // --- Main Processing Block ---
+  // --- Capture Timestamp for identifying the history entry ---
+  const claimTimestamp = new Date();
+  const claimTimestampISO = claimTimestamp.toISOString(); // Use ISO string for matching later
+
   try {
       // --- 1. Get Form Data & Validate ---
       const formData = new FormData(form);
@@ -2904,7 +2912,7 @@ async function handleCmeClaimSubmission(event) {
           additionalComments: formData.get('evalAdditionalComments')?.trim() || ''
       };
 
-      // Required evaluation validation (Keep this validation)
+      // Required evaluation validation
       if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) {
            throw new Error("Please complete all required evaluation questions (1, 2, 6, 7).");
       }
@@ -2918,22 +2926,15 @@ async function handleCmeClaimSubmission(event) {
           throw new Error("Please provide a comment if you indicated commercial bias was present.");
       }
       // Clean up other text if 'Other' wasn't selected
-      if (!evaluationData.practiceChange.includes('Other')) {
-          evaluationData.practiceChangeOtherText = '';
-      }
-       if (!evaluationData.biasChange.includes('Other')) {
-          evaluationData.biasChangeOtherText = '';
-      }
+      if (!evaluationData.practiceChange.includes('Other')) evaluationData.practiceChangeOtherText = '';
+      if (!evaluationData.biasChange.includes('Other')) evaluationData.biasChangeOtherText = '';
 
-      // --- 2. Firestore Transaction (Keep this exactly as it is) ---
-      const userDocRef = doc(db, 'users', uid);
-      const claimTimestamp = new Date(); // Capture timestamp for external service too
+
+      // --- 2. Firestore Transaction (Adds initial history entry) ---
       await runTransaction(db, async (transaction) => {
           console.log("Starting Firestore transaction for claim...");
           const userDoc = await transaction.get(userDocRef);
-          if (!userDoc.exists()) {
-              throw new Error("User data not found.");
-          }
+          if (!userDoc.exists()) throw new Error("User data not found.");
 
           const data = userDoc.data();
           const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
@@ -2955,13 +2956,16 @@ async function handleCmeClaimSubmission(event) {
               creditsClaimed: parseFloat(newCreditsClaimed.toFixed(2))
           };
 
+          // Use the captured timestamp Date object here
           const newHistoryEntry = {
-              timestamp: claimTimestamp, // Use the captured timestamp
+              timestamp: claimTimestamp, // Store the Date object
               creditsClaimed: creditsToClaim,
-              evaluationData: evaluationData // Save evaluation data here too
+              evaluationData: evaluationData
+              // downloadUrl will be added later
           };
 
           const existingHistory = data.cmeClaimHistory || [];
+          // Ensure history is sorted if needed before adding, although sorting on display is usually sufficient
           const updatedHistory = [...existingHistory, newHistoryEntry];
 
           transaction.set(userDocRef, {
@@ -2969,85 +2973,130 @@ async function handleCmeClaimSubmission(event) {
               cmeClaimHistory: updatedHistory
           }, { merge: true });
 
-          console.log("Firestore Transaction successful. Updated creditsClaimed and cmeClaimHistory.");
+          console.log("Firestore Transaction successful (initial history entry added).");
       });
       // --- End of Firestore Transaction ---
 
-      // --- 3. Prepare Data for External Service ---
-      const dataForExternalService = {
+      // --- 3. Prepare Data for Apps Script ---
+      const dataForScript = {
           userId: uid,
           userEmail: userEmail,
           creditsClaimed: creditsToClaim,
-          claimTimestamp: claimTimestamp.toISOString(), // Use ISO format for compatibility
-          evaluationData: evaluationData,
-          // certificateName is already inside evaluationData
+          claimTimestamp: claimTimestampISO, // Send ISO string to script
+          evaluationData: evaluationData
       };
+      console.log("Data prepared for Apps Script:", dataForScript);
 
-      // --- 4. Submit Data to External Service (NEW STEP) ---
-      console.log("Submitting data to external service...");
-      const externalSubmitSuccess = await submitCmeDataToExternalService(dataForExternalService);
+      // --- 4. Call Apps Script and Wait for Response ---
+      if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...'; // Update loader text
+      const scriptResult = await callCertificateGeneratorScript(dataForScript); // Assumes helper function exists
 
-      if (!externalSubmitSuccess) {
-          // Log the failure but don't necessarily stop the user flow,
-          // as the claim *was* recorded in Firestore.
-          console.warn("Submission to external service failed or was skipped. Certificate might not be generated automatically.");
-          // Optionally, you could add a specific message to the user here,
-          // but the generic success message below might be sufficient.
-          // if (errorDiv) errorDiv.textContent += " (Note: Certificate auto-generation might be delayed)";
+      // --- 5. Handle Script Response AND Update Firestore with Link ---
+      cleanup(false, false); // Hide loader, keep buttons disabled initially
+
+      if (scriptResult && scriptResult.status === 'success' && scriptResult.downloadUrl) {
+          // SUCCESS from Apps Script
+          console.log("Certificate generated successfully. URL:", scriptResult.downloadUrl);
+
+          // --- ADD Firestore Update to save the download URL ---
+          try {
+              console.log("Attempting to save download URL to Firestore history...");
+              const userDocSnap = await getDoc(userDocRef); // Get current data again
+              if (userDocSnap.exists()) {
+                  let data = userDocSnap.data();
+                  let history = data.cmeClaimHistory || [];
+
+                  // Find the matching history entry using the timestamp ISO string for comparison
+                  const entryIndex = history.findIndex(entry =>
+                      entry.timestamp && entry.timestamp.toDate && // Check if it's a Firestore Timestamp
+                      entry.timestamp.toDate().toISOString() === claimTimestampISO
+                  );
+
+                  if (entryIndex > -1) {
+                      // Add the download URL and filename to the found entry
+                      history[entryIndex].downloadUrl = scriptResult.downloadUrl;
+                      history[entryIndex].pdfFileName = scriptResult.fileName; // Save filename
+
+                      // Update the document with the modified history array
+                      await setDoc(userDocRef, { cmeClaimHistory: history }, { merge: true });
+                      console.log("Successfully saved download URL to history entry index:", entryIndex);
+                  } else {
+                      console.warn("Could not find matching history entry in Firestore to save download URL. Timestamp:", claimTimestampISO);
+                      // Attempt to add to the latest entry as a fallback? Maybe not safe.
+                  }
+              }
+          } catch (updateError) {
+              console.error("Error saving download URL to Firestore:", updateError);
+              // Log the error, but proceed with showing the download link to the user
+          }
+          // --- End of Firestore Update ---
+
+          // Show download link/button in the modal
+          if (errorDiv) {
+              errorDiv.innerHTML = `
+                  <p style="color: #28a745; font-weight: bold; margin-bottom: 15px;">Claim successful! Your certificate is ready.</p>
+                  <a href="${scriptResult.downloadUrl}" target="_blank" download="${scriptResult.fileName || 'CME_Certificate.pdf'}" class="auth-primary-btn" style="display: inline-block; margin-top: 10px; text-decoration: none; padding: 10px 15px; font-size: 1em;">
+                      Download Certificate (PDF)
+                  </a>
+                  <p style="font-size: 0.85em; margin-top: 15px; color: #555;">A record of this claim has been saved to your history.</p>
+              `;
+              // Apply success styling to the container div
+              errorDiv.style.border = '1px solid #c3e6cb';
+              errorDiv.style.backgroundColor = '#d4edda';
+              errorDiv.style.padding = '15px';
+              errorDiv.style.borderRadius = '5px';
+              errorDiv.style.textAlign = 'center'; // Center content
+          } else {
+              // Fallback alert if errorDiv isn't found
+              alert(`Claim successful! Download your certificate here: ${scriptResult.downloadUrl}`);
+          }
+          // Hide original buttons after success
+          cleanup(false, false); // Ensures buttons stay hidden
+
+      } else {
+          // FAILURE from Apps Script or fetch call
+          const errorMessage = scriptResult ? scriptResult.message : 'Unknown error communicating with certificate service.';
+          console.error("Certificate generation failed:", errorMessage);
+          if (errorDiv) {
+              errorDiv.textContent = `Claim recorded, but certificate generation failed: ${errorMessage}. Please contact support if the issue persists.`;
+              // Apply error styling
+              errorDiv.style.color = '#dc3545';
+              errorDiv.style.border = '1px solid #f5c6cb';
+              errorDiv.style.backgroundColor = '#f8d7da';
+              errorDiv.style.padding = '10px';
+              errorDiv.style.borderRadius = '5px';
+              errorDiv.style.textAlign = 'left'; // Reset alignment
+          } else {
+              alert(`Claim recorded, but certificate generation failed: ${errorMessage}`);
+          }
+          cleanup(true, false); // Re-enable buttons on error, hide loader
       }
 
-      // --- 5. User Feedback (Success - MODIFIED MESSAGE) ---
-      const successMessage = `Successfully claimed ${creditsToClaim.toFixed(2)} credits! Your certificate will be emailed to ${userEmail} shortly.`;
+      // --- 6. Refresh Dashboard (runs regardless of cert success/failure) ---
+      if(typeof loadCmeDashboardData === 'function') {
+           // Delay slightly to allow Firestore update to potentially propagate
+           setTimeout(() => loadCmeDashboardData(), 500);
+      }
+
+  } catch (error) { // Catch errors from validation or the initial Firestore transaction
+      console.error("Error during claim processing (Validation/Firestore):", error);
       if (errorDiv) {
-          errorDiv.textContent = successMessage;
-          // Apply success styling (same as before)
-          errorDiv.style.color = '#28a745';
-          errorDiv.style.border = '1px solid #c3e6cb';
-          errorDiv.style.backgroundColor = '#d4edda';
+          errorDiv.textContent = `Claim failed: ${error.message}`;
+          // Apply error styling
+          errorDiv.style.color = '#dc3545';
+          errorDiv.style.border = '1px solid #f5c6cb';
+          errorDiv.style.backgroundColor = '#f8d7da';
           errorDiv.style.padding = '10px';
           errorDiv.style.borderRadius = '5px';
+          errorDiv.style.textAlign = 'left'; // Reset alignment
       } else {
-          alert(successMessage); // Fallback alert
+          alert(`Claim failed: ${error.message}`);
       }
-
-      // --- 6. Cleanup and Refresh (Success - same as before) ---
-      cleanup(false); // Keep buttons disabled while showing success
-
-      setTimeout(() => {
-           if (cmeClaimModal) cmeClaimModal.style.display = 'none';
-           if (errorDiv) { // Reset message style after closing
-               errorDiv.textContent = '';
-               errorDiv.style.color = '';
-               errorDiv.style.border = '';
-               errorDiv.style.backgroundColor = '';
-               errorDiv.style.padding = '';
-               errorDiv.style.borderRadius = '';
-           }
-      }, 4000); // 4 second delay
-
-      if(typeof loadCmeDashboardData === 'function') {
-           loadCmeDashboardData(); // Refresh dashboard in background
-      }
-
-  } catch (error) {
-      // --- Error Handling (Keep this as is) ---
-      console.error("Error processing CME claim:", error);
-      if (errorDiv) {
-           errorDiv.textContent = `Claim failed: ${error.message}`;
-           // Reset specific error styles if needed
-           errorDiv.style.color = '#dc3545'; // Ensure error color
-           errorDiv.style.border = '1px solid #f5c6cb';
-           errorDiv.style.backgroundColor = '#f8d7da';
-           errorDiv.style.padding = '10px';
-           errorDiv.style.borderRadius = '5px';
-      } else {
-           alert(`Claim failed: ${error.message || 'Could not process claim.'}`);
-      }
-      cleanup(true); // Re-enable buttons on error
+      cleanup(true, false); // Re-enable buttons, hide loader
   }
 }
+// --- End of handleCmeClaimSubmission Function ---
 
-// --- End of MODIFIED handleCmeClaimSubmission Function ---
 
 // --- Step 5b: Populate CME Category Dropdown ---
 
@@ -3191,73 +3240,86 @@ async function loadCmeDashboardData() {
             claimButton.textContent = "Claim CME Credits"; // Reset text
         }
 
-            // --- Update History Card (Formatted Display) ---
-    if (cmeHistory.length > 0) {
-        // Sort history newest first (assuming timestamps are reliable enough)
-        cmeHistory.sort((a, b) => {
-            const timeA = a.timestamp?.seconds ?? 0; // Use seconds if available
-            const timeB = b.timestamp?.seconds ?? 0;
-            return timeB - timeA; // Descending order
-        });
+            // --- Update History Card (MODIFIED Display) ---
+        if (cmeHistory.length > 0) {
+          cmeHistory.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0)); // Sort newest first
 
-        // Generate HTML for a simple table
-        let historyHtml = `
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <thead>
-                    <tr style="border-bottom: 1px solid #ddd; text-align: left;">
-                        <th style="padding: 8px 5px;">Date Claimed</th>
-                        <th style="padding: 8px 5px; text-align: right;">Credits</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+          // Add a new column header for the download link/button
+          let historyHtml = `
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                  <thead>
+                      <tr style="border-bottom: 1px solid #ddd; text-align: left;">
+                          <th style="padding: 8px 5px;">Date Claimed</th>
+                          <th style="padding: 8px 5px; text-align: right;">Credits</th>
+                          <th style="padding: 8px 5px; text-align: center;">Certificate</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+          `;
 
-        cmeHistory.forEach(claim => {
-            const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
-            let claimDate = 'Unknown Date';
-            // Check if timestamp is a Firestore Timestamp object (has seconds)
-            // or if it's a JS Date object (from the client-side fix)
-            if (claim.timestamp) {
-                 if (typeof claim.timestamp.toDate === 'function') {
-                     // It's likely a Firestore Timestamp object
-                     claimDate = claim.timestamp.toDate().toLocaleDateString();
-                 } else if (claim.timestamp instanceof Date) {
-                     // It's likely a JS Date object (from client-side save)
-                     claimDate = claim.timestamp.toLocaleDateString();
-                 } else {
-                      // Attempt to parse if it's maybe a string or number
-                      try {
-                           claimDate = new Date(claim.timestamp).toLocaleDateString();
-                           if (claimDate === "Invalid Date") claimDate = "Invalid Date";
-                      } catch (e) { /* Keep 'Unknown Date' */ }
-                 }
-            }
+          cmeHistory.forEach(claim => {
+              const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
+              let claimDate = 'Unknown Date';
+              if (claim.timestamp && typeof claim.timestamp.toDate === 'function') {
+                  claimDate = claim.timestamp.toDate().toLocaleDateString();
+              } else if (claim.timestamp instanceof Date) { // Handle potential client-side Date objects if any exist
+                  claimDate = claim.timestamp.toLocaleDateString();
+              }
 
-            historyHtml += `
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 8px 5px;">${claimDate}</td>
-                    <td style="padding: 8px 5px; text-align: right;">${credits}</td>
-                </tr>
-            `;
-        });
+              // --- Check for downloadUrl and add button/link ---
+              let downloadCellContent = '-'; // Default if no link
+              if (claim.downloadUrl) {
+                  // Use an anchor tag styled as a small button
+                  downloadCellContent = `
+                      <a href="${claim.downloadUrl}" target="_blank" download="${claim.pdfFileName || 'CME_Certificate.pdf'}" class="cme-download-btn" title="Download PDF">
+                          ⬇️ PDF
+                      </a>
+                  `;
+              }
+              // --- End of download link check ---
 
-        historyHtml += `
-                </tbody>
-            </table>
-        `;
-        historyContent.innerHTML = historyHtml;
+              historyHtml += `
+                  <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 8px 5px;">${claimDate}</td>
+                      <td style="padding: 8px 5px; text-align: right;">${credits}</td>
+                      <td style="padding: 8px 5px; text-align: center;">${downloadCellContent}</td>
+                  </tr>
+              `;
+          });
 
-    } else {
-        historyContent.innerHTML = "<p style='text-align: center; color: #666;'>No credits claimed yet.</p>";
-    }
-    // --- End of History Card Update ---
+          historyHtml += `
+                  </tbody>
+              </table>
+              <style>
+                .cme-download-btn {
+                  display: inline-block;
+                  padding: 3px 8px;
+                  font-size: 0.8em;
+                  color: white;
+                  background-color: #007bff; /* Blue */
+                  border: none;
+                  border-radius: 4px;
+                  text-decoration: none;
+                  cursor: pointer;
+                  transition: background-color 0.2s;
+                }
+                .cme-download-btn:hover {
+                  background-color: #0056b3; /* Darker blue */
+                }
+              </style>
+          `;
+          historyContent.innerHTML = historyHtml;
 
-        console.log("CME dashboard data loaded and displayed.");
+      } else {
+          historyContent.innerHTML = "<p style='text-align: center; color: #666;'>No credits claimed yet.</p>";
+      }
+      // --- End of History Card Update ---
 
-    } catch (error) {
-        console.error("Error loading CME dashboard data:", error);
-        trackerContent.innerHTML = "<p>Error loading tracker data.</p>";
-        historyContent.innerHTML = "<p>Error loading history.</p>";
-        claimButton.disabled = true;
-    }
+      console.log("CME dashboard data loaded and displayed.");
+
+  } catch (error) {
+      console.error("Error loading CME dashboard data:", error);
+      // ... (error display logic) ...
+  }
 }
+// --- End of MODIFIED loadCmeDashboardData Function ---
