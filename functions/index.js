@@ -1,160 +1,149 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-// Import the necessary Firebase Functions modules
-// Using v1 syntax for simplicity with HTTPS callable functions for now
+// functions/index.js - TOP OF FILE
 const functions = require("firebase-functions");
-// If you need Firebase Admin SDK later (e.g., to access Firestore from functions)
-// const admin = require("firebase-admin");
-// admin.initializeApp();
-
-// Basic Logger (optional but helpful)
-const logger = require("firebase-functions/logger");
-
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
-
-// Simple HTTPS Callable Function (can be called directly from your app's JS)
-exports.helloWorld = functions.https.onCall((data, context) => {
-  // Log a message to the Firebase Functions console
-  logger.info("Hello world function called!", {structuredData: true});
-
-  // You can optionally receive data from the frontend call:
-  const text = data.text;
-  logger.info(`Received text from frontend: ${text || "No text received"}`);
-
-  // You can check if the user is authenticated (if needed)
-  // if (!context.auth) {
-  //   // Throwing an HttpsError is the standard way to handle errors client-side.
-  //   throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
-  // }
-  // const uid = context.auth.uid;
-  // logger.info(`Function called by user: ${uid}`);
-
-  // Send back a response to the frontend
-  return {
-    message: `Hello from the Cloud Function! You sent: ${text || "nothing"}`,
-    timestamp: new Date().toISOString(),
-  };
-});
-
-// You can add more functions here later by exporting them, e.g.:
-// exports.anotherFunction = functions.https.onRequest((req, res) => { ... });
-// exports.firestoreTrigger = functions.firestore.document('users/{userId}').onCreate((snap, context) => { ... });
-
-// --- Step C1: Add Certificate Generation Cloud Function ---
-
-// Import Firebase Admin SDK (needed to potentially fetch user email/data securely)
 const admin = require("firebase-admin");
-// Initialize admin SDK only once
-try { admin.initializeApp(); } catch (e) { console.log("Admin SDK already initialized or error:", e.message); }
+const { PDFDocument, rgb, StandardFonts } = require("pdf-lib"); // Import necessary pdf-lib components
+// const { Storage } = require("@google-cloud/storage"); // We'll use admin.storage() instead
 
+// Initialize Firebase Admin SDK. Cloud Functions does this automatically when deployed,
+// but initializing here is good practice and needed for local testing (if you do that later).
+admin.initializeApp();
 
-/**
- * Generates a CME certificate (simulation) and triggers email (simulation).
- * Called from the frontend after a successful claim transaction.
- */
+// Get a reference to the default Cloud Storage bucket
+const bucket = admin.storage().bucket();
+
+// Define the Cloud Function triggered by HTTPS callable request
 exports.generateCmeCertificate = functions.https.onCall(async (data, context) => {
-  // --- DETAILED LOGGING FOR AUTH ---
-  logger.info("--- generateCmeCertificate function invoked ---");
-  logger.info("Raw context object:", context); // Log the entire context
-  logger.info("Context.auth object:", context.auth); // Log the auth part specifically
-  if (context.auth) {
-      logger.info("Context.auth.uid:", context.auth.uid); // Log UID if auth exists
-      logger.info("Context.auth.token details:", context.auth.token); // Log token details
-  } else {
-      logger.warn("Context.auth is NULL or UNDEFINED.");
-  }
-  // --- END DETAILED LOGGING ---
-  
-  // --- 1. Authentication Check ---
-  // Ensure the user calling this function is authenticated.
-  if (!context.auth) {
-    logger.error("Certificate generation called by unauthenticated user.");
-    throw new functions.https.HttpsError('unauthenticated', 'Authentication context is missing or invalid. Please ensure you are logged in.');
-  }
-  const uid = context.auth.uid; // Proceed only if uid exists
-  logger.info(`Certificate generation authenticated for user: ${uid}`);
+    // --- 1. Authentication Check ---
+    // Verify the user calling the function is authenticated.
+    if (!context.auth) {
+        functions.logger.error("Authentication Error: User is not authenticated.");
+        throw new functions.https.HttpsError(
+            "unauthenticated", // Error code
+            "The function must be called while authenticated." // Error message
+        );
+    }
+    const uid = context.auth.uid; // Get the authenticated user's ID
+    const userEmail = context.auth.token.email || "No Email Provided"; // Get user's email
+    functions.logger.log(`Function called by authenticated user: ${uid}, Email: ${userEmail}`);
 
-  // --- 2. Data Validation ---
-  // Expecting data like: { creditsClaimed: 1.00, claimTimestamp: "ISO_string_or_millis", evaluationData: {...}, certificateName: "User Name" }
-  const creditsClaimed = data.creditsClaimed;
-  const claimTimestamp = data.claimTimestamp; // We'll send this from frontend
-  const evaluationData = data.evaluationData;
-  const certificateName = data.certificateName; // Get name provided during claim
+    // --- 2. Input Data Validation ---
+    // Get the data sent from the app (app.js)
+    const { certificateFullName, creditsToClaim } = data;
 
-  if (!creditsClaimed || typeof creditsClaimed !== 'number' || creditsClaimed <= 0) {
-    logger.error("Invalid data received: Missing or invalid 'creditsClaimed'.", data);
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid amount of credits claimed provided.');
-  }
-   if (!claimTimestamp) {
-    logger.error("Invalid data received: Missing 'claimTimestamp'.", data);
-    throw new functions.https.HttpsError('invalid-argument', 'Claim timestamp is missing.');
-  }
-   if (!certificateName || typeof certificateName !== 'string' || certificateName.trim() === '') {
-    logger.error("Invalid data received: Missing or invalid 'certificateName'.", data);
-    throw new functions.https.HttpsError('invalid-argument', 'Certificate name is missing.');
-  }
-   // Add more validation for evaluationData if needed
+    // Check if required data is present
+    if (!certificateFullName || typeof certificateFullName !== "string" || certificateFullName.trim() === "") {
+        functions.logger.error("Validation Error: Missing or invalid certificateFullName.");
+        throw new functions.https.HttpsError(
+            "invalid-argument",
+            "Please provide a valid full name for the certificate."
+        );
+    }
+    if (creditsToClaim === undefined || typeof creditsToClaim !== "number" || creditsToClaim <= 0) {
+        functions.logger.error("Validation Error: Missing or invalid creditsToClaim.");
+        throw new functions.https.HttpsError(
+            "invalid-argument",
+            "Please provide a valid number of credits to claim."
+        );
+    }
+    functions.logger.log(`Received data: Name='${certificateFullName}', Credits=${creditsToClaim}`);
 
-  logger.info(`Data received: Credits=${creditsClaimed}, Name=${certificateName}, Timestamp=${claimTimestamp}`);
+    // --- 3. PDF Generation using pdf-lib ---
+    try {
+        functions.logger.log("Starting PDF generation...");
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([612, 792]); // Standard US Letter size (points)
+        const { width, height } = page.getSize();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica); // Embed a standard font
 
-  // --- 3. Fetch User Email (Securely on Backend) ---
-  let userEmail = 'email_not_found@example.com'; // Default
-  try {
-    const userRecord = await admin.auth().getUser(uid);
-    userEmail = userRecord.email || userEmail;
-    logger.info(`Fetched user email: ${userEmail}`);
-  } catch (error) {
-    logger.error(`Failed to fetch user email for UID: ${uid}`, error);
-    // Decide if you want to proceed without email or throw an error
-    // throw new functions.https.HttpsError('internal', 'Could not retrieve user email.');
-  }
+        // --- Add Content to PDF ---
+        // Title (Centered)
+        const title = "Continuing Medical Education Certificate";
+        const titleSize = 18;
+        const titleWidth = font.widthOfTextAtSize(title, titleSize);
+        page.drawText(title, {
+            x: (width - titleWidth) / 2,
+            y: height - 50,
+            size: titleSize,
+            font: font,
+            color: rgb(0, 0.3, 0.7), // Dark blue color
+        });
 
-  // --- 4. Placeholder for PDF Generation ---
-  // TODO: Implement actual PDF generation using pdf-lib, pdfkit, etc.
-  // Use data: certificateName, creditsClaimed, claimTimestamp, your accreditation statement
-  logger.info("SIMULATING PDF Generation...");
-  const simulatedPdfUrl = `https://placeholder.pdf/for/${uid}/${Date.now()}.pdf`; // Fake URL
-  logger.info(`Simulated PDF URL: ${simulatedPdfUrl}`);
+        // Static Info
+        const textSize = 12;
+        const textYStart = height - 100;
+        const lineGap = 20;
+        page.drawText("Activity Title: MedSwipe ENT Quiz Module", { x: 50, y: textYStart, size: textSize, font: font });
+        page.drawText(`Date Awarded: ${new Date().toLocaleDateString()}`, { x: 50, y: textYStart - lineGap, size: textSize, font: font });
 
+        // Dynamic Info
+        page.drawText(`Participant Name: ${certificateFullName}`, { x: 50, y: textYStart - 2 * lineGap, size: textSize, font: font });
+        page.drawText(`AMA PRA Category 1 Credits™ Awarded: ${creditsToClaim.toFixed(2)}`, { x: 50, y: textYStart - 3 * lineGap, size: textSize, font: font });
 
-  // --- 5. Placeholder for Email Sending ---
-  // TODO: Implement actual email sending using SendGrid, Mailgun, etc.
-  // Send email to userEmail with the PDF attached or linked
-  logger.info(`SIMULATING Email Sending to ${userEmail}...`);
-  const emailSendData = {
-      to: userEmail,
-      from: "noreply@yourdomain.com", // Use a verified sender email
-      subject: `Your MedSwipe CME Certificate (${creditsClaimed.toFixed(2)} Credits)`,
-      text: `Dear ${certificateName},\n\nPlease find your CME certificate attached (or download here: ${simulatedPdfUrl}) for ${creditsClaimed.toFixed(2)} credits claimed on ${new Date(claimTimestamp).toLocaleDateString()}.\n\nThank you for using MedSwipe!\n\nAccreditation: [Your Statement Here]`,
-      // html: "...", // Add HTML version if desired
-      // attachments: [...] // Add PDF attachment if generating directly
-  };
-  logger.info("Simulated Email Data:", emailSendData);
+        // Accreditation Statement (Example - Replace with your actual text)
+        const accreditationText = "MedSwipe is jointly accredited by the [Joint Provider Name] and [Your Organization Name] to provide continuing education for the healthcare team. This activity was planned and implemented in accordance with the accreditation requirements and policies of the Accreditation Council for Continuing Medical Education (ACCME).";
+        page.drawText(accreditationText, {
+            x: 50,
+            y: textYStart - 5 * lineGap, // Adjust Y position
+            size: 10,
+            font: font,
+            lineHeight: 14,
+            maxWidth: width - 100, // Wrap text within margins
+            color: rgb(0.3, 0.3, 0.3), // Gray color
+        });
 
+        // Add Logos (Requires images accessible to the function or embedded)
+        // This part is more complex. For now, we'll skip adding images to keep it simple.
+        // You would typically load image bytes and use `pdfDoc.embedPng()` or `pdfDoc.embedJpg()`.
+        functions.logger.log("Skipping logo embedding for simplicity.");
 
-  // --- 6. Placeholder for Saving PDF URL to Firestore History (Optional) ---
-  // If you generate and store the PDF (e.g., in Cloud Storage), you might want
-  // to update the corresponding cmeClaimHistory entry with the download URL.
-  // This would likely involve another Firestore operation (potentially outside this function
-  // triggered by storage, or carefully done here).
-  logger.info("SIMULATING update of claim history with PDF URL (optional step).");
+        // --- Save PDF to Bytes ---
+        const pdfBytes = await pdfDoc.save();
+        functions.logger.log("PDF generated successfully in memory.");
 
+        // --- 4. Upload PDF to Firebase Cloud Storage ---
+        const fileName = `CME_Certificate_${certificateFullName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.pdf`;
+        const filePath = `cme_certificates/${uid}/${fileName}`; // Organize by user ID
+        const file = bucket.file(filePath);
 
-  // --- 7. Return Success Response ---
-  // Send back confirmation to the frontend.
-  return {
-    success: true,
-    message: `Certificate generation process initiated for ${creditsClaimed.toFixed(2)} credits. Check your email at ${userEmail}.`,
-    simulatedPdfUrl: simulatedPdfUrl, // Send back the fake URL for potential display
-  };
+        functions.logger.log(`Attempting to upload PDF to Cloud Storage at: ${filePath}`);
+        await file.save(Buffer.from(pdfBytes), {
+            metadata: {
+                contentType: "application/pdf",
+                // Optional: Add custom metadata if needed
+                metadata: {
+                    userId: uid,
+                    claimedCredits: creditsToClaim.toString(),
+                    participantName: certificateFullName,
+                },
+            },
+        });
+        functions.logger.log("PDF successfully uploaded to Cloud Storage.");
+
+        // --- 5. Generate Signed Download URL ---
+        // Create a URL that allows temporary read access to the file.
+        const config = {
+            action: "read", // Allow reading the file
+            expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // URL expires in 7 days
+        };
+        const [downloadUrl] = await file.getSignedUrl(config);
+        functions.logger.log(`Generated signed download URL: ${downloadUrl}`);
+
+        // --- 6. Return Success Response to the App ---
+        return {
+            success: true,
+            downloadUrl: downloadUrl,
+            fileName: fileName, // Send filename back for download attribute
+        };
+
+    } catch (error) {
+        functions.logger.error("Error during PDF generation or upload:", error);
+        // Throw a specific error for the client app
+        throw new functions.https.HttpsError(
+            "internal", // Error code
+            "Failed to generate or save the certificate. Please try again later.", // User-friendly message
+            error.message // Optional: include original error message for debugging
+        );
+    }
 });
 
-// --- End of Step C1 Code ---
+// functions/index.js - END OF FILE
