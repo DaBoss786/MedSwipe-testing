@@ -1,40 +1,31 @@
 // app.js - Top of file
-import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { csvUrl, closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
 
-// app.js - Global scope, after imports
-console.log("Auth instance used by Functions SDK (expected):", auth); // Log the auth instance
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    // Ensure 'app' is imported correctly at the top of the file
-    if (typeof app === 'undefined') {
-        console.error("CRITICAL: Firebase 'app' instance not available inside DOMContentLoaded!");
-        // Handle this error appropriately - maybe show an error message
-        return;
+    // Ensure imported 'functions' instance exists
+    if (typeof functions === 'undefined') {
+        throw new Error("Imported 'functions' instance is undefined.");
+    }
+    // Ensure imported 'httpsCallable' exists
+    if (typeof httpsCallable === 'undefined') {
+        throw new Error("Imported 'httpsCallable' function is undefined.");
     }
 
-    // Initialize Functions SDK, explicitly linking the 'app' instance
-    // Make functionsSdk globally available if needed elsewhere, otherwise keep it local
-    window.functionsSdk = getFunctions(app, 'us-central1'); // Use the imported 'app'
-    console.log("Firebase Functions SDK initialized inside DOMContentLoaded (linked to app).");
-
-    // Create the callable function reference and make it globally available
-    window.generateCmeCertificateFunction = httpsCallable(window.functionsSdk, 'generateCmeCertificate');
-    console.log("Callable function reference created globally.");
-
+    window.generateCmeCertificateFunction = httpsCallable(functions, 'generateCmeCertificate');
+    console.log("Callable function reference created globally using imported instance.");
 } catch (error) {
-    console.error("Error initializing Firebase Functions SDK:", error);
-    // Display an error message to the user?
+    console.error("Error creating callable function reference:", error);
+    // Handle error - maybe disable the claim button?
 }
-// ***** END INITIALIZATION BLOCK *****
 
   const splashScreen = document.getElementById('splashScreen');
   const welcomeScreen = document.getElementById('welcomeScreen');
