@@ -11,10 +11,10 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 // app.js - Global scope, after imports
 
 // Initialize Firebase Functions SDK globally
-const functions = getFunctions(); // Use the imported getFunctions
+const functions = getFunctions(app, 'us-central1'); // Use the imported getFunctions
 // Create a reference to your deployed cloud function
 const generateCmeCertificateFunction = httpsCallable(functions, 'generateCmeCertificate');
-console.log("Firebase Functions SDK initialized and callable function reference created.");
+console.log("Firebase Functions SDK initialized (with app instance & region) and callable function reference created.");
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
