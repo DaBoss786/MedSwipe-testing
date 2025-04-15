@@ -2902,6 +2902,31 @@ async function handleCmeClaimSubmission(event) {
 
       console.log("Calling Firebase Function 'generateCmeCertificate'...");
       // Use the globally defined function reference
+
+      // ******** ADD THIS DEBUGGING BLOCK ********
+if (!auth.currentUser) {
+  console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
+  // Display error to user and stop
+  if (errorDiv) {
+      errorDiv.textContent = "Authentication error. Please reload the page and try again.";
+      errorDiv.style.color = '#dc3545'; // Error styling
+      // Apply other error styles if needed
+  }
+  cleanup(true, false); // Re-enable buttons, hide loader
+  return; // Stop execution
+} else {
+  console.log(`DEBUG: User confirmed before call. UID: ${auth.currentUser.uid}, Email: ${auth.currentUser.email}, Anonymous: ${auth.currentUser.isAnonymous}`);
+  // Optionally force token refresh (usually not needed, but can help diagnose)
+  try {
+      const idTokenResult = await auth.currentUser.getIdTokenResult(true); // Pass true to force refresh
+      console.log("DEBUG: Forced token refresh successful. New token acquired.");
+  } catch (tokenError) {
+      console.error("DEBUG: Error forcing token refresh:", tokenError);
+      // Don't necessarily stop, but log the error
+  }
+}
+// ******** END DEBUGGING BLOCK ********
+      
       const result = await generateCmeCertificateFunction({
           certificateFullName: certificateFullName, // Pass the validated name
           creditsToClaim: creditsToClaim // Pass the validated credits
