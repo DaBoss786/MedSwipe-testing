@@ -1,5 +1,5 @@
 // app.js - Top of file
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
@@ -11,7 +11,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 // app.js - Global scope, after imports
 
 // Initialize Firebase Functions SDK globally
-const functions = getFunctions(app, 'us-central1'); // Use the imported getFunctions
+const functions = getFunctions();
 // Create a reference to your deployed cloud function
 const generateCmeCertificateFunction = httpsCallable(functions, 'generateCmeCertificate');
 console.log("Firebase Functions SDK initialized (with app instance & region) and callable function reference created.");
