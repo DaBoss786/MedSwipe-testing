@@ -15,6 +15,7 @@ const functions = getFunctions();
 // Create a reference to your deployed cloud function
 const generateCmeCertificateFunction = httpsCallable(functions, 'generateCmeCertificate');
 console.log("Firebase Functions SDK initialized (with app instance & region) and callable function reference created.");
+console.log("Auth instance used by Functions SDK (expected):", auth); // Log the auth instance
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
