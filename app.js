@@ -9,16 +9,33 @@ import { displayPerformance } from './stats.js';
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
 
 // app.js - Global scope, after imports
-
-// Initialize Firebase Functions SDK globally
-const functions = getFunctions();
-// Create a reference to your deployed cloud function
-const generateCmeCertificateFunction = httpsCallable(functions, 'generateCmeCertificate');
-console.log("Firebase Functions SDK initialized (with app instance & region) and callable function reference created.");
 console.log("Auth instance used by Functions SDK (expected):", auth); // Log the auth instance
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
+  try {
+    // Ensure 'app' is imported correctly at the top of the file
+    if (typeof app === 'undefined') {
+        console.error("CRITICAL: Firebase 'app' instance not available inside DOMContentLoaded!");
+        // Handle this error appropriately - maybe show an error message
+        return;
+    }
+
+    // Initialize Functions SDK, explicitly linking the 'app' instance
+    // Make functionsSdk globally available if needed elsewhere, otherwise keep it local
+    window.functionsSdk = getFunctions(app, 'us-central1'); // Use the imported 'app'
+    console.log("Firebase Functions SDK initialized inside DOMContentLoaded (linked to app).");
+
+    // Create the callable function reference and make it globally available
+    window.generateCmeCertificateFunction = httpsCallable(window.functionsSdk, 'generateCmeCertificate');
+    console.log("Callable function reference created globally.");
+
+} catch (error) {
+    console.error("Error initializing Firebase Functions SDK:", error);
+    // Display an error message to the user?
+}
+// ***** END INITIALIZATION BLOCK *****
+
   const splashScreen = document.getElementById('splashScreen');
   const welcomeScreen = document.getElementById('welcomeScreen');
   const mainOptions = document.getElementById('mainOptions');
@@ -2902,9 +2919,15 @@ async function handleCmeClaimSubmission(event) {
       if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...'; // Update loader text
 
       console.log("Calling Firebase Function 'generateCmeCertificate'...");
-      // Use the globally defined function reference
 
-      // ******** ADD THIS DEBUGGING BLOCK ********
+// Ensure the global reference exists before calling
+if (typeof window.generateCmeCertificateFunction !== 'function') {
+  console.error("CRITICAL: generateCmeCertificateFunction is not available on window object!");
+  if (errorDiv) errorDiv.textContent = "Error: Certificate function not initialized. Please reload.";
+  cleanup(true, false);
+  return;
+}
+// ******** ADD THIS DEBUGGING BLOCK ********
 if (!auth.currentUser) {
   console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
   // Display error to user and stop
@@ -2927,11 +2950,12 @@ if (!auth.currentUser) {
   }
 }
 // ******** END DEBUGGING BLOCK ********
-      
-      const result = await generateCmeCertificateFunction({
-          certificateFullName: certificateFullName, // Pass the validated name
-          creditsToClaim: creditsToClaim // Pass the validated credits
-      });
+// Call using the window reference
+const result = await window.generateCmeCertificateFunction({ // Use window.generateCmeCertificateFunction
+  certificateFullName: certificateFullName,
+  creditsToClaim: creditsToClaim
+});
+
       console.log("Cloud Function result received:", result);
 
       // --- 4. Handle Cloud Function Response ---
