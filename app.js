@@ -40,11 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const welcomeScreen = document.getElementById('welcomeScreen');
   const mainOptions = document.getElementById('mainOptions');
 
-    // ADD THIS CODE HERE - Firebase Functions global setup
-    window.functionsSdk = getFunctions();
-    window.callCloudFunction = httpsCallable;
-    console.log("Firebase Functions SDK initialized globally");
-  
   // Immediately hide the dashboard to prevent it from being visible at any point
   if (mainOptions) {
     mainOptions.style.display = 'none';
