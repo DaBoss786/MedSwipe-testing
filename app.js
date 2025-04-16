@@ -2937,67 +2937,63 @@ if (!auth.currentUser) {
       // --- 4. Handle Cloud Function Response ---
       cleanup(false, false); // Hide loader, keep buttons disabled initially
 
-      if (result.data.success && result.data.downloadUrl) {
-          // SUCCESS from Cloud Function
-          const downloadUrl = result.data.downloadUrl;
-          const pdfFileName = result.data.fileName || 'CME_Certificate.pdf'; // Use filename from function
-          console.log("Certificate generated successfully. URL:", downloadUrl);
+      // --- MODIFIED HANDLING FOR PUBLIC URL ---
+      if (result.data.success && result.data.publicUrl) {
+        // SUCCESS from Cloud Function
+        const publicUrl = result.data.publicUrl; // Get publicUrl
+        const pdfFileName = result.data.fileName || 'CME_Certificate.pdf';
+        console.log("Certificate generated successfully. Public URL:", publicUrl);
 
-          // --- Optional: Update Firestore History with URL ---
-          // You might want to save the download URL and filename to the history entry
-          // This requires another Firestore operation (setDoc with merge:true or updateDoc)
-          // Example (add this if needed):
-          try {
-              const userDocSnap = await getDoc(userDocRef);
-              if (userDocSnap.exists()) {
-                  let currentData = userDocSnap.data();
-                  let history = currentData.cmeClaimHistory || [];
-                  const entryIndex = history.findIndex(entry =>
-                      entry.timestamp && entry.timestamp.toDate &&
-                      entry.timestamp.toDate().toISOString() === claimTimestampISO
-                  );
-                  if (entryIndex > -1) {
-                      history[entryIndex].downloadUrl = downloadUrl; // Store the temporary URL
-                      history[entryIndex].pdfFileName = pdfFileName; // Store the filename
-                      await setDoc(userDocRef, { cmeClaimHistory: history }, { merge: true });
-                      console.log("Saved download URL and filename to Firestore history.");
-                  } else {
-                      console.warn("Could not find matching history entry to save URL.");
-                  }
-              }
-          } catch (updateError) {
-              console.error("Error saving download URL to Firestore:", updateError);
-              // Log but continue, user still gets the link now
-          }
-          // --- End Optional Firestore Update ---
+        // --- Optional: Update Firestore History with Public URL ---
+        try {
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                let currentData = userDocSnap.data();
+                let history = currentData.cmeClaimHistory || [];
+                const entryIndex = history.findIndex(entry =>
+                    entry.timestamp && entry.timestamp.toDate &&
+                    entry.timestamp.toDate().toISOString() === claimTimestampISO
+                );
+                if (entryIndex > -1) {
+                    // --- SAVE PUBLIC URL ---
+                    history[entryIndex].downloadUrl = publicUrl; // Use the same field name for simplicity or rename
+                    history[entryIndex].pdfFileName = pdfFileName;
+                    await setDoc(userDocRef, { cmeClaimHistory: history }, { merge: true });
+                    console.log("Saved public URL and filename to Firestore history.");
+                } else {
+                    console.warn("Could not find matching history entry to save URL.");
+                }
+            }
+        } catch (updateError) {
+            console.error("Error saving public URL to Firestore:", updateError);
+        }
+        // --- End Optional Firestore Update ---
 
+        // --- Display Download Link in Modal using Public URL ---
+        if (errorDiv) {
+            errorDiv.innerHTML = `
+                <p style="color: #28a745; font-weight: bold; margin-bottom: 15px;">Claim successful! Your certificate is ready.</p>
+                <a href="${publicUrl}" target="_blank" download="${pdfFileName}" class="auth-primary-btn" style="display: inline-block; margin-top: 10px; text-decoration: none; padding: 10px 15px; font-size: 1em;">
+                    Download Certificate (PDF)
+                </a>
+                <p style="font-size: 0.85em; margin-top: 15px; color: #555;">A record of this claim has been saved to your history. You may also receive an email shortly.</p>
+            `;
+            // Apply success styling (border, background, etc.)
+            errorDiv.style.border = '1px solid #c3e6cb';
+            errorDiv.style.backgroundColor = '#d4edda';
+            // ... other styles ...
+        } else {
+            alert(`Claim successful! Download certificate: ${publicUrl}`); // Fallback
+        }
+        // Hide original buttons after success
+        if(submitButton) submitButton.style.display = 'none';
+        if(cancelButton) cancelButton.style.display = 'none';
 
-          // --- Display Download Link in Modal ---
-          if (errorDiv) {
-              errorDiv.innerHTML = `
-                  <p style="color: #28a745; font-weight: bold; margin-bottom: 15px;">Claim successful! Your certificate is ready.</p>
-                  <a href="${downloadUrl}" target="_blank" download="${pdfFileName}" class="auth-primary-btn" style="display: inline-block; margin-top: 10px; text-decoration: none; padding: 10px 15px; font-size: 1em;">
-                      Download Certificate (PDF)
-                  </a>
-                  <p style="font-size: 0.85em; margin-top: 15px; color: #555;">A record of this claim has been saved to your history. The download link will expire in 7 days.</p>
-              `;
-              // Apply success styling
-              errorDiv.style.border = '1px solid #c3e6cb';
-              errorDiv.style.backgroundColor = '#d4edda';
-              errorDiv.style.padding = '15px';
-              errorDiv.style.borderRadius = '5px';
-              errorDiv.style.textAlign = 'center';
-          } else {
-              alert(`Claim successful! Download certificate: ${downloadUrl}`); // Fallback
-          }
-          // Hide original buttons after success
-          if(submitButton) submitButton.style.display = 'none';
-          if(cancelButton) cancelButton.style.display = 'none';
-
-      } else {
-          // FAILURE reported by Cloud Function
-          throw new Error(result.data.error || 'Cloud function did not return a success status or download URL.');
-      }
+    } else {
+        // FAILURE reported by Cloud Function
+        throw new Error(result.data.error || 'Cloud function did not return a success status or public URL.');
+    }
+    // --- END MODIFIED HANDLING ---
 
       // --- 5. Refresh Dashboard Data ---
       if(typeof loadCmeDashboardData === 'function') {
