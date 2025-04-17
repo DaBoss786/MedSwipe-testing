@@ -2905,15 +2905,9 @@ async function handleCmeClaimSubmission(event) {
       if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...'; // Update loader text
 
       console.log("Calling Firebase Function 'generateCmeCertificate'...");
+      // Use the globally defined function reference
 
-// Ensure the global reference exists before calling
-if (typeof window.generateCmeCertificateFunction !== 'function') {
-  console.error("CRITICAL: generateCmeCertificateFunction is not available on window object!");
-  if (errorDiv) errorDiv.textContent = "Error: Certificate function not initialized. Please reload.";
-  cleanup(true, false);
-  return;
-}
-// ******** ADD THIS DEBUGGING BLOCK ********
+      // ******** ADD THIS DEBUGGING BLOCK ********
 if (!auth.currentUser) {
   console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
   // Display error to user and stop
@@ -2936,83 +2930,83 @@ if (!auth.currentUser) {
   }
 }
 // ******** END DEBUGGING BLOCK ********
-// Call using the window reference
-const result = await window.generateCmeCertificateFunction({ // Use window.generateCmeCertificateFunction
-  certificateFullName: certificateFullName,
-  creditsToClaim: creditsToClaim
-});
-
+      
+      const result = await generateCmeCertificateFunction({
+          certificateFullName: certificateFullName, // Pass the validated name
+          creditsToClaim: creditsToClaim // Pass the validated credits
+      });
       console.log("Cloud Function result received:", result);
 
-      // --- 4. Handle Cloud Function Response ---
-      cleanup(false, false); // Hide loader, keep buttons disabled initially
+  // --- 4. Handle Cloud Function Response ---
+cleanup(false, false); // hide loader
 
-      if (result.data.success && result.data.downloadUrl) {
-          // SUCCESS from Cloud Function
-          const downloadUrl = result.data.downloadUrl;
-          const pdfFileName = result.data.fileName || 'CME_Certificate.pdf'; // Use filename from function
-          console.log("Certificate generated successfully. URL:", downloadUrl);
+console.log("Detailed Check - Success value:", result.data.success, "(Type:", typeof result.data.success + ")");
+console.log("Detailed Check - Public URL value:", result.data.publicUrl, "(Type:", typeof result.data.publicUrl + ")");
 
-          // --- Optional: Update Firestore History with URL ---
-          // You might want to save the download URL and filename to the history entry
-          // This requires another Firestore operation (setDoc with merge:true or updateDoc)
-          // Example (add this if needed):
-          try {
-              const userDocSnap = await getDoc(userDocRef);
-              if (userDocSnap.exists()) {
-                  let currentData = userDocSnap.data();
-                  let history = currentData.cmeClaimHistory || [];
-                  const entryIndex = history.findIndex(entry =>
-                      entry.timestamp && entry.timestamp.toDate &&
-                      entry.timestamp.toDate().toISOString() === claimTimestampISO
-                  );
-                  if (entryIndex > -1) {
-                      history[entryIndex].downloadUrl = downloadUrl; // Store the temporary URL
-                      history[entryIndex].pdfFileName = pdfFileName; // Store the filename
-                      await setDoc(userDocRef, { cmeClaimHistory: history }, { merge: true });
-                      console.log("Saved download URL and filename to Firestore history.");
-                  } else {
-                      console.warn("Could not find matching history entry to save URL.");
-                  }
-              }
-          } catch (updateError) {
-              console.error("Error saving download URL to Firestore:", updateError);
-              // Log but continue, user still gets the link now
-          }
-          // --- End Optional Firestore Update ---
+// Check if the function reported success AND provided a public URL string
+if (result.data.success === true && typeof result.data.publicUrl === 'string' && result.data.publicUrl.length > 0) {
+    // ✅ Success!
+    const publicUrl = result.data.publicUrl;
+    // Try to get a filename, default if not provided by function
+    const pdfFileName = result.data.fileName || `CME_Certificate_${certificateFullName.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+    console.log("Certificate generated successfully. Public URL:", publicUrl);
 
+    // 📌 Inject the download link into your modal
+    const linkContainer = document.getElementById("claimModalLink");
+    if (linkContainer) {
+        console.log("Found link container (claimModalLink). Injecting link.");
+        linkContainer.innerHTML = `
+            <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
+              🎉 Your CME certificate is ready!
+            </p>
+            <a href="${publicUrl}"
+               target="_blank"  
+               download="${pdfFileName}"
+               class="auth-primary-btn"
+               style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px;">
+              📄 Download Certificate
+            </a>
+            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab. You might need to allow pop-ups.)</p>
+        `;
+        // Hide the submit/cancel buttons after success
+        if (submitButton) submitButton.style.display = 'none';
+        if (cancelButton) cancelButton.style.display = 'none';
+        // Show the close button clearly
+        const closeButton = document.getElementById('closeCmeClaimModal');
+        if(closeButton) closeButton.style.display = 'block'; // Make sure close is visible
 
-          // --- Display Download Link in Modal ---
-          if (errorDiv) {
-              errorDiv.innerHTML = `
-                  <p style="color: #28a745; font-weight: bold; margin-bottom: 15px;">Claim successful! Your certificate is ready.</p>
-                  <a href="${downloadUrl}" target="_blank" download="${pdfFileName}" class="auth-primary-btn" style="display: inline-block; margin-top: 10px; text-decoration: none; padding: 10px 15px; font-size: 1em;">
-                      Download Certificate (PDF)
-                  </a>
-                  <p style="font-size: 0.85em; margin-top: 15px; color: #555;">A record of this claim has been saved to your history. The download link will expire in 7 days.</p>
-              `;
-              // Apply success styling
-              errorDiv.style.border = '1px solid #c3e6cb';
-              errorDiv.style.backgroundColor = '#d4edda';
-              errorDiv.style.padding = '15px';
-              errorDiv.style.borderRadius = '5px';
-              errorDiv.style.textAlign = 'center';
-          } else {
-              alert(`Claim successful! Download certificate: ${downloadUrl}`); // Fallback
-          }
-          // Hide original buttons after success
-          if(submitButton) submitButton.style.display = 'none';
-          if(cancelButton) cancelButton.style.display = 'none';
+    } else {
+        console.error("CRITICAL: Could not find the element with id='claimModalLink' in your HTML to display the download link!");
+        if (errorDiv) errorDiv.textContent = "Internal error: Cannot display download link (missing HTML element).";
+        // Still show the URL in the error div as a fallback
+         if (errorDiv) {
+             errorDiv.innerHTML += `<br>Certificate URL (Copy manually): <input type='text' value='${publicUrl}' readonly style='width: 80%; font-size: 0.8em;'>`;
+         }
+         cleanup(true, false); // Re-enable buttons if link injection failed
+    }
 
-      } else {
-          // FAILURE reported by Cloud Function
-          throw new Error(result.data.error || 'Cloud function did not return a success status or download URL.');
-      }
+} else {
+    // ❌ Failure
+    console.error("Condition for success failed. Result data:", result.data);
+    // Construct a more informative error message
+    let failureReason = "Cloud function failed.";
+    if (!result.data.success) {
+        failureReason = `Cloud function reported failure (success flag is not true). Error: ${result.data.error || 'Unknown error'}`;
+    } else if (typeof result.data.publicUrl !== 'string' || result.data.publicUrl.length === 0) {
+        failureReason = "Cloud function succeeded but did not return a valid public URL string.";
+    } else {
+         failureReason = `Unexpected state. Success: ${result.data.success}, URL: ${result.data.publicUrl}`;
+    }
 
-      // --- 5. Refresh Dashboard Data ---
-      if(typeof loadCmeDashboardData === 'function') {
-          setTimeout(() => loadCmeDashboardData(), 500); // Refresh after a short delay
-      }
+    // Throw the specific error based on our checks
+    throw new Error(failureReason);
+}
+
+// --- 5. Refresh Dashboard Data (if you have that) ---
+if (typeof loadCmeDashboardData === 'function') {
+    setTimeout(loadCmeDashboardData, 500); // Refresh dashboard after a short delay
+}
+
 
   } catch (error) { // Catch errors from Validation, Firestore Transaction, or Cloud Function Call
       console.error("Error during claim processing:", error);
