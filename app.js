@@ -2898,122 +2898,61 @@ async function handleCmeClaimSubmission(event) {
       // --- End of Firestore Transaction ---
 
 
-      // --- 3. Call the Cloud Function ---
-      if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...'; // Update loader text
+        // --- 3. Call the Cloud Function ---
+  if (loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...';
+  console.log("Calling Firebase Function 'generateCmeCertificate'...");
+  const result = await generateCmeCertificateFunction({
+    certificateFullName,
+    creditsToClaim
+  });
+  console.log("Cloud Function result received:", result);
+  console.log("Result data payload:", result.data);
+  console.log("→ Public URL:", result.data.publicUrl);
 
-      console.log("Calling Firebase Function 'generateCmeCertificate'...");
-      // Use the globally defined function reference
+  // --- 4. Handle Cloud Function Response ---
+  cleanup(false, false); // hide loader
 
-      // ******** ADD THIS DEBUGGING BLOCK ********
-if (!auth.currentUser) {
-  console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
-  // Display error to user and stop
-  if (errorDiv) {
-      errorDiv.textContent = "Authentication error. Please reload the page and try again.";
-      errorDiv.style.color = '#dc3545'; // Error styling
-      // Apply other error styles if needed
-  }
-  cleanup(true, false); // Re-enable buttons, hide loader
-  return; // Stop execution
-} else {
-  console.log(`DEBUG: User confirmed before call. UID: ${auth.currentUser.uid}, Email: ${auth.currentUser.email}, Anonymous: ${auth.currentUser.isAnonymous}`);
-  // Optionally force token refresh (usually not needed, but can help diagnose)
-  try {
-      const idTokenResult = await auth.currentUser.getIdTokenResult(true); // Pass true to force refresh
-      console.log("DEBUG: Forced token refresh successful. New token acquired.");
-  } catch (tokenError) {
-      console.error("DEBUG: Error forcing token refresh:", tokenError);
-      // Don't necessarily stop, but log the error
-  }
-}
-// ******** END DEBUGGING BLOCK ********
-      
-      const result = await generateCmeCertificateFunction({
-          certificateFullName: certificateFullName, // Pass the validated name
-          creditsToClaim: creditsToClaim // Pass the validated credits
-      });
-      console.log("Cloud Function result received:", result);
-      console.log("Result data payload:", result.data);
-      console.log("→ Public URL:", result.data.publicUrl);
+  // 🔑 Make sure we check for publicUrl (not downloadUrl)
+  if (result.data.success && result.data.publicUrl) {
+    // ✅ Success!
+    const publicUrl = result.data.publicUrl;
+    const pdfFileName = result.data.fileName || 'CME_Certificate.pdf';
+    console.log("Certificate generated successfully. Public URL:", publicUrl);
 
-      // --- 4. Handle Cloud Function Response ---
-      cleanup(false, false); // Hide loader, keep buttons disabled initially
-
-      // --- MODIFIED HANDLING FOR PUBLIC URL ---
-      if (result.data.success && result.data.publicUrl) {
-        // SUCCESS from Cloud Function
-        const publicUrl = result.data.publicUrl; // Get publicUrl
-        const pdfFileName = result.data.fileName || 'CME_Certificate.pdf';
-        console.log("Certificate generated successfully. Public URL:", publicUrl);
-
-        // 📌 Inject the download link into the modal
-const linkContainer = document.getElementById("claimModalLink");
-if (linkContainer) {
-  linkContainer.innerHTML = `
-    <p>Your CME certificate is ready!</p>
-    <a href="${publicUrl}" target="_blank" rel="noopener">
-      📄 Download Certificate
-    </a>
-  `;
-} else {
-  console.warn("claimModalLink container not found in DOM");
-}
-
-        // --- Optional: Update Firestore History with Public URL ---
-        try {
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                let currentData = userDocSnap.data();
-                let history = currentData.cmeClaimHistory || [];
-                const entryIndex = history.findIndex(entry =>
-                    entry.timestamp && entry.timestamp.toDate &&
-                    entry.timestamp.toDate().toISOString() === claimTimestampISO
-                );
-                if (entryIndex > -1) {
-                    // --- SAVE PUBLIC URL ---
-                    history[entryIndex].downloadUrl = publicUrl; // Use the same field name for simplicity or rename
-                    history[entryIndex].pdfFileName = pdfFileName;
-                    await setDoc(userDocRef, { cmeClaimHistory: history }, { merge: true });
-                    console.log("Saved public URL and filename to Firestore history.");
-                } else {
-                    console.warn("Could not find matching history entry to save URL.");
-                }
-            }
-        } catch (updateError) {
-            console.error("Error saving public URL to Firestore:", updateError);
-        }
-        // --- End Optional Firestore Update ---
-
-        // --- Display Download Link in Modal using Public URL ---
-        if (errorDiv) {
-            errorDiv.innerHTML = `
-                <p style="color: #28a745; font-weight: bold; margin-bottom: 15px;">Claim successful! Your certificate is ready.</p>
-                <a href="${publicUrl}" target="_blank" download="${pdfFileName}" class="auth-primary-btn" style="display: inline-block; margin-top: 10px; text-decoration: none; padding: 10px 15px; font-size: 1em;">
-                    Download Certificate (PDF)
-                </a>
-                <p style="font-size: 0.85em; margin-top: 15px; color: #555;">A record of this claim has been saved to your history. You may also receive an email shortly.</p>
-            `;
-            // Apply success styling (border, background, etc.)
-            errorDiv.style.border = '1px solid #c3e6cb';
-            errorDiv.style.backgroundColor = '#d4edda';
-            // ... other styles ...
-        } else {
-            alert(`Claim successful! Download certificate: ${publicUrl}`); // Fallback
-        }
-        // Hide original buttons after success
-        if(submitButton) submitButton.style.display = 'none';
-        if(cancelButton) cancelButton.style.display = 'none';
-
+    // 📌 Inject the download link into your modal
+    const linkContainer = document.getElementById("claimModalLink");
+    if (linkContainer) {
+      linkContainer.innerHTML = `
+        <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
+          🎉 Your CME certificate is ready!
+        </p>
+        <a href="${publicUrl}"
+           download="${pdfFileName}"
+           class="auth-primary-btn"
+           style="display: inline-block; padding: 10px 15px; text-decoration: none;">
+          📄 Download Certificate
+        </a>
+      `;
     } else {
-        // FAILURE reported by Cloud Function
-        throw new Error(result.data.error || 'Cloud function did not return a success status or public URL.');
+      console.warn("claimModalLink container not found in DOM");
     }
-    // --- END MODIFIED HANDLING ---
 
-      // --- 5. Refresh Dashboard Data ---
-      if(typeof loadCmeDashboardData === 'function') {
-          setTimeout(() => loadCmeDashboardData(), 500); // Refresh after a short delay
-      }
+    // (Optional) save publicUrl to Firestore here...
+    // …your existing Firestore-history code…
+
+  } else {
+    // ❌ Failure
+    throw new Error(
+      result.data.error ||
+      "Cloud function did not return a success status or publicUrl."
+    );
+  }
+
+  // --- 5. Refresh Dashboard Data (if you have that) ---
+  if (typeof loadCmeDashboardData === 'function') {
+    setTimeout(loadCmeDashboardData, 500);
+  }
+
 
   } catch (error) { // Catch errors from Validation, Firestore Transaction, or Cloud Function Call
       console.error("Error during claim processing:", error);
