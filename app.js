@@ -2933,6 +2933,8 @@ if (!auth.currentUser) {
           creditsToClaim: creditsToClaim // Pass the validated credits
       });
       console.log("Cloud Function result received:", result);
+      console.log("Result data payload:", result.data);
+
 
       // --- 4. Handle Cloud Function Response ---
       cleanup(false, false); // Hide loader, keep buttons disabled initially
