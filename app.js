@@ -2934,7 +2934,7 @@ if (!auth.currentUser) {
       });
       console.log("Cloud Function result received:", result);
       console.log("Result data payload:", result.data);
-
+      console.log("→ Public URL:", result.data.publicUrl);
 
       // --- 4. Handle Cloud Function Response ---
       cleanup(false, false); // Hide loader, keep buttons disabled initially
@@ -2945,6 +2945,19 @@ if (!auth.currentUser) {
         const publicUrl = result.data.publicUrl; // Get publicUrl
         const pdfFileName = result.data.fileName || 'CME_Certificate.pdf';
         console.log("Certificate generated successfully. Public URL:", publicUrl);
+
+        // 📌 Inject the download link into the modal
+const linkContainer = document.getElementById("claimModalLink");
+if (linkContainer) {
+  linkContainer.innerHTML = `
+    <p>Your CME certificate is ready!</p>
+    <a href="${publicUrl}" target="_blank" rel="noopener">
+      📄 Download Certificate
+    </a>
+  `;
+} else {
+  console.warn("claimModalLink container not found in DOM");
+}
 
         // --- Optional: Update Firestore History with Public URL ---
         try {
