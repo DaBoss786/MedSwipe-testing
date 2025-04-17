@@ -2910,48 +2910,74 @@ async function handleCmeClaimSubmission(event) {
   console.log("→ Public URL:", result.data.publicUrl);
 
   // --- 4. Handle Cloud Function Response ---
-  cleanup(false, false); // hide loader
+cleanup(false, false); // hide loader
 
-  // 🔑 Make sure we check for publicUrl (not downloadUrl)
-  if (result.data.success && result.data.publicUrl) {
+console.log("Detailed Check - Success value:", result.data.success, "(Type:", typeof result.data.success + ")");
+console.log("Detailed Check - Public URL value:", result.data.publicUrl, "(Type:", typeof result.data.publicUrl + ")");
+
+// Check if the function reported success AND provided a public URL string
+if (result.data.success === true && typeof result.data.publicUrl === 'string' && result.data.publicUrl.length > 0) {
     // ✅ Success!
     const publicUrl = result.data.publicUrl;
-    const pdfFileName = result.data.fileName || 'CME_Certificate.pdf';
+    // Try to get a filename, default if not provided by function
+    const pdfFileName = result.data.fileName || `CME_Certificate_${certificateFullName.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
     console.log("Certificate generated successfully. Public URL:", publicUrl);
 
     // 📌 Inject the download link into your modal
     const linkContainer = document.getElementById("claimModalLink");
     if (linkContainer) {
-      linkContainer.innerHTML = `
-        <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-          🎉 Your CME certificate is ready!
-        </p>
-        <a href="${publicUrl}"
-           download="${pdfFileName}"
-           class="auth-primary-btn"
-           style="display: inline-block; padding: 10px 15px; text-decoration: none;">
-          📄 Download Certificate
-        </a>
-      `;
+        console.log("Found link container (claimModalLink). Injecting link.");
+        linkContainer.innerHTML = `
+            <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
+              🎉 Your CME certificate is ready!
+            </p>
+            <a href="${publicUrl}"
+               target="_blank"  
+               download="${pdfFileName}"
+               class="auth-primary-btn"
+               style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px;">
+              📄 Download Certificate
+            </a>
+            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab. You might need to allow pop-ups.)</p>
+        `;
+        // Hide the submit/cancel buttons after success
+        if (submitButton) submitButton.style.display = 'none';
+        if (cancelButton) cancelButton.style.display = 'none';
+        // Show the close button clearly
+        const closeButton = document.getElementById('closeCmeClaimModal');
+        if(closeButton) closeButton.style.display = 'block'; // Make sure close is visible
+
     } else {
-      console.warn("claimModalLink container not found in DOM");
+        console.error("CRITICAL: Could not find the element with id='claimModalLink' in your HTML to display the download link!");
+        if (errorDiv) errorDiv.textContent = "Internal error: Cannot display download link (missing HTML element).";
+        // Still show the URL in the error div as a fallback
+         if (errorDiv) {
+             errorDiv.innerHTML += `<br>Certificate URL (Copy manually): <input type='text' value='${publicUrl}' readonly style='width: 80%; font-size: 0.8em;'>`;
+         }
+         cleanup(true, false); // Re-enable buttons if link injection failed
     }
 
-    // (Optional) save publicUrl to Firestore here...
-    // …your existing Firestore-history code…
-
-  } else {
+} else {
     // ❌ Failure
-    throw new Error(
-      result.data.error ||
-      "Cloud function did not return a success status or publicUrl."
-    );
-  }
+    console.error("Condition for success failed. Result data:", result.data);
+    // Construct a more informative error message
+    let failureReason = "Cloud function failed.";
+    if (!result.data.success) {
+        failureReason = `Cloud function reported failure (success flag is not true). Error: ${result.data.error || 'Unknown error'}`;
+    } else if (typeof result.data.publicUrl !== 'string' || result.data.publicUrl.length === 0) {
+        failureReason = "Cloud function succeeded but did not return a valid public URL string.";
+    } else {
+         failureReason = `Unexpected state. Success: ${result.data.success}, URL: ${result.data.publicUrl}`;
+    }
 
-  // --- 5. Refresh Dashboard Data (if you have that) ---
-  if (typeof loadCmeDashboardData === 'function') {
-    setTimeout(loadCmeDashboardData, 500);
-  }
+    // Throw the specific error based on our checks
+    throw new Error(failureReason);
+}
+
+// --- 5. Refresh Dashboard Data (if you have that) ---
+if (typeof loadCmeDashboardData === 'function') {
+    setTimeout(loadCmeDashboardData, 500); // Refresh dashboard after a short delay
+}
 
 
   } catch (error) { // Catch errors from Validation, Firestore Transaction, or Cloud Function Call
