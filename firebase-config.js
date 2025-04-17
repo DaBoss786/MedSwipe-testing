@@ -10,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
   authDomain: "medswipe-648ee.firebaseapp.com",
   projectId: "medswipe-648ee",
-  storageBucket: "medswipe-648ee.appspot.com",
+  storageBucket: "medswipe-648ee.firebasestorage.app",
   messagingSenderId: "288366122490",
   appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
   measurementId: "G-748P8P634B"
