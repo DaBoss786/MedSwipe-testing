@@ -555,7 +555,13 @@ function addOptionListeners() {
                             // Show the CME Dashboard and refresh its data
                             if (typeof showCmeDashboard === 'function') {
                                 showCmeDashboard(); // This calls loadCmeDashboardData
-                            } else { /* fallback */ }
+                            } else {
+                              console.error("showCmeDashboard function not found from quiz.js!"); // <<< Make sure this log is here
+                              // Fallback: Try to show main options if dashboard function fails
+                              const mainOpts = document.getElementById("mainOptions");
+                              if(mainOpts) mainOpts.style.display = "flex";
+                              alert("Error: Could not navigate back to the dashboard.");
+                           }
                         });
                         // --- End CME Action ---
 
