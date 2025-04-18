@@ -694,6 +694,8 @@ window.addEventListener('load', function() {
   if (performanceItemUser) {
     performanceItemUser.addEventListener("click", function() {
       closeUserMenu();
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
       window.displayPerformance(); 
     });
   }
@@ -704,6 +706,8 @@ window.addEventListener('load', function() {
     bookmarksFilterUser.addEventListener("click", function(e) {
       e.preventDefault();
       closeUserMenu();
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
       
       // Start a quiz with only bookmarked questions
       loadQuestions({
@@ -749,6 +753,8 @@ window.addEventListener('load', function() {
         alert("There was an error resetting your progress.");
       }
       closeUserMenu();
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
     });
   }
   
@@ -853,6 +859,8 @@ window.addEventListener('load', function() {
     bookmarksFilter.addEventListener("click", function(e) {
       e.preventDefault();
       closeSideMenu();
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
     });
   }
   
@@ -883,6 +891,9 @@ window.addEventListener('load', function() {
       
       const aboutView = document.getElementById("aboutView");
       if (aboutView) aboutView.style.display = "none";
+
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
       
       const mainOptions = document.getElementById("mainOptions");
       if (mainOptions) mainOptions.style.display = "flex";
@@ -894,6 +905,8 @@ window.addEventListener('load', function() {
   if (leaderboardItem) {
     leaderboardItem.addEventListener("click", function() {
       closeSideMenu();
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
       showLeaderboard();
     });
   }
@@ -903,6 +916,8 @@ window.addEventListener('load', function() {
   if (faqItem) {
     faqItem.addEventListener("click", function() {
       closeSideMenu();
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
       showFAQ();
     });
   }
@@ -912,6 +927,8 @@ window.addEventListener('load', function() {
   if (aboutItem) {
     aboutItem.addEventListener("click", function() {
       closeSideMenu();
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
       showAbout();
     });
   }
@@ -942,6 +959,9 @@ window.addEventListener('load', function() {
       
       const faqView = document.getElementById("faqView");
       if (faqView) faqView.style.display = "none";
+
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+if (cmeDashboard) cmeDashboard.style.display = "none";
       
       const mainOptions = document.getElementById("mainOptions");
       if (mainOptions) mainOptions.style.display = "none";
@@ -1004,6 +1024,9 @@ window.addEventListener('load', function() {
       
       const leaderboardView = document.getElementById("leaderboardView");
       if (leaderboardView) leaderboardView.style.display = "none";
+
+      const cmeDashboard = document.getElementById("cmeDashboardView");
+    if (cmeDashboard) cmeDashboard.style.display = "none";
       
       const mainOptions = document.getElementById("mainOptions");
       if (mainOptions) mainOptions.style.display = "flex";

@@ -21,6 +21,9 @@ function showLeaderboard() {
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
+
   document.getElementById("leaderboardView").style.display = "block";
   
   // Use the loadOverallData function from window object
@@ -51,7 +54,8 @@ function showAbout() {
   document.getElementById("leaderboardView").style.display = "none";
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("faqView").style.display = "none";
-  
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
   document.getElementById("aboutView").innerHTML = `
     <h2>About MedSwipe</h2>
     <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.</p>
@@ -75,7 +79,8 @@ function showFAQ() {
   document.getElementById("leaderboardView").style.display = "none";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("mainOptions").style.display = "none";
-  
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
   document.getElementById("faqView").innerHTML = `
     <h2>FAQ</h2>
     <ul>
