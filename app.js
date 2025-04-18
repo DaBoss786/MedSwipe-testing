@@ -2958,7 +2958,7 @@ if (result.data.success === true && typeof result.data.publicUrl === 'string' &&
 
     // --- ADD CODE HERE TO SAVE LINK TO FIRESTORE HISTORY ---
     try {
-      logger.log("Attempting to update Firestore history with certificate URL..."); // Use logger if available, else console.log
+      console.log("Attempting to update Firestore history with certificate URL..."); // Use logger if available, else console.log
       const userDoc = await getDoc(userDocRef); // Get the latest user doc data again
       if (userDoc.exists()) {
           let history = userDoc.data().cmeClaimHistory || [];
@@ -2977,13 +2977,15 @@ if (result.data.success === true && typeof result.data.publicUrl === 'string' &&
 
               // Update the document with the modified history array
               await updateDoc(userDocRef, { cmeClaimHistory: history });
-              logger.log(`Successfully updated history entry at index ${historyIndex} with URL.`); // Use logger if available, else console.log
+              console.log(`Successfully updated history entry at index ${historyIndex} with URL.`); // Use logger if available, else console.log
           } else {
-               logger.warn("Could not find the exact history entry to update with URL based on timestamp.", { claimTimestampISO: claimTimestamp.toISOString() }); // Use logger if available, else console.warn
+               console.warn("Could not find the exact history entry to update with URL based on timestamp.", { claimTimestampISO: claimTimestamp.toISOString() }); // Use logger if available, else console.warn
           }
+        } else {
+          console.warn("User document doesn't exist while trying to update history."); // Added check
       }
   } catch (updateError) {
-       logger.error("Error updating Firestore history with certificate URL:", updateError); // Use logger if available, else console.error
+       console.error("Error updating Firestore history with certificate URL:", updateError); // Use logger if available, else console.error
        // Don't stop the user flow, but log the error. The link is still available in the modal.
   }
   // --- END OF CODE TO SAVE LINK TO FIRESTORE HISTORY ---
