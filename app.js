@@ -2649,87 +2649,90 @@ async function checkUserCmeSubscriptionStatus() {
 
 // Function to show the CME Dashboard and hide others
 function showCmeDashboard() {
-    console.log("Attempting to show CME Dashboard..."); // For debugging
+  console.log("Executing showCmeDashboard..."); // For debugging START
 
-    // Define IDs of all top-level views to hide
-    const viewsToHide = [
-        "mainOptions",
-        "performanceView",
-        "leaderboardView",
-        "aboutView",
-        "faqView",
-        "welcomeScreen", // Add welcome/splash if they might be visible
-        "splashScreen",
-        "loginScreen",
-        "onboardingLoadingScreen" // Add onboarding loading screen
-        // Add any other top-level view IDs here
-    ];
-    // Define IDs of modals/forms to hide
-    const modalsToHide = [
-        "customQuizForm",
-        "randomQuizForm",
-        "quizSetupModal",
-        "contactModal",
-        "feedbackModal",
-        "loginModal",
-        "registerModal",
-        "forgotPasswordModal",
-        "registrationBenefitsModal",
-        "termsOfServiceModal", // Add TOS/Privacy modals
-        "privacyPolicyModal"
-        // Add other modal IDs
-    ];
-    // Define elements related to the quiz interface
-    const quizElementsToHide = [
-        ".swiper", // Use class selector for swiper container
-        "#bottomToolbar",
-        "#iconBar"
-    ];
+  // Define IDs of all top-level views to hide
+  const viewsToHide = [
+      "mainOptions",
+      "performanceView",
+      "leaderboardView",
+      "aboutView",
+      "faqView",
+      "welcomeScreen",
+      "splashScreen",
+      "loginScreen",
+      "onboardingLoadingScreen"
+      // Add any other top-level view IDs here
+  ];
+  // Define IDs of modals/forms to hide
+  const modalsToHide = [
+      "customQuizForm",
+      "randomQuizForm",
+      "quizSetupModal",
+      "cmeQuizSetupModal", // Added CME setup modal
+      "cmeClaimModal",     // Added CME claim modal
+      "contactModal",
+      "feedbackModal",
+      "loginModal",
+      "registerModal",
+      "forgotPasswordModal",
+      "registrationBenefitsModal",
+      "termsOfServiceModal",
+      "privacyPolicyModal"
+      // Add other modal IDs
+  ];
+  // Define elements related to the quiz interface using querySelector for flexibility
+  const quizSelectorsToHide = [
+      ".swiper",        // The main quiz container
+      "#bottomToolbar", // Quiz progress/score bar
+      "#iconBar"        // Favorite/Feedback buttons during quiz
+  ];
 
-    // Hide all other views
-    viewsToHide.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.style.display = "none";
-             // console.log(`Hid view: #${id}`);
-        } else {
-            // console.warn(`View element with ID #${id} not found.`);
-        }
-    });
+  // Hide all standard views
+  viewsToHide.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+          element.style.display = "none";
+          console.log(`Hid view: #${id}`);
+      } else {
+          // console.warn(`View element with ID #${id} not found.`);
+      }
+  });
 
-    // Hide all modals
-    modalsToHide.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            // Modals might use 'flex' or 'block', setting to 'none' is safest
-            element.style.display = "none";
-             // console.log(`Hid modal: #${id}`);
-        } else {
-             // console.warn(`Modal element with ID #${id} not found.`);
-        }
-    });
+  // Hide all modals
+  modalsToHide.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+          element.style.display = "none";
+          console.log(`Hid modal: #${id}`);
+      } else {
+           // console.warn(`Modal element with ID #${id} not found.`);
+      }
+  });
 
-     // Hide quiz interface elements
-     quizElementsToHide.forEach(selector => {
-        const element = document.querySelector(selector); // Use querySelector for class/tag
-        if (element) {
-            element.style.display = "none";
-             // console.log(`Hid quiz element: ${selector}`);
-        } else {
-             // console.warn(`Quiz element with selector ${selector} not found.`);
-        }
-    });
+   // Hide quiz interface elements
+   quizSelectorsToHide.forEach(selector => {
+      const element = document.querySelector(selector); // Use querySelector
+      if (element) {
+          element.style.display = "none";
+          console.log(`Hid quiz element: ${selector}`);
+      } else {
+           console.warn(`Quiz element with selector ${selector} not found.`);
+      }
+  });
 
-
-    // Show the CME dashboard
-    const cmeDashboard = document.getElementById("cmeDashboardView");
-    if (cmeDashboard) {
-        cmeDashboard.style.display = "block";
-        console.log("CME Dashboard display set to 'block'."); // Confirm display change
-        loadCmeDashboardData();
-    } else {
-        console.error("CME Dashboard element (#cmeDashboardView) not found."); // Error if dashboard doesn't exist
-    }
+  // Show the CME dashboard
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) {
+      console.log("Attempting to show #cmeDashboardView...");
+      cmeDashboard.style.display = "block"; // Or 'flex' depending on your CSS
+      console.log("Set #cmeDashboardView display to 'block'.");
+      // Load data AFTER showing the view
+      loadCmeDashboardData();
+  } else {
+      console.error("CRITICAL: CME Dashboard element (#cmeDashboardView) not found.");
+  }
+  console.log("showCmeDashboard finished."); // For debugging END
 }
 
 // --- Step 12b: Helper Function to Prepare Claim Modal ---
