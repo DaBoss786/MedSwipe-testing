@@ -552,16 +552,16 @@ function addOptionListeners() {
                             if (swiperElement) swiperElement.style.display = "none";
                             if (bottomToolbar) bottomToolbar.style.display = "none";
                             if (iconBar) iconBar.style.display = "none";
-                            // Show the CME Dashboard and refresh its data
-                            if (typeof showCmeDashboard === 'function') {
-                                showCmeDashboard(); // This calls loadCmeDashboardData
-                            } else {
-                              console.error("showCmeDashboard function not found from quiz.js!"); // <<< Make sure this log is here
-                              // Fallback: Try to show main options if dashboard function fails
-                              const mainOpts = document.getElementById("mainOptions");
-                              if(mainOpts) mainOpts.style.display = "flex";
-                              alert("Error: Could not navigate back to the dashboard.");
-                           }
+                                 // Show the CME Dashboard and refresh its data (using the global function)
+     if (typeof window.showCmeDashboard === 'function') { // <<< Check window object
+      window.showCmeDashboard(); // <<< Call using window object
+  } else {
+      console.error("window.showCmeDashboard function not found from quiz.js!"); // <<< Updated error message
+      // Fallback: Try to show main options if dashboard function fails
+      const mainOpts = document.getElementById("mainOptions");
+      if(mainOpts) mainOpts.style.display = "flex";
+      alert("Error: Could not navigate back to the dashboard.");
+   }
                         });
                         // --- End CME Action ---
 

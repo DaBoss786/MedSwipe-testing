@@ -2735,6 +2735,8 @@ function showCmeDashboard() {
   console.log("showCmeDashboard finished."); // For debugging END
 }
 
+window.showCmeDashboard = showCmeDashboard; // Make the function globally accessible
+
 // --- Step 12b: Helper Function to Prepare Claim Modal ---
 
 async function prepareClaimModal() {
