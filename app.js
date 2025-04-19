@@ -3425,21 +3425,29 @@ function updatePricingView(planType) {
   const priceDisplay = document.getElementById('cmePriceDisplay');
   const annualBtn = document.getElementById('cmeAnnualBtn');
   const monthlyBtn = document.getElementById('cmeMonthlyBtn');
-  // const featureList = document.getElementById('cmeFeatureList'); // If features change
+  const annualFeatureList = document.getElementById('cmeFeatureList'); // Get annual list
+  const monthlyFeatureList = document.getElementById('cmeMonthlyFeatureList'); // Get monthly list
 
-  if (!priceDisplay || !annualBtn || !monthlyBtn) return;
+  // Exit if any essential element is missing
+  if (!priceDisplay || !annualBtn || !monthlyBtn || !annualFeatureList || !monthlyFeatureList) {
+       console.error("One or more pricing view elements are missing.");
+       return;
+  }
+
 
   if (planType === 'annual') {
       priceDisplay.textContent = '$149/year';
       annualBtn.classList.add('active');
       monthlyBtn.classList.remove('active');
-      // Update feature list or checkout button data if needed for annual
+      annualFeatureList.style.display = 'inline-block'; // Show annual features
+      monthlyFeatureList.style.display = 'none'; // Hide monthly features
       console.log("Switched to Annual pricing view.");
   } else if (planType === 'monthly') {
       priceDisplay.textContent = '$14.99/month';
       monthlyBtn.classList.add('active');
       annualBtn.classList.remove('active');
-      // Update feature list or checkout button data if needed for monthly
+      annualFeatureList.style.display = 'none'; // Hide annual features
+      monthlyFeatureList.style.display = 'inline-block'; // Show monthly features
       console.log("Switched to Monthly pricing view.");
   }
 }
