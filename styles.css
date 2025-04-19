@@ -3818,3 +3818,70 @@ html, body {
   font-size: 1.2rem;
   font-weight: bold;
 }
+
+/* Styles for CME Learn More Modal */
+#cmeLearnMoreModal .modal-content {
+  max-width: 700px; /* Allow slightly wider modal for more text */
+  max-height: 85vh; /* Limit height */
+}
+
+#cmeLearnMoreModal .modal-body {
+  padding: 15px 25px 25px 25px; /* Adjust padding */
+  line-height: 1.6; /* Improve readability */
+}
+
+#cmeLearnMoreModal h3 {
+  color: #0056b3; /* Use theme blue */
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #eee; /* Add subtle separator */
+  padding-bottom: 5px;
+}
+
+#cmeLearnMoreModal h3:first-of-type {
+  margin-top: 0; /* Remove top margin for the first heading */
+}
+
+#cmeLearnMoreModal p {
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+#cmeLearnMoreModal ul {
+  margin-bottom: 15px;
+  padding-left: 20px; /* Indent lists */
+}
+
+#cmeLearnMoreModal li {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+/* Style for the custom bullet points */
+#cmeLearnMoreModal ul[style*="list-style: none"] li span {
+  color: #0C72D3;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+/* Action Buttons Container */
+.cme-learn-more-buttons {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column; /* Stack buttons vertically */
+  gap: 10px; /* Space between buttons */
+  align-items: center; /* Center buttons horizontally */
+  padding-top: 15px;
+  border-top: 1px solid #eee; /* Separator line */
+}
+
+/* Style action buttons */
+.cme-learn-more-buttons button {
+  width: 90%; /* Make buttons wider */
+  max-width: 300px; /* Limit max width */
+  padding: 12px; /* Adjust padding */
+  font-size: 1rem; /* Adjust font size */
+}

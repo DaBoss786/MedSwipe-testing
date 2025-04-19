@@ -3390,9 +3390,7 @@ if (learnMoreCmeLink) {
   learnMoreCmeLink.addEventListener("click", function(e) {
       e.preventDefault(); // Prevent default link behavior
       console.log("Learn More link clicked.");
-      // --- ADD ACTION FOR LEARN MORE ---
-      // e.g., scroll to a details section, show another modal, link to a webpage
-      alert("Learn More action needs to be defined (e.g., show details).");
+      showCmeLearnMoreModal();
   });
 } else {
   console.error("Learn More link (#learnMoreCmeLink) not found.");
@@ -3508,3 +3506,88 @@ if (cmeCheckoutBtn) {
   console.error("CME Checkout button (#cmeCheckoutBtn) not found.");
 }
 // --- End of MODIFIED loadCmeDashboardData Function ---
+
+// --- Function to Show the CME Learn More Modal ---
+function showCmeLearnMoreModal() {
+  console.log("Executing showCmeLearnMoreModal...");
+
+  // Hide the Info Screen first (where the link was clicked)
+  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+  if (cmeInfoScreen) {
+      cmeInfoScreen.style.display = "none";
+  }
+
+  // Show the Learn More Modal
+  const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+  if (cmeLearnMoreModal) {
+      cmeLearnMoreModal.style.display = "flex"; // Use 'flex' based on base modal CSS
+      // Scroll modal body to top when opened
+      const modalBody = cmeLearnMoreModal.querySelector('.modal-body');
+      if(modalBody) modalBody.scrollTop = 0;
+      console.log("Displayed #cmeLearnMoreModal.");
+  } else {
+      console.error("CME Learn More Modal (#cmeLearnMoreModal) not found!");
+  }
+}
+
+// --- Event Listeners for CME Learn More Modal Buttons ---
+
+// Close Button (X)
+const closeCmeLearnMoreModal = document.getElementById("closeCmeLearnMoreModal");
+if (closeCmeLearnMoreModal) {
+  closeCmeLearnMoreModal.addEventListener("click", function() {
+      console.log("CME Learn More Close button clicked.");
+      const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+      const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+
+      if (cmeLearnMoreModal) cmeLearnMoreModal.style.display = "none";
+      if (cmeInfoScreen) cmeInfoScreen.style.display = "flex"; // Show info screen again
+  });
+} else {
+  console.error("CME Learn More Close button (#closeCmeLearnMoreModal) not found.");
+}
+
+// Continue to Checkout Button
+const continueToCheckoutBtn = document.getElementById("continueToCheckoutBtn");
+if (continueToCheckoutBtn) {
+  continueToCheckoutBtn.addEventListener("click", function() {
+      console.log("Continue to Checkout button clicked from Learn More modal.");
+      const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+
+      if (cmeLearnMoreModal) cmeLearnMoreModal.style.display = "none";
+      showCmePricingScreen(); // Show the pricing screen
+  });
+} else {
+  console.error("Continue to Checkout button (#continueToCheckoutBtn) not found.");
+}
+
+// Return to Main Dashboard Button
+const returnToDashboardBtn = document.getElementById("returnToDashboardBtn");
+if (returnToDashboardBtn) {
+  returnToDashboardBtn.addEventListener("click", function() {
+      console.log("Return to Dashboard button clicked from Learn More modal.");
+      const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+      const cmeInfoScreen = document.getElementById("cmeInfoScreen"); // Also hide info screen if needed
+      const mainOptions = document.getElementById("mainOptions");
+
+      if (cmeLearnMoreModal) cmeLearnMoreModal.style.display = "none";
+      if (cmeInfoScreen) cmeInfoScreen.style.display = "none"; // Ensure info screen is hidden too
+      if (mainOptions) mainOptions.style.display = "flex"; // Show main dashboard
+  });
+} else {
+  console.error("Return to Dashboard button (#returnToDashboardBtn) not found.");
+}
+
+// Optional: Close modal if clicking outside the content
+const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+if (cmeLearnMoreModal) {
+   cmeLearnMoreModal.addEventListener('click', function(event) {
+       // Check if the click is directly on the modal background
+       if (event.target === cmeLearnMoreModal) {
+           console.log("Clicked outside Learn More modal content.");
+           const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+           cmeLearnMoreModal.style.display = 'none';
+           if (cmeInfoScreen) cmeInfoScreen.style.display = "flex"; // Show info screen again
+       }
+   });
+}

@@ -994,10 +994,10 @@
       </ul>
       <!-- Monthly Feature List (Initially Hidden) -->
       <ul id="cmeMonthlyFeatureList" style="list-style: none; padding: 0; margin-bottom: 35px; text-align: left; display: none; /* Start hidden */ inline-block;">
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> [Monthly Feature 1 - Fill In]</li>
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> [Monthly Feature 2 - Fill In]</li>
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> [Monthly Feature 3 - Fill In]</li>
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> [Monthly Feature 4 - Fill In]</li>
+        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> 1 CME credit per 12 questions</li>
+        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Unlimited access to 300 CME questions</li>
+        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
+        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Cancel anytime</li>
     </ul>
 
       <!-- Checkout Button -->
@@ -1009,6 +1009,58 @@
   </div> <!-- End Content Area -->
 
 </div> <!-- End cmePricingScreen -->
+
+<!-- ============================= -->
+<!-- == CME Learn More Modal == -->
+<!-- ============================= -->
+<div id="cmeLearnMoreModal" class="modal" style="z-index: 2200;"> <!-- Use base modal class, ensure high z-index -->
+  <div class="modal-content cme-learn-more-content"> <!-- Add specific class for styling -->
+      <div class="modal-header">
+          <h2>MedSwipe CME Module</h2>
+          <span id="closeCmeLearnMoreModal" class="close-modal">×</span>
+      </div>
+      <div class="modal-body">
+
+          <h3>What is this CME module?</h3>
+          <p>This is a self-paced, mobile-accessible CME experience built into the MedSwipe quiz platform. Answer clinically relevant multiple choice questions, track your progress, and claim CME credits — all in one place and done at your own pace.</p>
+
+          <h3>What do I get?</h3>
+          <ul style="list-style: none; padding-left: 5px;">
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Swipeable MCQs in the exact format as the free version of MedSwipe but now with the ability to claim CME credits</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> 1 AMA PRA Category 1 Credit™ for every 12 questions answered with ≥70% accuracy</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> 300+ CME-eligible questions</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Ability to claim up to 25 AMA PRA Category 1 Credits™</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Downloadable, printable CME certificates</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Automatic tracking of your CME progress</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> No extra steps — earn as you learn</li>
+          </ul>
+
+          <h3>Who accredits this?</h3>
+          <p>This activity is jointly provided by MedSwipe and CME Consultants, and has been planned and implemented in accordance with the ACCME accreditation requirements.</p>
+
+          <h3>How do credits get calculated?</h3>
+          <p>We award 1 credit for every 12 questions answered correctly (at least 70% correct), based on user testing that showed an average time of ~5 minutes per question.</p>
+
+          <h3>Is this accepted by my hospital/board?</h3>
+          <p>Yes — these credits are Category 1 AMA PRA credits, accepted for:</p>
+          <ul style="list-style: disc; padding-left: 25px;">
+              <li>State licensure requirements</li>
+              <li>Maintenance of Certification (MOC)</li>
+              <li>Hospital privileges and credentialing</li>
+          </ul>
+
+          <h3>How do I claim a certificate?</h3>
+          <p>Once you hit the threshold (12 Qs with 70%+ accuracy), your certificate becomes available for download in the CME Dashboard. You can download and submit it anytime.</p>
+
+          <!-- Action Buttons -->
+          <div class="cme-learn-more-buttons" style="margin-top: 25px; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+              <button id="continueToCheckoutBtn" class="auth-primary-btn" style="width: 90%; max-width: 300px;">Continue to Checkout</button>
+              <button id="returnToDashboardBtn" class="auth-secondary-btn" style="width: 90%; max-width: 300px;">Return to Main Dashboard</button>
+          </div>
+
+      </div> <!-- End modal-body -->
+  </div> <!-- End modal-content -->
+</div> <!-- End cmeLearnMoreModal -->
 
 </body>
 </html>
