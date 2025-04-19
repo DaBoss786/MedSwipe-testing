@@ -152,40 +152,26 @@ if (cmeModuleBtn) {
         console.log("CME Module button clicked."); // For debugging
 
         // --- PAYWALL INTEGRATION POINT ---
-        // 1. Check if user is registered (guests cannot access CME)
-        if (!window.authState || !window.authState.user || window.authState.user.isAnonymous) {
-             alert("Please register or log in to access the CME Module.");
-             // Optionally, show the login/register form
-             // if (typeof showLoginScreen === 'function') showLoginScreen();
-             return; // Stop processing for guests
-        }
+        // The check below now runs for ALL users (guests and registered)
 
-        // 2. Check if the registered user has an active CME subscription
+        // 2. Check if the user has an active CME subscription
         // Using await here as the check might be async
         checkUserCmeSubscriptionStatus().then(hasActiveCmeSubscription => {
-            if (hasActiveCmeSubscription) {
-                // User has paid, show the CME dashboard
-                showCmeDashboard();
-            } else {
-                // User has NOT paid, show the paywall/subscription options
-                // For now, we'll just show an alert and then the dashboard for testing.
-                // Replace this alert with your actual Stripe integration later.
-                alert("CME Module requires a subscription. (Placeholder - Bypassing for testing)"); // Inform user
-
-                // --- TRIGGER YOUR STRIPE CHECKOUT/PAYMENT FLOW HERE ---
-                // Example: redirectToStripeCheckout(window.authState.user.uid);
-
-                // FOR TESTING PURPOSES ONLY - REMOVE LATER: Directly show CME dashboard
-                 console.warn("Bypassing paywall for testing. Implement Stripe check and payment flow.");
-                 showCmeDashboard(); // Show dashboard even without payment for now
-            }
-        }).catch(error => {
-             console.error("Error during subscription check:", error);
-             alert("Could not verify subscription status. Please try again.");
-        });
-    });
+          if (hasActiveCmeSubscription) {
+              // User has paid, show the CME dashboard
+              showCmeDashboard();
+          } else {
+              // User has NOT paid (or is guest), show the informational/paywall screen
+              console.log("User not subscribed to CME or is guest. Showing info screen.");
+              showCmeInfoScreen(); // Call the function to show the new screen
+          }
+      }).catch(error => {
+           console.error("Error during subscription check:", error);
+           alert("Could not verify subscription status. Please try again.");
+      });
+  });
 } else {
-    console.error("CME Module button (#cmeModuleBtn) not found."); // Error if button doesn't exist
+  console.error("CME Module button (#cmeModuleBtn) not found."); // Error if button doesn't exist
 }
 
 // Add event listener for the CME Dashboard's back button
@@ -3325,5 +3311,92 @@ async function loadCmeDashboardData() {
       console.error("Error loading CME dashboard data:", error);
       // ... (error display logic) ...
   }
+}
+
+// --- Function to Show the CME Info/Paywall Screen ---
+function showCmeInfoScreen() {
+  console.log("Executing showCmeInfoScreen...");
+
+  // Define IDs of views/modals/elements to hide
+  const elementsToHideIds = [
+      "mainOptions", "cmeDashboardView", "performanceView", "leaderboardView",
+      "aboutView", "faqView", "welcomeScreen", "splashScreen", "loginScreen",
+      "onboardingLoadingScreen", "customQuizForm", "randomQuizForm",
+      "quizSetupModal", "cmeQuizSetupModal", "cmeClaimModal", "contactModal",
+      "feedbackModal", "loginModal", "registerModal", "forgotPasswordModal",
+      "registrationBenefitsModal", "termsOfServiceModal", "privacyPolicyModal"
+  ];
+  const elementsToHideSelectors = [".swiper", "#bottomToolbar", "#iconBar"];
+
+  // Hide elements by ID
+  elementsToHideIds.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+          element.style.display = "none";
+          console.log(`Hid element: #${id}`);
+      }
+  });
+
+  // Hide elements by selector
+  elementsToHideSelectors.forEach(selector => {
+      const element = document.querySelector(selector);
+      if (element) {
+          element.style.display = "none";
+          console.log(`Hid element: ${selector}`);
+      }
+  });
+
+  // Show the CME Info Screen
+  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+  if (cmeInfoScreen) {
+      cmeInfoScreen.style.display = "flex"; // Use 'flex' because of the CSS styling we added
+      console.log("Displayed #cmeInfoScreen.");
+  } else {
+      console.error("CME Info Screen (#cmeInfoScreen) not found!");
+  }
+}
+
+// --- Event Listeners for CME Info Screen Buttons ---
+
+// Back Button
+const cmeInfoBackBtn = document.getElementById("cmeInfoBackBtn");
+if (cmeInfoBackBtn) {
+  cmeInfoBackBtn.addEventListener("click", function() {
+      console.log("CME Info Back button clicked.");
+      const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+      const mainOptions = document.getElementById("mainOptions");
+
+      if (cmeInfoScreen) cmeInfoScreen.style.display = "none";
+      if (mainOptions) mainOptions.style.display = "flex"; // Show main dashboard
+  });
+} else {
+  console.error("CME Info Back button (#cmeInfoBackBtn) not found.");
+}
+
+// Unlock CME Button (Placeholder for Stripe)
+const unlockCmeBtn = document.getElementById("unlockCmeBtn");
+if (unlockCmeBtn) {
+  unlockCmeBtn.addEventListener("click", function() {
+      console.log("Unlock CME button clicked.");
+      // --- THIS IS WHERE YOU WILL TRIGGER YOUR STRIPE CHECKOUT ---
+      alert("Stripe integration needed here to handle the $149 payment.");
+      // Example: redirectToStripeCheckout(window.authState.user.uid);
+  });
+} else {
+  console.error("Unlock CME button (#unlockCmeBtn) not found.");
+}
+
+// Learn More Link (Placeholder)
+const learnMoreCmeLink = document.getElementById("learnMoreCmeLink");
+if (learnMoreCmeLink) {
+  learnMoreCmeLink.addEventListener("click", function(e) {
+      e.preventDefault(); // Prevent default link behavior
+      console.log("Learn More link clicked.");
+      // --- ADD ACTION FOR LEARN MORE ---
+      // e.g., scroll to a details section, show another modal, link to a webpage
+      alert("Learn More action needs to be defined (e.g., show details).");
+  });
+} else {
+  console.error("Learn More link (#learnMoreCmeLink) not found.");
 }
 // --- End of MODIFIED loadCmeDashboardData Function ---

@@ -3573,3 +3573,142 @@ html, body {
   margin-bottom: 15px;
   color: #0056b3;
 }
+
+/* Styling for the CME Info/Paywall Screen */
+#cmeInfoScreen {
+  display: none; /* Start hidden */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f8f9fa; /* Light background */
+  z-index: 2100; /* High z-index to cover other elements */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  display: flex; /* Use flexbox for centering */
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
+  text-align: center;
+}
+
+#cmeInfoScreen h1 {
+  color: #0056b3; /* MedSwipe blue */
+  font-size: 1.8rem; /* Adjust as needed */
+  margin-bottom: 15px;
+}
+
+#cmeInfoScreen ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 25px;
+  text-align: left; /* Align bullet points text left */
+  display: inline-block; /* Make the container only as wide as its content */
+}
+
+#cmeInfoScreen li {
+  margin-bottom: 10px;
+  font-size: 1.1rem; /* Adjust as needed */
+  color: #333; /* Darker text color */
+}
+
+#cmeInfoScreen li span {
+  color: #0056b3; /* Bullet point color */
+  margin-right: 8px;
+}
+
+.certificate-preview {
+  margin-bottom: 30px;
+  text-align: center; /* Center the image container */
+}
+
+.certificate-image {
+  max-width: 80%; /* Responsive width */
+  height: auto;
+  border: 1px solid #ccc; /* Subtle border */
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+  background-color: #fff; /* White background for the certificate */
+  padding: 5px; /* Small padding around the image */
+  box-sizing: border-box;
+}
+
+#unlockCmeBtn {
+  /* Inherits from .auth-primary-btn, add overrides if needed */
+  width: 80%;
+  max-width: 300px;
+  padding: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+#learnMoreCmeLink {
+  color: #0056b3;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+#learnMoreCmeLink:hover {
+  text-decoration: underline;
+}
+
+#cmeInfoBackBtn {
+  position: absolute;
+  top: 15px; /* Adjust as needed */
+  left: 15px; /* Adjust as needed */
+  background: none;
+  border: none;
+  font-size: 1.2rem; /* Adjust size */
+  color: #0056b3; /* Button color */
+  cursor: pointer;
+  padding: 5px 10px;
+  z-index: 2101; /* Ensure it's above the screen content */
+}
+
+/* Styles for CME Info Screen Buttons */
+
+.cme-back-btn {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: none;
+  border: 1px solid #0C72D3; /* Match secondary button border */
+  color: #0C72D3; /* Match secondary button color */
+  padding: 8px 12px; /* Smaller padding */
+  font-size: 1rem; /* Adjust size */
+  border-radius: 6px; /* Match other buttons */
+  cursor: pointer;
+  z-index: 2101; /* Ensure it's above screen content */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cme-back-btn:hover {
+  background-color: #f0f7ff; /* Match secondary button hover */
+}
+
+.cme-unlock-button {
+  /* Inherits base style from auth-primary-btn */
+  width: 80%;
+  max-width: 300px;
+  padding: 15px; /* Restore specific padding */
+  font-size: 1.2rem; /* Restore specific font size */
+  font-weight: bold;
+}
+
+.cme-learn-more-link {
+  color: #0056b3; /* Restore specific color */
+  text-decoration: none; /* Restore specific text-decoration */
+  font-size: 1rem; /* Restore specific font size */
+  display: inline-block; /* Allows margin/padding if needed */
+  margin-top: 5px;
+}
+
+.cme-learn-more-link:hover {
+  text-decoration: underline;
+}
+
+/* Ensure the main screen container allows absolute positioning of back button */
+#cmeInfoScreen {
+  position: fixed; /* Keep fixed */
+  /* ... other styles ... */
+}

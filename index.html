@@ -920,5 +920,44 @@
 </div> <!-- <<< CLOSE THE WRAPPER DIV HERE -->
 </div> <!-- End of cmeClaimModal -->
  
+<!-- ========================== -->
+<!-- == CME Info/Paywall Screen == -->
+<!-- ========================== -->
+<div id="cmeInfoScreen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f8f9fa; z-index: 2100; padding: 20px; box-sizing: border-box; overflow-y: auto; flex-direction: column; align-items: center; text-align: center;">
+
+  <!-- Back Button (Top Left) -->
+  <button id="cmeInfoBackBtn" class="cme-back-btn">← Back</button>
+  
+  <!-- Content Area -->
+  <div style="max-width: 600px; width: 100%; margin-top: 50px;"> <!-- Added margin-top for back button space -->
+
+      <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" style="max-width: 150px; margin-bottom: 15px;">
+
+      <h1 style="color: #0056b3; font-size: 1.8rem; margin-bottom: 15px;">Earn AMA PRA Category 1 Credits™ – Anytime, Anywhere</h1>
+
+      <ul style="list-style: none; padding: 0; margin-bottom: 25px; text-align: left; display: inline-block;">
+          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> CME-accredited by <strong>CME Consultants</strong></li>
+          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Credit for doing what you're already doing</li>
+          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Printable certificate</li>
+          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Earn up to 25 AMA PRA Category 1 Credits™i>
+      </ul>
+
+      <!-- Sample Certificate Preview -->
+      <div class="certificate-preview" style="margin-bottom: 30px; text-align: center;">
+           <!-- You will need to create or find an image that looks like your desired sample certificate -->
+           <!-- Replace 'path/to/your/sample-certificate.png' with the actual path to your image -->
+          <img src="Certificate example.png" alt="Sample CME Certificate" class="certificate-image" style="max-width: 80%; height: auto; border: 1px solid #ccc; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="margin-bottom: 15px;">
+        <button id="unlockCmeBtn" class="auth-primary-btn cme-unlock-button">Unlock CME Access</button>      </div>
+      <div>
+        <a href="#" id="learnMoreCmeLink" class="cme-learn-more-link">Learn more</a>      </div>
+
+  </div> <!-- End Content Area -->
+
+</div> <!-- End cmeInfoScreen -->
+
 </body>
 </html>
