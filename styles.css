@@ -3582,7 +3582,7 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #f8f9fa; /* Light background */
+  background-color: #ffffff; /* Light background */
   z-index: 2100; /* High z-index to cover other elements */
   padding: 20px;
   box-sizing: border-box;
@@ -3595,14 +3595,14 @@ html, body {
 
 #cmeInfoScreen h1 {
   color: #0056b3; /* MedSwipe blue */
-  font-size: 1.8rem; /* Adjust as needed */
-  margin-bottom: 15px;
+  font-size: 1.5rem; /* Adjust as needed */
+  margin-bottom: 10px;
 }
 
 #cmeInfoScreen ul {
   list-style: none;
   padding: 0;
-  margin-bottom: 25px;
+  margin-bottom: 15px;
   text-align: left; /* Align bullet points text left */
   display: inline-block; /* Make the container only as wide as its content */
 }
@@ -3624,7 +3624,7 @@ html, body {
 }
 
 .certificate-image {
-  max-width: 80%; /* Responsive width */
+  max-width: 50%; /* Responsive width */
   height: auto;
   border: 1px solid #ccc; /* Subtle border */
   box-shadow: 2px 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
