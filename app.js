@@ -7,21 +7,6 @@ import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { csvUrl, closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
 
-// --- Stripe Initialization ---
-// Replace 'YOUR_PUBLISHABLE_KEY' with your actual Stripe Publishable Test Key
-const stripePublishableKey = 'Ypk_test_51RFk9TR9wwfN8hwy4l2J6mW0TzJOZI0NQtvNN4MB51RQNOY1cfw1KxatNxwQTHnxXOvXm7fjLppuUHVdGi9NUGph00fdaUuBwS';
-let stripe; // Declare stripe variable
-
-try {
-    stripe = Stripe(stripePublishableKey);
-    console.log("Stripe.js initialized successfully.");
-} catch (error) {
-    console.error("Error initializing Stripe.js:", error);
-    // You might want to disable checkout buttons here if Stripe fails to load
-    alert("Error loading payment system. Please refresh the page or try again later.");
-}
-// --- End Stripe Initialization ---
-
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
   try {
@@ -3525,8 +3510,8 @@ if (cmeCheckoutBtn) {
                   return; // Stop if Price ID is missing
               }
       
-              // Make sure stripe object is available
-              if (!stripe) {
+              // Make sure stripe object is available globally
+            if (!window.stripe) {
                    alert('Error: Payment system is not loaded correctly. Please refresh the page.');
                    console.error('Stripe object is not available for checkout.');
                    return; // Stop if Stripe object isn't ready
@@ -3538,7 +3523,7 @@ if (cmeCheckoutBtn) {
                   cmeCheckoutBtn.disabled = true;
                   cmeCheckoutBtn.textContent = 'Redirecting...';
       
-                  stripe.redirectToCheckout({
+                  window.stripe.redirectToCheckout({
                       lineItems: [{
                           price: selectedPriceId, // Use the selected Price ID
                           quantity: 1,
