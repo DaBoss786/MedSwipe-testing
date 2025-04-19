@@ -7,6 +7,20 @@ import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { csvUrl, closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
 
+// --- Stripe Initialization ---
+// Replace 'YOUR_PUBLISHABLE_KEY' with your actual Stripe Publishable Test Key
+const stripePublishableKey = 'Ypk_test_51RFk9TR9wwfN8hwy4l2J6mW0TzJOZI0NQtvNN4MB51RQNOY1cfw1KxatNxwQTHnxXOvXm7fjLppuUHVdGi9NUGph00fdaUuBwS';
+let stripe; // Declare stripe variable
+
+try {
+    stripe = Stripe(stripePublishableKey);
+    console.log("Stripe.js initialized successfully.");
+} catch (error) {
+    console.error("Error initializing Stripe.js:", error);
+    // You might want to disable checkout buttons here if Stripe fails to load
+    alert("Error loading payment system. Please refresh the page or try again later.");
+}
+// --- End Stripe Initialization ---
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
@@ -3488,19 +3502,76 @@ if (cmeMonthlyBtn) {
   console.error("CME Monthly button (#cmeMonthlyBtn) not found.");
 }
 
+// --- Add your Stripe Price IDs (Test Mode) ---
+const STRIPE_ANNUAL_PRICE_ID = 'price_1RFkDtR9wwfN8hwye6csyxWu'; // Replace with your actual Annual Price ID (price_...)
+const STRIPE_MONTHLY_PRICE_ID = 'price_1RFkIrR9wwfN8hwyn8VrPfsx'; // Replace with your actual Monthly Price ID (price_...)
+// ---
+
 // Checkout Button (Placeholder for Stripe)
 const cmeCheckoutBtn = document.getElementById("cmeCheckoutBtn");
 if (cmeCheckoutBtn) {
   cmeCheckoutBtn.addEventListener("click", function() {
-      const isActiveAnnual = document.getElementById('cmeAnnualBtn')?.classList.contains('active');
-      const plan = isActiveAnnual ? 'Annual' : 'Monthly';
-      const price = isActiveAnnual ? '$149/year' : '$14.99/month';
-
-      console.log(`Checkout button clicked for ${plan} plan (${price}).`);
-      // --- THIS IS WHERE YOU WILL TRIGGER YOUR STRIPE CHECKOUT ---
-      // You'll need the specific Stripe Price ID for the selected plan.
-      alert(`Stripe integration needed here to handle the ${plan} (${price}) payment.`);
-      // Example: redirectToStripeCheckout(window.authState.user.uid, isActiveAnnual ? 'STRIPE_ANNUAL_PRICE_ID' : 'STRIPE_MONTHLY_PRICE_ID');
+              // Determine which plan is selected
+              const isActiveAnnual = document.getElementById('cmeAnnualBtn')?.classList.contains('active');
+              const selectedPriceId = isActiveAnnual ? STRIPE_ANNUAL_PRICE_ID : STRIPE_MONTHLY_PRICE_ID;
+              const planName = isActiveAnnual ? 'Annual' : 'Monthly';
+      
+              console.log(`Attempting checkout for ${planName} plan with Price ID: ${selectedPriceId}`);
+      
+              // Make sure Price ID is set
+              if (!selectedPriceId || selectedPriceId.includes('YOUR_')) {
+                  alert('Error: Stripe Price ID is not configured correctly. Please contact support.');
+                  console.error('Stripe Price ID missing or not replaced.');
+                  return; // Stop if Price ID is missing
+              }
+      
+              // Make sure stripe object is available
+              if (!stripe) {
+                   alert('Error: Payment system is not loaded correctly. Please refresh the page.');
+                   console.error('Stripe object is not available for checkout.');
+                   return; // Stop if Stripe object isn't ready
+              }
+      
+              // --- Redirect to Stripe Checkout ---
+              try {
+                  // Disable button to prevent multiple clicks
+                  cmeCheckoutBtn.disabled = true;
+                  cmeCheckoutBtn.textContent = 'Redirecting...';
+      
+                  stripe.redirectToCheckout({
+                      lineItems: [{
+                          price: selectedPriceId, // Use the selected Price ID
+                          quantity: 1,
+                      }],
+                      mode: 'subscription', // Important: We are selling a subscription
+                      // Define URLs where Stripe should redirect the user after checkout
+                      // For now, we'll just redirect back to the current page.
+                      // Later, we'll create specific success/cancel pages or handle it differently.
+                      successUrl: window.location.href + '?checkout=success', // Add query param for potential handling later
+                      cancelUrl: window.location.href + '?checkout=cancel',   // Add query param for potential handling later
+                      // You can prefill the email if the user is logged in
+                      customerEmail: (window.authState && window.authState.user && window.authState.user.email) ? window.authState.user.email : undefined
+                      // If you skipped the free trial setup in Stripe, remove the line below
+                      
+                  }).then(function (result) {
+                      // If `redirectToCheckout` fails due to client-side error (rare)
+                      if (result.error) {
+                          console.error('Stripe redirectToCheckout error:', result.error.message);
+                          alert(`Payment Error: ${result.error.message}`);
+                          // Re-enable button on client-side error
+                          cmeCheckoutBtn.disabled = false;
+                          cmeCheckoutBtn.textContent = 'Checkout';
+                      }
+                      // Note: If successful, the user is redirected and won't reach here.
+                  });
+      
+              } catch (error) {
+                   console.error('Error initiating Stripe checkout:', error);
+                   alert('Could not start the checkout process. Please try again.');
+                   // Re-enable button on general error
+                   cmeCheckoutBtn.disabled = false;
+                   cmeCheckoutBtn.textContent = 'Checkout';
+              }
   });
 } else {
   console.error("CME Checkout button (#cmeCheckoutBtn) not found.");
