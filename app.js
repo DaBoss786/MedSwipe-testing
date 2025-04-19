@@ -3378,9 +3378,7 @@ const unlockCmeBtn = document.getElementById("unlockCmeBtn");
 if (unlockCmeBtn) {
   unlockCmeBtn.addEventListener("click", function() {
       console.log("Unlock CME button clicked.");
-      // --- THIS IS WHERE YOU WILL TRIGGER YOUR STRIPE CHECKOUT ---
-      alert("Stripe integration needed here to handle the $149 payment.");
-      // Example: redirectToStripeCheckout(window.authState.user.uid);
+      showCmePricingScreen(); // <<<--- Call function to show pricing screen
   });
 } else {
   console.error("Unlock CME button (#unlockCmeBtn) not found.");
@@ -3398,5 +3396,107 @@ if (learnMoreCmeLink) {
   });
 } else {
   console.error("Learn More link (#learnMoreCmeLink) not found.");
+}
+
+// --- Function to Show the CME Pricing Screen ---
+function showCmePricingScreen() {
+  console.log("Executing showCmePricingScreen...");
+
+  // Hide the Info Screen first
+  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+  if (cmeInfoScreen) {
+      cmeInfoScreen.style.display = "none";
+  }
+
+  // Show the Pricing Screen
+  const cmePricingScreen = document.getElementById("cmePricingScreen");
+  if (cmePricingScreen) {
+      cmePricingScreen.style.display = "flex"; // Use 'flex' based on CSS
+      // Default to Annual view when showing
+      updatePricingView('annual');
+      console.log("Displayed #cmePricingScreen.");
+  } else {
+      console.error("CME Pricing Screen (#cmePricingScreen) not found!");
+  }
+}
+
+// --- Helper function to update pricing view ---
+function updatePricingView(planType) {
+  const priceDisplay = document.getElementById('cmePriceDisplay');
+  const annualBtn = document.getElementById('cmeAnnualBtn');
+  const monthlyBtn = document.getElementById('cmeMonthlyBtn');
+  // const featureList = document.getElementById('cmeFeatureList'); // If features change
+
+  if (!priceDisplay || !annualBtn || !monthlyBtn) return;
+
+  if (planType === 'annual') {
+      priceDisplay.textContent = '$149/year';
+      annualBtn.classList.add('active');
+      monthlyBtn.classList.remove('active');
+      // Update feature list or checkout button data if needed for annual
+      console.log("Switched to Annual pricing view.");
+  } else if (planType === 'monthly') {
+      priceDisplay.textContent = '$14.99/month';
+      monthlyBtn.classList.add('active');
+      annualBtn.classList.remove('active');
+      // Update feature list or checkout button data if needed for monthly
+      console.log("Switched to Monthly pricing view.");
+  }
+}
+
+
+// --- Event Listeners for CME Pricing Screen Buttons ---
+
+// Back Button (Pricing Screen to Info Screen)
+const cmePricingBackBtn = document.getElementById("cmePricingBackBtn");
+if (cmePricingBackBtn) {
+  cmePricingBackBtn.addEventListener("click", function() {
+      console.log("CME Pricing Back button clicked.");
+      const cmePricingScreen = document.getElementById("cmePricingScreen");
+      const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+
+      if (cmePricingScreen) cmePricingScreen.style.display = "none";
+      if (cmeInfoScreen) cmeInfoScreen.style.display = "flex"; // Show info screen again
+  });
+} else {
+  console.error("CME Pricing Back button (#cmePricingBackBtn) not found.");
+}
+
+// Annual Toggle Button
+const cmeAnnualBtn = document.getElementById("cmeAnnualBtn");
+if (cmeAnnualBtn) {
+  cmeAnnualBtn.addEventListener("click", function() {
+      updatePricingView('annual');
+  });
+} else {
+  console.error("CME Annual button (#cmeAnnualBtn) not found.");
+}
+
+// Monthly Toggle Button
+const cmeMonthlyBtn = document.getElementById("cmeMonthlyBtn");
+if (cmeMonthlyBtn) {
+  cmeMonthlyBtn.addEventListener("click", function() {
+      updatePricingView('monthly');
+  });
+} else {
+  console.error("CME Monthly button (#cmeMonthlyBtn) not found.");
+}
+
+// Checkout Button (Placeholder for Stripe)
+const cmeCheckoutBtn = document.getElementById("cmeCheckoutBtn");
+if (cmeCheckoutBtn) {
+  cmeCheckoutBtn.addEventListener("click", function() {
+      const isActiveAnnual = document.getElementById('cmeAnnualBtn')?.classList.contains('active');
+      const plan = isActiveAnnual ? 'Annual' : 'Monthly';
+      const price = isActiveAnnual ? '$149/year' : '$14.99/month';
+
+      console.log(`Checkout button clicked for ${plan} plan (${price}).`);
+      // --- THIS IS WHERE YOU WILL TRIGGER YOUR STRIPE CHECKOUT ---
+      // You'll need the specific Stripe Price ID for the selected plan.
+      alert(`Stripe integration needed here to handle the ${plan} (${price}) payment.`);
+      // Example: redirectToStripeCheckout(window.authState.user.uid, isActiveAnnual ? 'STRIPE_ANNUAL_PRICE_ID' : 'STRIPE_MONTHLY_PRICE_ID');
+  });
+} else {
+  console.error("CME Checkout button (#cmeCheckoutBtn) not found.");
 }
 // --- End of MODIFIED loadCmeDashboardData Function ---
