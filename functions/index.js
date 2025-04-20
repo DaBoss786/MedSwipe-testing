@@ -1,16 +1,41 @@
 // functions/index.js
 const functions = require("firebase-functions");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onRequest } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
-const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib"); // Added degrees
-const stripe = require("stripe"); // Add this line
+const stripe = require("stripe");
+const { defineString } = require("firebase-functions/params");
+
+// Define a test parameter (no secrets yet)
+const testParam = defineString("TEST_PARAM", {
+  description: "Test parameter"
+});
+
+exports.testFunction = onCall(
+  {
+    region: "us-central1"
+  },
+  async (request) => {
+    return { message: "Test function works!" };
+  }
+);
 
 // Initialize Firebase Admin SDK only once
 if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
+// --- Define Configuration Parameters (v2 Style) ---
+const stripeSecretKeyParam = defineString("STRIPE_SECRET_KEY", {
+  description: "Stripe API Secret Key (sk_...)",
+  input: { secret: "STRIPE_SECRET_KEY" },
+});
+
+const stripeWebhookSecretParam = defineString("STRIPE_WEBHOOK_SECRET", {
+  description: "Stripe Webhook Signing Secret (whsec_...)",
+  input: { secret: "STRIPE_WEBHOOK_SECRET" },
+});
 // --- CONFIGURATION ---
 const BUCKET_NAME = "medswipe-648ee.firebasestorage.app"; // Your bucket name
 const LOGO1_FILENAME_IN_BUCKET = "MedSwipe Logo gradient.png"; // <<< CHANGE if your logo file has a different name
@@ -19,6 +44,11 @@ const LOGO2_FILENAME_IN_BUCKET = "CME consultants.jpg"; // <<< CHANGE if your se
 
 const storage = admin.storage();
 const bucket = storage.bucket(BUCKET_NAME);
+
+// --- Stripe Client Initialization (Using Parameters) ---
+let stripeClient = null;
+// --- End Stripe Client ---
+
 
 exports.generateCmeCertificate = onCall({ timeoutSeconds: 120, memory: "512MiB" }, async (request) => {
   // 1. Auth check
@@ -337,150 +367,167 @@ exports.generateCmeCertificate = onCall({ timeoutSeconds: 120, memory: "512MiB" 
 });
 
 // --- Stripe Webhook Handler ---
-// This function listens for events from Stripe (like successful payments)
+exports.stripeWebhookHandler = onRequest(
+  {
+    region: "us-central1",
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    secrets: ["STRIPE_WEBHOOK_SECRET", "STRIPE_SECRET_KEY"] // Include both secrets
+  },
+  async (req, res) => {
+    logger.info(`stripeWebhookHandler received request: ${req.method} ${req.path}`);
 
-// IMPORTANT: Set your Stripe secret key and webhook signing secret in Firebase environment configuration:
-// firebase functions:config:set stripe.secret_key="sk_test_YOUR_SECRET_KEY" stripe.webhook_secret="whsec_YOUR_WEBHOOK_SECRET"
-// (Replace with your actual TEST keys/secrets - get webhook secret in the next step)
-
-// Initialize Stripe with the secret key from environment config
-// Ensure functions.config() is defined or handle potential errors
-
-
-exports.stripeWebhookHandler = functions.https.onRequest(async (request, response) => {
-  // --- Initialize Stripe client INSIDE the function ---
-  const stripeSecretKey = functions.config().stripe?.secret_key;
-  if (!stripeSecretKey) {
-       logger.error("Stripe secret key is not configured..."); // Shortened log
-       response.status(500).send("Webhook Error: Server configuration missing (SK).");
-       return;
-  }
-  const stripeClient = stripe(stripeSecretKey);
-
-  // --- Read and Check Webhook Secret INSIDE the function ---
-  const webhookSecret = functions.config().stripe?.webhook_secret;
-  if (!webhookSecret || webhookSecret.includes("PLACEHOLDER")) { // Also check for placeholder
-      logger.error("Stripe webhook secret is not configured or is placeholder..."); // Shortened log
-      response.status(500).send("Webhook Error: Server configuration missing (WHS).");
+    // 1️⃣ Health check
+    if (req.method === "GET") {
+      logger.info("Health check request received. Responding OK.");
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end("OK");
       return;
-  }
-  // --- End Webhook Secret Check ---
-
-    // Get the signature from the headers
-    const sig = request.headers['stripe-signature'];
-    let event;
-
-    try {
-        // Verify the event signature
-        event = stripeClient.webhooks.constructEvent(request.rawBody, sig, webhookSecret);
-        logger.log("Stripe webhook event verified:", event.id, event.type);
-
-    } catch (err) {
-        // On error, log and return the error message
-        logger.error(`⚠️ Webhook signature verification failed: ${err.message}`);
-        response.status(400).send(`Webhook Error: ${err.message}`);
-        return;
     }
 
-                   // --- Handle the Stripe event ---
-        if (event.type === 'checkout.session.completed') {
-          const session = event.data.object;
-          logger.log(`Checkout session completed: ${session.id}`);
+    // 2️⃣ Get webhook secret from environment
+    const webhookSecretValue = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecretValue || webhookSecretValue.startsWith("YOUR_") || webhookSecretValue.length < 10) {
+      logger.error("CRITICAL: Webhook secret is missing or invalid.");
+      res.status(500).send("Webhook Error: Server configuration error (webhook secret).");
+      return;
+    }
 
-          // --- Get Subscription and User ID ---
-          const clientReferenceId = session.client_reference_id; // This is the Firebase UID we passed
-          const stripeSubscriptionId = session.subscription;
-          const stripeCustomerId = session.customer;
-          const paymentStatus = session.payment_status;
+    // 3️⃣ Initialize Stripe client
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey || secretKey.startsWith("YOUR_") || secretKey.length < 10) {
+      logger.error("CRITICAL: Stripe secret key is missing or invalid.");
+      res.status(500).send("Webhook Error: Server configuration error (Stripe client init).");
+      return;
+    }
 
-          // Validate necessary data
-          if (!clientReferenceId) { // <<< Check clientReferenceId again
-            logger.error(`Missing client_reference_id in checkout session: ${session.id}`);
-            response.status(200).json({ received: true, error: "Missing client reference ID" });
-            return;
+    const stripeClient = stripe(secretKey);
+    logger.info("Stripe client initialized successfully within webhook handler.");
+
+    // 4️⃣ Construct & verify the event
+    let event;
+    try {
+      if (!req.rawBody) {
+        logger.error("Missing req.rawBody.");
+        return res.status(400).send("Webhook Error: Missing raw body.");
+      }
+      const signature = req.headers["stripe-signature"];
+      if (!signature) {
+        logger.error("Missing 'stripe-signature' header.");
+        return res.status(400).send("Webhook Error: Missing signature header.");
+      }
+      
+      event = stripeClient.webhooks.constructEvent(req.rawBody, signature, webhookSecretValue);
+      logger.info(`Webhook event constructed successfully: ${event.id}, Type: ${event.type}`);
+    } catch (err) {
+      logger.error(`Webhook signature verification failed: ${err.message}`, { error: err });
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    // 5️⃣ Handle the event
+    try {
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
+        logger.info(`Processing checkout.session.completed for session: ${session.id}`);
+
+        const uid = session.client_reference_id;
+        const subsId = session.subscription;
+        const custId = session.customer;
+        const paid = session.payment_status === "paid";
+        const planName = session.metadata?.planName || "subscription";
+
+        logger.info(`Session details: UID=${uid}, SubID=${subsId}, CustID=${custId}, Paid=${paid}, Plan=${planName}`);
+
+        if (paid && uid && subsId && custId) {
+          logger.info(`Updating Firestore for user: ${uid}`);
+          const subscriptionStartDate = admin.firestore.FieldValue.serverTimestamp();
+          
+          await admin.firestore()
+            .collection("users")
+            .doc(uid)
+            .set({
+              stripeCustomerId: custId,
+              stripeSubscriptionId: subsId,
+              cmeSubscriptionActive: true,
+              cmeSubscriptionPlan: planName,
+              cmeSubscriptionStartDate: subscriptionStartDate,
+            }, { merge: true });
+            
+          logger.info(`Firestore update successful for user: ${uid}`);
+        } else {
+          logger.warn(`Skipping Firestore update for session ${session.id}. Conditions not met.`);
         }
-
-          // Validate necessary data from session
-          if (paymentStatus !== 'paid') {
-               logger.warn(`Checkout session ${session.id} not paid (status: ${paymentStatus}). No action taken.`);
-               response.status(200).json({ received: true, status: "Not paid" });
-               return;
-          }
-           if (!stripeSubscriptionId || !stripeCustomerId) {
-               logger.error(`Missing subscription or customer ID in checkout session: ${session.id}`);
-               response.status(200).json({ received: true, error: "Missing subscription/customer ID" });
-               return;
-           }
-
-          // --- Update User Document in Firestore ---
-          try {
-            const userDocRef = admin.firestore().collection('users').doc(clientReferenceId); // Use the UID from client_reference_id
-
-              // Prepare data to update/set
-              const subscriptionData = {
-                  stripeCustomerId: stripeCustomerId,
-                  stripeSubscriptionId: stripeSubscriptionId,
-                  cmeSubscriptionActive: true, // Grant access!
-                  cmeSubscriptionPlan: session.metadata?.planName || (session.mode === 'subscription' ? 'unknown_subscription' : 'unknown'),
-                  cmeSubscriptionStartDate: admin.firestore.FieldValue.serverTimestamp(),
-              };
-
-              await userDocRef.set(subscriptionData, { merge: true });
-
-              logger.log(`Successfully updated Firestore for user ${clientReferenceId}. CME access granted.`);
-
-          } catch (dbError) {
-            logger.error(`Firestore update failed for user ${clientReferenceId}:`, dbError);
-              response.status(500).send(`Webhook Error: Firestore update failed: ${dbError.message}`);
-              return;
-          }
-
       } else {
-          // Handle other event types
-          logger.log(`Received unhandled event type: ${event.type}`);
+        logger.info(`Received unhandled event type: ${event.type}`);
       }
 
-    // Return a response to acknowledge receipt of the event
-    response.status(200).json({ received: true });
-});
-
-// Replace your old export with this:
-exports.createStripeCheckoutSession = onCall(
-  { region: "us-central1" },       // match your deployment region
-  async (request) => {
-    // 1. HTTP‑level auth check
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated",
-        "You must be logged in to start a checkout.");
+      // 6️⃣ Acknowledge receipt
+      logger.info(`Acknowledging webhook event: ${event.id}`);
+      res.status(200).json({ received: true, eventId: event.id });
+    } catch (dbErr) {
+      logger.error(`Firestore update failed for session ${event?.data?.object?.id}: ${dbErr.message}`, { error: dbErr });
+      res.status(500).send("Webhook Error: Internal database error.");
     }
+  }
+);
+
+// --- createStripeCheckoutSession ---
+exports.createStripeCheckoutSession = onCall(
+  {
+    region: "us-central1",
+    memory: "256MiB",
+    secrets: ["STRIPE_SECRET_KEY"]
+  },
+  async (request) => {
+    logger.log("createStripeCheckoutSession called.");
+
+    // 1. Auth check
+    if (!request.auth) {
+      logger.error("Authentication failed: No auth context.");
+      throw new HttpsError("unauthenticated", "You must be logged in to start a checkout.");
+    }
+    
     const uid = request.auth.uid;
+    logger.log(`Authenticated user: ${uid}`);
 
     // 2. Validate priceId
     const priceId = request.data.priceId;
     if (!priceId || typeof priceId !== "string") {
-      throw new HttpsError("invalid-argument",
-        "A valid Price ID must be provided.");
+      logger.error("Validation failed: Invalid Price ID.", { data: request.data });
+      throw new HttpsError("invalid-argument", "A valid Price ID must be provided.");
     }
+    
+    logger.log(`Received Price ID: ${priceId}`);
 
-    // 3. Stripe initialization
-    const stripeSecret = functions.config().stripe?.secret_key;
-    if (!stripeSecret) {
-      throw new HttpsError("internal",
-        "Server configuration error [SK].");
+    // 3. Initialize Stripe Client using environment variable
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey || secretKey.startsWith("YOUR_") || secretKey.length < 10) {
+      logger.error("CRITICAL: Stripe secret key is missing or invalid.");
+      throw new HttpsError("internal", "Server configuration error [SK].");
     }
-    const stripeClient = require("stripe")(stripeSecret);
+    
+    const stripeClient = stripe(secretKey);
+    logger.info("Stripe client initialized successfully within createCheckout handler.");
 
     // 4. Create session
-    const YOUR_APP_BASE_URL = "https://medswipeapp.com";  // adjust as needed
-    const session = await stripeClient.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
-      client_reference_id: uid,
-      success_url:  `${YOUR_APP_BASE_URL}/checkout-success.html`,
-      cancel_url:   `${YOUR_APP_BASE_URL}/checkout-cancel.html`
-    });
-
-    return { sessionId: session.id };
+    const YOUR_APP_BASE_URL = "https://medswipeapp.com";
+    try {
+      logger.log(`Creating Stripe session for user ${uid} with price ${priceId}`);
+      const session = await stripeClient.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        client_reference_id: uid,
+        success_url: `${YOUR_APP_BASE_URL}/checkout-success.html`,
+        cancel_url: `${YOUR_APP_BASE_URL}/checkout-cancel.html`,
+      });
+      
+      logger.log(`Stripe session created: ${session.id}`);
+      return { sessionId: session.id };
+    } catch (error) {
+      logger.error("Stripe session creation failed:", error);
+      throw new HttpsError("internal", "Failed to create Stripe checkout session.", error.message);
+    }
   }
 );
