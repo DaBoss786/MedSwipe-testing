@@ -7,6 +7,22 @@ import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { csvUrl, closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
 
+// --- Get reference to Firebase Callable Function ---
+let createCheckoutSessionFunction;
+try {
+    if (functions && httpsCallable) { // Check if imports exist
+         createCheckoutSessionFunction = httpsCallable(functions, 'createStripeCheckoutSession');
+         console.log("Callable function reference 'createStripeCheckoutSession' created.");
+    } else {
+         console.error("Firebase Functions or httpsCallable not imported correctly.");
+         // Disable checkout button maybe?
+    }
+} catch(error) {
+     console.error("Error getting callable function reference:", error);
+     // Disable checkout button maybe?
+}
+// ---
+
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
   try {
@@ -3492,86 +3508,87 @@ const STRIPE_ANNUAL_PRICE_ID = 'price_1RFkDtR9wwfN8hwye6csyxWu'; // Replace with
 const STRIPE_MONTHLY_PRICE_ID = 'price_1RFkIrR9wwfN8hwyn8VrPfsx'; // Replace with your actual Monthly Price ID (price_...)
 // ---
 
-// Checkout Button (Placeholder for Stripe)
-const cmeCheckoutBtn = document.getElementById("cmeCheckoutBtn");
-if (cmeCheckoutBtn) {
-  cmeCheckoutBtn.addEventListener("click", function() {
-              // Determine which plan is selected
-              const isActiveAnnual = document.getElementById('cmeAnnualBtn')?.classList.contains('active');
-              const selectedPriceId = isActiveAnnual ? STRIPE_ANNUAL_PRICE_ID : STRIPE_MONTHLY_PRICE_ID;
-              const planName = isActiveAnnual ? 'Annual' : 'Monthly';
-      
-              console.log(`Attempting checkout for ${planName} plan with Price ID: ${selectedPriceId}`);
-      
-              // Make sure Price ID is set
-              if (!selectedPriceId || selectedPriceId.includes('YOUR_')) {
-                  alert('Error: Stripe Price ID is not configured correctly. Please contact support.');
-                  console.error('Stripe Price ID missing or not replaced.');
-                  return; // Stop if Price ID is missing
-              }
-      
-              // Make sure stripe object is available globally
-            if (!window.stripe) {
-                   alert('Error: Payment system is not loaded correctly. Please refresh the page.');
-                   console.error('Stripe object is not available for checkout.');
-                   return; // Stop if Stripe object isn't ready
-              }
-      
-              // --- Redirect to Stripe Checkout ---
-              try {
-                  // Disable button to prevent multiple clicks
-                  cmeCheckoutBtn.disabled = true;
-                  cmeCheckoutBtn.textContent = 'Redirecting...';
+    // Checkout Button
+    const cmeCheckoutBtn = document.getElementById("cmeCheckoutBtn");
+    if (cmeCheckoutBtn) {
+        cmeCheckoutBtn.addEventListener("click", async function() { // Make the function async
+            // Determine which plan is selected
+            const isActiveAnnual = document.getElementById('cmeAnnualBtn')?.classList.contains('active');
+            const selectedPriceId = isActiveAnnual ? STRIPE_ANNUAL_PRICE_ID : STRIPE_MONTHLY_PRICE_ID;
+            const planName = isActiveAnnual ? 'Annual' : 'Monthly';
 
-                  // Get the Firebase User ID (UID) - Ensure user is logged in
-                const user = window.authFunctions.getCurrentUser(); // Use your auth function
-                if (!user || user.isAnonymous) { // Also check for anonymous
-                    alert("Please log in or register before purchasing a subscription.");
+            console.log(`Requesting checkout session for ${planName} plan with Price ID: ${selectedPriceId}`);
+
+            // Ensure Price ID is valid
+            if (!selectedPriceId || selectedPriceId.includes('YOUR_')) {
+                alert('Error: Stripe Price ID is not configured correctly.');
+                console.error('Stripe Price ID missing or not replaced.');
+                return;
+            }
+
+            // Ensure Stripe.js (window.stripe) and the callable function are ready
+            if (!window.stripe || !createCheckoutSessionFunction) {
+                alert('Error: Payment system or function reference not ready. Please refresh.');
+                console.error('Stripe object or callable function reference missing.');
+                return;
+            }
+
+             // Ensure user is logged in and registered
+             const user = window.authFunctions.getCurrentUser();
+             if (!user || user.isAnonymous) {
+                 alert("Please log in or register before purchasing a subscription.");
+                 return;
+             }
+
+            // Disable button
+            cmeCheckoutBtn.disabled = true;
+            cmeCheckoutBtn.textContent = 'Preparing Checkout...';
+
+            try {
+                // --- Call the Cloud Function ---
+                console.log("Calling createStripeCheckoutSession function...");
+                const result = await createCheckoutSessionFunction({ priceId: selectedPriceId });
+                const sessionId = result.data.sessionId;
+                console.log("Received Session ID:", sessionId);
+
+                if (!sessionId) {
+                     throw new Error("Cloud function did not return a Session ID.");
+                }
+
+                // --- Redirect using the Session ID ---
+                cmeCheckoutBtn.textContent = 'Redirecting...';
+                const { error } = await window.stripe.redirectToCheckout({
+                    sessionId: sessionId
+                });
+
+                // If redirectToCheckout fails (e.g., network error client-side)
+                if (error) {
+                    console.error("Stripe redirectToCheckout error:", error);
+                    alert(`Could not redirect to checkout: ${error.message}`);
+                    // Re-enable button if redirect fails
                     cmeCheckoutBtn.disabled = false;
                     cmeCheckoutBtn.textContent = 'Checkout';
-                    return; // Stop if not a registered user
                 }
-                const userId = user.uid;
-      
-                  window.stripe.redirectToCheckout({
-                      lineItems: [{
-                          price: selectedPriceId, // Use the selected Price ID
-                          quantity: 1,
-                      }],
-                      mode: 'subscription', // Important: We are selling a subscription
-                      // Define URLs where Stripe should redirect the user after checkout
-                      // For now, we'll just redirect back to the current page.
-                      // Later, we'll create specific success/cancel pages or handle it differently.
-                      successUrl: window.location.href + '?checkout=success', // Add query param for potential handling later
-                      cancelUrl: window.location.href + '?checkout=cancel',   // Add query param for potential handling later
-                      // You can prefill the email if the user is logged in
-                      customerEmail: (window.authState && window.authState.user && window.authState.user.email) ? window.authState.user.email : undefined,
-                      client_reference_id: userId
-                      
-                  }).then(function (result) {
-                      // If `redirectToCheckout` fails due to client-side error (rare)
-                      if (result.error) {
-                          console.error('Stripe redirectToCheckout error:', result.error.message);
-                          alert(`Payment Error: ${result.error.message}`);
-                          // Re-enable button on client-side error
-                          cmeCheckoutBtn.disabled = false;
-                          cmeCheckoutBtn.textContent = 'Checkout';
-                      }
-                      // Note: If successful, the user is redirected and won't reach here.
-                  });
-      
-              } catch (error) {
-                   console.error('Error initiating Stripe checkout:', error);
-                   alert('Could not start the checkout process. Please try again.');
-                   // Re-enable button on general error
-                   cmeCheckoutBtn.disabled = false;
-                   cmeCheckoutBtn.textContent = 'Checkout';
-              }
-  });
-} else {
-  console.error("CME Checkout button (#cmeCheckoutBtn) not found.");
-}
-// --- End of MODIFIED loadCmeDashboardData Function ---
+                // If successful, user is redirected, this part isn't reached.
+
+            } catch (error) {
+                console.error("Error calling createStripeCheckoutSession function or redirecting:", error);
+                // Check for specific Firebase Functions errors
+                let message = "Could not prepare checkout. Please try again.";
+                if (error.code && error.message) { // Firebase Functions error format
+                     message = `Error: ${error.message} (Code: ${error.code})`;
+                } else if (error.message) {
+                     message = error.message; // General JS error
+                }
+                alert(message);
+                // Re-enable button on error
+                cmeCheckoutBtn.disabled = false;
+                cmeCheckoutBtn.textContent = 'Checkout';
+            }
+        });
+    } else {
+        console.error("CME Checkout button (#cmeCheckoutBtn) not found.");
+    }
 
 // --- Function to Show the CME Learn More Modal ---
 function showCmeLearnMoreModal() {

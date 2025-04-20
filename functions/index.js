@@ -443,3 +443,68 @@ exports.stripeWebhookHandler = functions.https.onRequest(async (request, respons
     // Return a response to acknowledge receipt of the event
     response.status(200).json({ received: true });
 });
+
+// --- Callable Function to Create Stripe Checkout Session ---
+exports.createStripeCheckoutSession = functions.https.onCall(async (data, context) => {
+  // 1. Check Authentication
+  if (!context.auth) {
+      logger.error("Authentication required for createStripeCheckoutSession.");
+      throw new functions.https.HttpsError("unauthenticated", "You must be logged in to start a checkout.");
+  }
+  const uid = context.auth.uid; // Firebase User ID of the caller
+
+  // 2. Validate Input Data (Price ID)
+  const priceId = data.priceId;
+  if (!priceId || typeof priceId !== 'string') {
+      logger.error(`Invalid Price ID received from user ${uid}: ${priceId}`);
+      throw new functions.https.HttpsError("invalid-argument", "A valid Price ID must be provided.");
+  }
+  logger.log(`User ${uid} requested checkout session for Price ID: ${priceId}`);
+
+  // 3. Initialize Stripe Client (ensure secret key is configured)
+  const stripeSecretKey = functions.config().stripe?.secret_key;
+  if (!stripeSecretKey) {
+      logger.error("Stripe secret key is not configured.");
+      throw new functions.https.HttpsError("internal", "Server configuration error [SK].");
+  }
+  const stripeClient = stripe(stripeSecretKey);
+
+  // 4. Define Success and Cancel URLs (can be environment variables later if needed)
+  //    For now, using a placeholder - ideally, point to specific pages on your site.
+  const YOUR_APP_BASE_URL = "https://medswipeapp.com"; // <<< IMPORTANT: Replace with your actual app URL if different
+  const successUrl = `${YOUR_APP_BASE_URL}/checkout-success.html`; // Example success page
+  const cancelUrl = `${YOUR_APP_BASE_URL}/checkout-cancel.html`;   // Example cancel page
+
+  // 5. Create the Stripe Checkout Session on the Server
+  try {
+      const session = await stripeClient.checkout.sessions.create({
+          payment_method_types: ['card'],
+          mode: 'subscription',
+          line_items: [{
+              price: priceId,
+              quantity: 1,
+          }],
+          // --- THIS IS WHERE client_reference_id IS VALID ---
+          client_reference_id: uid, // Associate session with Firebase UID
+          // ---
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          // Optionally add metadata if needed (e.g., plan name)
+          // metadata: {
+          //    firebaseUid: uid // Redundant if using client_reference_id, but can add more
+          // }
+          // If adding trial later, add subscription_data here:
+          // subscription_data: {
+          //    trial_period_days: 7
+          // }
+      });
+
+      logger.log(`Created Stripe Checkout Session ${session.id} for user ${uid}`);
+      // 6. Return the Session ID to the client
+      return { sessionId: session.id };
+
+  } catch (error) {
+      logger.error(`Error creating Stripe Checkout Session for user ${uid}:`, error);
+      throw new functions.https.HttpsError("internal", `Failed to create checkout session: ${error.message}`);
+  }
+});
