@@ -382,67 +382,74 @@ exports.stripeWebhookHandler = functions.https.onRequest(async (request, respons
         return;
     }
 
-            // --- Handle the Stripe event ---
-            if (event.type === 'checkout.session.completed') {
-              const session = event.data.object;
-              logger.log(`Checkout session completed: ${session.id}`);
-  
-              // --- Get User ID and Subscription Details ---
-              const clientReferenceId = session.client_reference_id; // This is the Firebase UID we passed
-              const stripeCustomerId = session.customer;
-              const stripeSubscriptionId = session.subscription;
-              const paymentStatus = session.payment_status;
-  
-              // Validate necessary data
-              if (!clientReferenceId) {
-                  logger.error(`Missing client_reference_id in checkout session: ${session.id}`);
-                  // Respond early, but with 200 so Stripe doesn't retry indefinitely for this issue
-                  response.status(200).json({ received: true, error: "Missing client reference ID" });
-                  return;
-              }
-              if (paymentStatus !== 'paid') {
-                   logger.warn(`Checkout session ${session.id} for user ${clientReferenceId} not paid (status: ${paymentStatus}). No action taken.`);
-                   response.status(200).json({ received: true, status: "Not paid" });
-                   return;
-              }
-               if (!stripeSubscriptionId || !stripeCustomerId) {
-                   logger.error(`Missing subscription or customer ID in checkout session: ${session.id}`);
-                   response.status(200).json({ received: true, error: "Missing subscription/customer ID" });
-                   return;
-               }
-  
-              // --- Update User Document in Firestore ---
-              try {
-                  const userDocRef = admin.firestore().collection('users').doc(clientReferenceId); // Use the UID
-  
-                  // Prepare data to update/set
-                  const subscriptionData = {
-                      stripeCustomerId: stripeCustomerId,
-                      stripeSubscriptionId: stripeSubscriptionId,
-                      cmeSubscriptionActive: true, // Grant access!
-                      cmeSubscriptionPlan: session.metadata?.planName || (session.mode === 'subscription' ? 'unknown_subscription' : 'unknown'), // Store plan type if available (we might add metadata later)
-                      cmeSubscriptionStartDate: admin.firestore.FieldValue.serverTimestamp(), // Record start time
-                      // Add other relevant fields if needed, e.g., trial end, next billing date (can get from subscription object later)
-                  };
-  
-                  await userDocRef.set(subscriptionData, { merge: true }); // Use set with merge:true to add/update fields
-  
-                  logger.log(`Successfully updated Firestore for user ${clientReferenceId}. CME access granted.`);
-  
-              } catch (dbError) {
-                  logger.error(`Firestore update failed for user ${clientReferenceId}:`, dbError);
-                  // Respond with 500 to signal an internal error; Stripe might retry.
-                  response.status(500).send(`Webhook Error: Firestore update failed: ${dbError.message}`);
-                  return; // Stop execution
-              }
-  
-          } else {
-              // Handle other event types if needed in the future
-              logger.log(`Received unhandled event type: ${event.type}`);
+                   // --- Handle the Stripe event ---
+        if (event.type === 'checkout.session.completed') {
+          const session = event.data.object;
+          logger.log(`Checkout session completed: ${session.id}`);
+
+          // --- Get Subscription and User ID ---
+          const stripeSubscriptionId = session.subscription;
+          const stripeCustomerId = session.customer;
+          const paymentStatus = session.payment_status;
+
+          // Validate necessary data from session
+          if (paymentStatus !== 'paid') {
+               logger.warn(`Checkout session ${session.id} not paid (status: ${paymentStatus}). No action taken.`);
+               response.status(200).json({ received: true, status: "Not paid" });
+               return;
           }
-  
-          // Return a response to acknowledge receipt of the event
-          response.status(200).json({ received: true });
+           if (!stripeSubscriptionId || !stripeCustomerId) {
+               logger.error(`Missing subscription or customer ID in checkout session: ${session.id}`);
+               response.status(200).json({ received: true, error: "Missing subscription/customer ID" });
+               return;
+           }
+
+          // Retrieve the subscription to get metadata (including firebaseUid)
+          let firebaseUid;
+          try {
+              const subscription = await stripeClient.subscriptions.retrieve(stripeSubscriptionId);
+              firebaseUid = subscription.metadata.firebaseUid; // Get UID from metadata
+              if (!firebaseUid) {
+                   logger.error(`Missing firebaseUid in metadata for subscription: ${stripeSubscriptionId}`);
+                   response.status(200).json({ received: true, error: "Missing firebaseUid in subscription metadata" });
+                   return;
+              }
+               logger.log(`Retrieved subscription ${stripeSubscriptionId}, found firebaseUid: ${firebaseUid}`);
+          } catch (subError) {
+               logger.error(`Failed to retrieve subscription ${stripeSubscriptionId}:`, subError);
+               response.status(500).send(`Webhook Error: Could not retrieve subscription: ${subError.message}`);
+               return;
+          }
+          // --- End Get Subscription and User ID ---
+
+
+          // --- Update User Document in Firestore ---
+          try {
+              const userDocRef = admin.firestore().collection('users').doc(firebaseUid); // Use the UID from metadata
+
+              // Prepare data to update/set
+              const subscriptionData = {
+                  stripeCustomerId: stripeCustomerId,
+                  stripeSubscriptionId: stripeSubscriptionId,
+                  cmeSubscriptionActive: true, // Grant access!
+                  cmeSubscriptionPlan: session.metadata?.planName || (session.mode === 'subscription' ? 'unknown_subscription' : 'unknown'),
+                  cmeSubscriptionStartDate: admin.firestore.FieldValue.serverTimestamp(),
+              };
+
+              await userDocRef.set(subscriptionData, { merge: true });
+
+              logger.log(`Successfully updated Firestore for user ${firebaseUid}. CME access granted.`);
+
+          } catch (dbError) {
+              logger.error(`Firestore update failed for user ${firebaseUid}:`, dbError);
+              response.status(500).send(`Webhook Error: Firestore update failed: ${dbError.message}`);
+              return;
+          }
+
+      } else {
+          // Handle other event types
+          logger.log(`Received unhandled event type: ${event.type}`);
+      }
 
     // Return a response to acknowledge receipt of the event
     response.status(200).json({ received: true });

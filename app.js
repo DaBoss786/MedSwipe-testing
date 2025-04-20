@@ -3546,8 +3546,13 @@ if (cmeCheckoutBtn) {
                       cancelUrl: window.location.href + '?checkout=cancel',   // Add query param for potential handling later
                       // You can prefill the email if the user is logged in
                       customerEmail: (window.authState && window.authState.user && window.authState.user.email) ? window.authState.user.email : undefined,
-                      client_reference_id: userId
-                      // If you skipped the free trial setup in Stripe, remove the line below
+                      subscription_data: {
+                        metadata: {
+                            firebaseUid: userId // Pass Firebase UID here
+                        }
+                        // If you add back the trial later, it goes here too:
+                        // trial_period_days: 7
+                    }
                       
                   }).then(function (result) {
                       // If `redirectToCheckout` fails due to client-side error (rare)
