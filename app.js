@@ -3546,13 +3546,7 @@ if (cmeCheckoutBtn) {
                       cancelUrl: window.location.href + '?checkout=cancel',   // Add query param for potential handling later
                       // You can prefill the email if the user is logged in
                       customerEmail: (window.authState && window.authState.user && window.authState.user.email) ? window.authState.user.email : undefined,
-                      subscription_data: {
-                        metadata: {
-                            firebaseUid: userId // Pass Firebase UID here
-                        }
-                        // If you add back the trial later, it goes here too:
-                        // trial_period_days: 7
-                    }
+                      client_reference_id: userId
                       
                   }).then(function (result) {
                       // If `redirectToCheckout` fails due to client-side error (rare)

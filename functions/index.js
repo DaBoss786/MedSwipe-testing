@@ -388,9 +388,17 @@ exports.stripeWebhookHandler = functions.https.onRequest(async (request, respons
           logger.log(`Checkout session completed: ${session.id}`);
 
           // --- Get Subscription and User ID ---
+          const clientReferenceId = session.client_reference_id; // This is the Firebase UID we passed
           const stripeSubscriptionId = session.subscription;
           const stripeCustomerId = session.customer;
           const paymentStatus = session.payment_status;
+
+          // Validate necessary data
+          if (!clientReferenceId) { // <<< Check clientReferenceId again
+            logger.error(`Missing client_reference_id in checkout session: ${session.id}`);
+            response.status(200).json({ received: true, error: "Missing client reference ID" });
+            return;
+        }
 
           // Validate necessary data from session
           if (paymentStatus !== 'paid') {
@@ -404,28 +412,9 @@ exports.stripeWebhookHandler = functions.https.onRequest(async (request, respons
                return;
            }
 
-          // Retrieve the subscription to get metadata (including firebaseUid)
-          let firebaseUid;
-          try {
-              const subscription = await stripeClient.subscriptions.retrieve(stripeSubscriptionId);
-              firebaseUid = subscription.metadata.firebaseUid; // Get UID from metadata
-              if (!firebaseUid) {
-                   logger.error(`Missing firebaseUid in metadata for subscription: ${stripeSubscriptionId}`);
-                   response.status(200).json({ received: true, error: "Missing firebaseUid in subscription metadata" });
-                   return;
-              }
-               logger.log(`Retrieved subscription ${stripeSubscriptionId}, found firebaseUid: ${firebaseUid}`);
-          } catch (subError) {
-               logger.error(`Failed to retrieve subscription ${stripeSubscriptionId}:`, subError);
-               response.status(500).send(`Webhook Error: Could not retrieve subscription: ${subError.message}`);
-               return;
-          }
-          // --- End Get Subscription and User ID ---
-
-
           // --- Update User Document in Firestore ---
           try {
-              const userDocRef = admin.firestore().collection('users').doc(firebaseUid); // Use the UID from metadata
+            const userDocRef = admin.firestore().collection('users').doc(clientReferenceId); // Use the UID from client_reference_id
 
               // Prepare data to update/set
               const subscriptionData = {
@@ -438,10 +427,10 @@ exports.stripeWebhookHandler = functions.https.onRequest(async (request, respons
 
               await userDocRef.set(subscriptionData, { merge: true });
 
-              logger.log(`Successfully updated Firestore for user ${firebaseUid}. CME access granted.`);
+              logger.log(`Successfully updated Firestore for user ${clientReferenceId}. CME access granted.`);
 
           } catch (dbError) {
-              logger.error(`Firestore update failed for user ${firebaseUid}:`, dbError);
+            logger.error(`Firestore update failed for user ${clientReferenceId}:`, dbError);
               response.status(500).send(`Webhook Error: Firestore update failed: ${dbError.message}`);
               return;
           }
