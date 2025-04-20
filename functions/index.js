@@ -367,3 +367,75 @@ exports.createStripeCheckoutSession = onCall(
     }
   }
 ); // End createStripeCheckoutSession
+
+// --- Callable Function to Create Stripe Customer Portal Session ---
+exports.createStripePortalSession = onCall(
+  {
+    region: "us-central1", // Or your preferred region
+    memory: "256MiB",
+    secrets: ["STRIPE_SECRET_KEY"] // Needs the secret key
+  },
+  async (request) => {
+    logger.log("createStripePortalSession called.");
+
+    // 1. Auth check
+    if (!request.auth) {
+      logger.error("Portal Session: Authentication failed.");
+      throw new HttpsError("unauthenticated", "You must be logged in.");
+    }
+    const uid = request.auth.uid;
+    logger.log(`Portal Session: Authenticated user: ${uid}`);
+
+    // 2. Initialize Stripe Client
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      logger.error("CRITICAL: Portal Session: Stripe secret key missing.");
+      throw new HttpsError("internal", "Server config error [SK].");
+    }
+    const stripeClient = stripe(secretKey);
+    logger.info("Portal Session: Stripe client initialized.");
+
+    // 3. Get Stripe Customer ID from Firestore
+    let stripeCustomerId;
+    try {
+      const userDocRef = admin.firestore().collection('users').doc(uid);
+      const userDocSnap = await userDocRef.get();
+
+      if (!userDocSnap.exists()) {
+        logger.error(`Portal Session: User document not found for UID: ${uid}`);
+        throw new HttpsError("not-found", "User data not found.");
+      }
+      stripeCustomerId = userDocSnap.data()?.stripeCustomerId; // Get the stored ID
+
+      if (!stripeCustomerId) {
+        logger.error(`Portal Session: Stripe Customer ID not found in Firestore for UID: ${uid}`);
+        throw new HttpsError("failed-precondition", "Subscription not found for this user.");
+      }
+       logger.log(`Portal Session: Found Stripe Customer ID: ${stripeCustomerId} for UID: ${uid}`);
+
+    } catch (dbError) {
+      logger.error(`Portal Session: Firestore lookup failed for UID ${uid}:`, dbError);
+      throw new HttpsError("internal", "Failed to retrieve user data.");
+    }
+
+    // 4. Define Return URL (Where user comes back *after* portal)
+    const YOUR_APP_BASE_URL = "https://medswipe-648ee.web.app"; // <<< Double-check this URL
+    const returnUrl = `${YOUR_APP_BASE_URL}/`; // Return to dashboard/homepage
+
+    // 5. Create the Stripe Billing Portal Session
+    try {
+      const portalSession = await stripeClient.billingPortal.sessions.create({
+        customer: stripeCustomerId,
+        return_url: returnUrl,
+      });
+
+      logger.log(`Portal Session: Created Stripe Portal Session ${portalSession.id} for Customer ${stripeCustomerId}`);
+      // 6. Return the Portal Session URL to the client
+      return { portalUrl: portalSession.url };
+
+    } catch (error) {
+      logger.error(`Portal Session: Error creating Stripe Portal Session for Customer ${stripeCustomerId}:`, error);
+      throw new HttpsError("internal", `Failed to create portal session: ${error.message}`);
+    }
+  }
+); // End createStripePortalSession

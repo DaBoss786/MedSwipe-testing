@@ -1,4 +1,6 @@
 // user-profile.js - Fixed version
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc } from './firebase-config.js'; // Adjust path if needed
+
 document.addEventListener('DOMContentLoaded', function() {
   // Update user profile UI based on auth state - without creating new UI elements
   function updateUserProfileUI(authState) {
@@ -7,9 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Update the user info section in the user menu
-  function updateUserMenuInfo(authState) {
+  async function updateUserMenuInfo(authState) {
     const usernameDisplay = document.getElementById('usernameDisplay');
-    
+    const manageSubBtn = document.getElementById('manageSubscriptionBtn'); // Get manage button
     if (!usernameDisplay) return;
     
     // Update username display
@@ -50,6 +52,30 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }
       }
+
+      // --- Show/Hide Manage Subscription Button ---
+      if (manageSubBtn) { // Check if button exists
+        try {
+            // Fetch user data to check for stripeCustomerId
+            const userDocRef = doc(db, 'users', authState.user.uid); // Use imported doc/db
+            const userDocSnap = await getDoc(userDocRef); // Use imported getDoc
+
+            if (userDocSnap.exists() && userDocSnap.data().stripeCustomerId) {
+                // User has a Stripe Customer ID, likely subscribed
+                manageSubBtn.style.display = 'block'; // Show the button
+                console.log("User has stripeCustomerId, showing Manage Subscription button.");
+            } else {
+                // No Stripe Customer ID found
+                manageSubBtn.style.display = 'none'; // Hide the button
+                console.log("User does not have stripeCustomerId, hiding Manage Subscription button.");
+            }
+        } catch (error) {
+             console.error("Error checking for stripeCustomerId:", error);
+             manageSubBtn.style.display = 'none'; // Hide on error
+        }
+    }
+    // --- End Show/Hide Manage Subscription Button ---
+
     } else {
       // For anonymous users, show guest username
       usernameDisplay.textContent = 'Guest User';

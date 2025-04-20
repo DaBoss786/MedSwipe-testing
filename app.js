@@ -9,9 +9,11 @@ import { displayPerformance } from './stats.js';
 
 // --- Get reference to Firebase Callable Function ---
 let createCheckoutSessionFunction;
+let createPortalSessionFunction;
 try {
     if (functions && httpsCallable) { // Check if imports exist
          createCheckoutSessionFunction = httpsCallable(functions, 'createStripeCheckoutSession');
+         createPortalSessionFunction = httpsCallable(functions, 'createStripePortalSession');
          console.log("Callable function reference 'createStripeCheckoutSession' created.");
     } else {
          console.error("Firebase Functions or httpsCallable not imported correctly.");
@@ -717,6 +719,65 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       });
     });
   }
+
+  // --- Manage Subscription Button ---
+const manageSubBtn = document.getElementById('manageSubscriptionBtn');
+if (manageSubBtn) {
+    manageSubBtn.addEventListener('click', async () => {
+        console.log("Manage Subscription button clicked.");
+
+        // Ensure user is logged in and function ref exists
+        const user = window.authFunctions.getCurrentUser();
+        if (!user || user.isAnonymous) {
+            alert("Please log in to manage your subscription.");
+            return;
+        }
+        if (!createPortalSessionFunction) {
+             alert("Error: Cannot connect to subscription manager. Please refresh.");
+             console.error("createPortalSessionFunction reference missing.");
+             return;
+        }
+
+        // Disable button and show loading state
+        manageSubBtn.style.pointerEvents = 'none'; // Disable clicks
+        manageSubBtn.textContent = 'Loading Portal...';
+        manageSubBtn.style.opacity = '0.7';
+
+        try {
+            console.log("Calling createStripePortalSession function...");
+            const result = await createPortalSessionFunction(); // No data needed from client
+            const portalUrl = result.data.portalUrl;
+            console.log("Received Portal URL:", portalUrl);
+
+            if (portalUrl) {
+                // Redirect the user to the Stripe Customer Portal
+                window.location.href = portalUrl;
+            } else {
+                throw new Error("Portal URL was not returned from the function.");
+            }
+            // No need to re-enable button here as user is redirected
+
+        } catch (error) {
+            console.error("Error calling createStripePortalSession function:", error);
+            let message = "Could not open the subscription portal. Please try again later.";
+             if (error.code && error.message) { // Firebase Functions error format
+                 // Provide more specific feedback if possible
+                 if (error.code === 'failed-precondition' || error.message.includes("Subscription not found")) {
+                      message = "No active subscription found to manage.";
+                 } else {
+                      message = `Error: ${error.message}`;
+                 }
+             }
+            alert(message);
+            // Re-enable button on error
+            manageSubBtn.style.pointerEvents = 'auto';
+            manageSubBtn.textContent = 'Manage Subscription';
+            manageSubBtn.style.opacity = '1';
+        }
+    });
+} else {
+    console.error("Manage Subscription button not found.");
+}
   
   // Reset progress from user menu
   const resetProgressUser = document.getElementById("resetProgressUser");
