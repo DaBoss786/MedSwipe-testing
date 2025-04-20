@@ -1,8 +1,10 @@
 // functions/index.js
+const functions = require("firebase-functions");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib"); // Added degrees
+const stripe = require("stripe"); // Add this line
 
 // Initialize Firebase Admin SDK only once
 if (admin.apps.length === 0) {
@@ -332,4 +334,116 @@ exports.generateCmeCertificate = onCall({ timeoutSeconds: 120, memory: "512MiB" 
         throw new HttpsError("internal", "Failed to generate or save the certificate.", error.message);
     }
   }
+});
+
+// --- Stripe Webhook Handler ---
+// This function listens for events from Stripe (like successful payments)
+
+// IMPORTANT: Set your Stripe secret key and webhook signing secret in Firebase environment configuration:
+// firebase functions:config:set stripe.secret_key="sk_test_YOUR_SECRET_KEY" stripe.webhook_secret="whsec_YOUR_WEBHOOK_SECRET"
+// (Replace with your actual TEST keys/secrets - get webhook secret in the next step)
+
+// Initialize Stripe with the secret key from environment config
+// Ensure functions.config() is defined or handle potential errors
+
+
+exports.stripeWebhookHandler = functions.https.onRequest(async (request, response) => {
+  // --- Initialize Stripe client INSIDE the function ---
+  const stripeSecretKey = functions.config().stripe?.secret_key;
+  if (!stripeSecretKey) {
+       logger.error("Stripe secret key is not configured..."); // Shortened log
+       response.status(500).send("Webhook Error: Server configuration missing (SK).");
+       return;
+  }
+  const stripeClient = stripe(stripeSecretKey);
+
+  // --- Read and Check Webhook Secret INSIDE the function ---
+  const webhookSecret = functions.config().stripe?.webhook_secret;
+  if (!webhookSecret || webhookSecret.includes("PLACEHOLDER")) { // Also check for placeholder
+      logger.error("Stripe webhook secret is not configured or is placeholder..."); // Shortened log
+      response.status(500).send("Webhook Error: Server configuration missing (WHS).");
+      return;
+  }
+  // --- End Webhook Secret Check ---
+
+    // Get the signature from the headers
+    const sig = request.headers['stripe-signature'];
+    let event;
+
+    try {
+        // Verify the event signature
+        event = stripeClient.webhooks.constructEvent(request.rawBody, sig, webhookSecret);
+        logger.log("Stripe webhook event verified:", event.id, event.type);
+
+    } catch (err) {
+        // On error, log and return the error message
+        logger.error(`⚠️ Webhook signature verification failed: ${err.message}`);
+        response.status(400).send(`Webhook Error: ${err.message}`);
+        return;
+    }
+
+            // --- Handle the Stripe event ---
+            if (event.type === 'checkout.session.completed') {
+              const session = event.data.object;
+              logger.log(`Checkout session completed: ${session.id}`);
+  
+              // --- Get User ID and Subscription Details ---
+              const clientReferenceId = session.client_reference_id; // This is the Firebase UID we passed
+              const stripeCustomerId = session.customer;
+              const stripeSubscriptionId = session.subscription;
+              const paymentStatus = session.payment_status;
+  
+              // Validate necessary data
+              if (!clientReferenceId) {
+                  logger.error(`Missing client_reference_id in checkout session: ${session.id}`);
+                  // Respond early, but with 200 so Stripe doesn't retry indefinitely for this issue
+                  response.status(200).json({ received: true, error: "Missing client reference ID" });
+                  return;
+              }
+              if (paymentStatus !== 'paid') {
+                   logger.warn(`Checkout session ${session.id} for user ${clientReferenceId} not paid (status: ${paymentStatus}). No action taken.`);
+                   response.status(200).json({ received: true, status: "Not paid" });
+                   return;
+              }
+               if (!stripeSubscriptionId || !stripeCustomerId) {
+                   logger.error(`Missing subscription or customer ID in checkout session: ${session.id}`);
+                   response.status(200).json({ received: true, error: "Missing subscription/customer ID" });
+                   return;
+               }
+  
+              // --- Update User Document in Firestore ---
+              try {
+                  const userDocRef = admin.firestore().collection('users').doc(clientReferenceId); // Use the UID
+  
+                  // Prepare data to update/set
+                  const subscriptionData = {
+                      stripeCustomerId: stripeCustomerId,
+                      stripeSubscriptionId: stripeSubscriptionId,
+                      cmeSubscriptionActive: true, // Grant access!
+                      cmeSubscriptionPlan: session.metadata?.planName || (session.mode === 'subscription' ? 'unknown_subscription' : 'unknown'), // Store plan type if available (we might add metadata later)
+                      cmeSubscriptionStartDate: admin.firestore.FieldValue.serverTimestamp(), // Record start time
+                      // Add other relevant fields if needed, e.g., trial end, next billing date (can get from subscription object later)
+                  };
+  
+                  await userDocRef.set(subscriptionData, { merge: true }); // Use set with merge:true to add/update fields
+  
+                  logger.log(`Successfully updated Firestore for user ${clientReferenceId}. CME access granted.`);
+  
+              } catch (dbError) {
+                  logger.error(`Firestore update failed for user ${clientReferenceId}:`, dbError);
+                  // Respond with 500 to signal an internal error; Stripe might retry.
+                  response.status(500).send(`Webhook Error: Firestore update failed: ${dbError.message}`);
+                  return; // Stop execution
+              }
+  
+          } else {
+              // Handle other event types if needed in the future
+              logger.log(`Received unhandled event type: ${event.type}`);
+          }
+  
+          // Return a response to acknowledge receipt of the event
+          response.status(200).json({ received: true });
+
+    // Return a response to acknowledge receipt of the event
+    response.status(200).json({ received: true });
 });

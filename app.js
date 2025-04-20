@@ -3522,6 +3522,16 @@ if (cmeCheckoutBtn) {
                   // Disable button to prevent multiple clicks
                   cmeCheckoutBtn.disabled = true;
                   cmeCheckoutBtn.textContent = 'Redirecting...';
+
+                  // Get the Firebase User ID (UID) - Ensure user is logged in
+                const user = window.authFunctions.getCurrentUser(); // Use your auth function
+                if (!user || user.isAnonymous) { // Also check for anonymous
+                    alert("Please log in or register before purchasing a subscription.");
+                    cmeCheckoutBtn.disabled = false;
+                    cmeCheckoutBtn.textContent = 'Checkout';
+                    return; // Stop if not a registered user
+                }
+                const userId = user.uid;
       
                   window.stripe.redirectToCheckout({
                       lineItems: [{
@@ -3535,7 +3545,8 @@ if (cmeCheckoutBtn) {
                       successUrl: window.location.href + '?checkout=success', // Add query param for potential handling later
                       cancelUrl: window.location.href + '?checkout=cancel',   // Add query param for potential handling later
                       // You can prefill the email if the user is logged in
-                      customerEmail: (window.authState && window.authState.user && window.authState.user.email) ? window.authState.user.email : undefined
+                      customerEmail: (window.authState && window.authState.user && window.authState.user.email) ? window.authState.user.email : undefined,
+                      client_reference_id: userId
                       // If you skipped the free trial setup in Stripe, remove the line below
                       
                   }).then(function (result) {
