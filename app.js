@@ -3511,13 +3511,33 @@ const STRIPE_MONTHLY_PRICE_ID = 'price_1RFkIrR9wwfN8hwyn8VrPfsx'; // Replace wit
     // Checkout Button
     const cmeCheckoutBtn = document.getElementById("cmeCheckoutBtn");
     if (cmeCheckoutBtn) {
-        cmeCheckoutBtn.addEventListener("click", async function() { // Make the function async
+        // Make the event listener function async
+        cmeCheckoutBtn.addEventListener("click", async function() {
             // Determine which plan is selected
             const isActiveAnnual = document.getElementById('cmeAnnualBtn')?.classList.contains('active');
             const selectedPriceId = isActiveAnnual ? STRIPE_ANNUAL_PRICE_ID : STRIPE_MONTHLY_PRICE_ID;
             const planName = isActiveAnnual ? 'Annual' : 'Monthly';
 
             console.log(`Requesting checkout session for ${planName} plan with Price ID: ${selectedPriceId}`);
+
+            // Check Auth State
+            if (window.authState.isLoading) {
+                alert("Authentication is still loading. Please wait a moment and try again.");
+                console.warn("Checkout attempted while auth state is loading.");
+                return;
+            }
+            const user = window.authFunctions.getCurrentUser();
+            if (!user) {
+                alert("Authentication error. Please try logging out and back in.");
+                console.error("Checkout attempted but no user found in auth state.");
+                return;
+            }
+            if (user.isAnonymous) {
+                alert("Please register or log in fully before purchasing a subscription.");
+                console.warn("Checkout attempted by anonymous user.");
+                return;
+            }
+            const userId = user.uid;
 
             // Ensure Price ID is valid
             if (!selectedPriceId || selectedPriceId.includes('YOUR_')) {
@@ -3526,27 +3546,26 @@ const STRIPE_MONTHLY_PRICE_ID = 'price_1RFkIrR9wwfN8hwyn8VrPfsx'; // Replace wit
                 return;
             }
 
-            // Ensure Stripe.js (window.stripe) and the callable function are ready
+            // Ensure Stripe.js and callable function are ready
             if (!window.stripe || !createCheckoutSessionFunction) {
                 alert('Error: Payment system or function reference not ready. Please refresh.');
                 console.error('Stripe object or callable function reference missing.');
                 return;
             }
 
-             // Ensure user is logged in and registered
-             const user = window.authFunctions.getCurrentUser();
-             if (!user || user.isAnonymous) {
-                 alert("Please log in or register before purchasing a subscription.");
-                 return;
-             }
-
             // Disable button
             cmeCheckoutBtn.disabled = true;
             cmeCheckoutBtn.textContent = 'Preparing Checkout...';
 
             try {
-                // --- Call the Cloud Function ---
-                console.log("Calling createStripeCheckoutSession function...");
+                // --- FORCE TOKEN REFRESH ---
+                console.log("Forcing ID token refresh...");
+                await getIdToken(user, true); // Pass true to force refresh
+                console.log("ID token refreshed.");
+                // --- END TOKEN REFRESH ---
+
+                // Call the Cloud Function
+                console.log("Calling createStripeCheckoutSession function for user:", userId);
                 const result = await createCheckoutSessionFunction({ priceId: selectedPriceId });
                 const sessionId = result.data.sessionId;
                 console.log("Received Session ID:", sessionId);
@@ -3555,33 +3574,29 @@ const STRIPE_MONTHLY_PRICE_ID = 'price_1RFkIrR9wwfN8hwyn8VrPfsx'; // Replace wit
                      throw new Error("Cloud function did not return a Session ID.");
                 }
 
-                // --- Redirect using the Session ID ---
+                // Redirect using the Session ID
                 cmeCheckoutBtn.textContent = 'Redirecting...';
                 const { error } = await window.stripe.redirectToCheckout({
                     sessionId: sessionId
                 });
 
-                // If redirectToCheckout fails (e.g., network error client-side)
+                // Handle redirect error
                 if (error) {
                     console.error("Stripe redirectToCheckout error:", error);
                     alert(`Could not redirect to checkout: ${error.message}`);
-                    // Re-enable button if redirect fails
                     cmeCheckoutBtn.disabled = false;
                     cmeCheckoutBtn.textContent = 'Checkout';
                 }
-                // If successful, user is redirected, this part isn't reached.
 
             } catch (error) {
                 console.error("Error calling createStripeCheckoutSession function or redirecting:", error);
-                // Check for specific Firebase Functions errors
                 let message = "Could not prepare checkout. Please try again.";
-                if (error.code && error.message) { // Firebase Functions error format
+                if (error.code && error.message) {
                      message = `Error: ${error.message} (Code: ${error.code})`;
                 } else if (error.message) {
-                     message = error.message; // General JS error
+                     message = error.message;
                 }
                 alert(message);
-                // Re-enable button on error
                 cmeCheckoutBtn.disabled = false;
                 cmeCheckoutBtn.textContent = 'Checkout';
             }
