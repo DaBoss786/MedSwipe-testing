@@ -339,7 +339,7 @@ exports.createStripeCheckoutSession = onCall(
     logger.info("Stripe client initialized successfully within createCheckout handler.");
 
     // 4. Define URLs (Consider making these configurable later)
-    const YOUR_APP_BASE_URL = "https://daboss786.github.io/MedSwipe-testing/"; // <<< Double-check this URL is correct
+    const YOUR_APP_BASE_URL = "https://daboss786.github.io/MedSwipe-testing"; // <<< Double-check this URL is correct
     const successUrl = `${YOUR_APP_BASE_URL}/checkout-success.html`; // Example success page
     const cancelUrl = `${YOUR_APP_BASE_URL}/checkout-cancel.html`;   // Example cancel page
 
@@ -401,7 +401,7 @@ exports.createStripePortalSession = onCall(
       const userDocRef = admin.firestore().collection('users').doc(uid);
       const userDocSnap = await userDocRef.get();
 
-      if (!userDocSnap.exists()) {
+      if (!userDocSnap.exists) {
         logger.error(`Portal Session: User document not found for UID: ${uid}`);
         throw new HttpsError("not-found", "User data not found.");
       }
@@ -419,7 +419,7 @@ exports.createStripePortalSession = onCall(
     }
 
     // 4. Define Return URL (Where user comes back *after* portal)
-    const YOUR_APP_BASE_URL = "https://medswipe-648ee.web.app"; // <<< Double-check this URL
+    const YOUR_APP_BASE_URL = "https://daboss786.github.io/MedSwipe-testing"; // <<< Double-check this URL
     const returnUrl = `${YOUR_APP_BASE_URL}/`; // Return to dashboard/homepage
 
     // 5. Create the Stripe Billing Portal Session
