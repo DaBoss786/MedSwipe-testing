@@ -4,7 +4,7 @@ import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection
 import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
-import { csvUrl, closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
+import { closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
 
 // --- Get reference to Firebase Callable Function ---
