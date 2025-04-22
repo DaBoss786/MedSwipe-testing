@@ -503,6 +503,8 @@ function showLoginForm(fromWelcomeScreen = false) {
   loginModal.style.display = 'flex';
 }
 
+window.showLoginForm = showLoginForm;
+
 // Function to show the registration form modal
 function showRegisterForm() {
   // Create registration modal if it doesn't exist
