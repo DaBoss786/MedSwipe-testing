@@ -1,5 +1,6 @@
 // user-profile.js - Fixed version
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc } from './firebase-config.js'; // Adjust path if needed
+import { closeUserMenu } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function() {
   // Update user profile UI based on auth state - without creating new UI elements
