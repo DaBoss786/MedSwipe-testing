@@ -1,5 +1,5 @@
 // app.js - TOP OF FILE
-import { csvUrl, shuffleArray, getCurrentQuestionId } from './utils.js';
+import { shuffleArray, getCurrentQuestionId } from './utils.js';
 import { auth, db, doc, getDoc, analytics, logEvent, collection, getDocs } from './firebase-config.js'; // Adjust path if needed
 import {
   fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
