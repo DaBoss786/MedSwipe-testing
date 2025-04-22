@@ -1,6 +1,6 @@
 // app.js - TOP OF FILE
 import { csvUrl, shuffleArray, getCurrentQuestionId } from './utils.js';
-import { auth, db, doc, getDoc, analytics, logEvent } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, analytics, logEvent, collection, getDocs } from './firebase-config.js'; // Adjust path if needed
 import {
   fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
   recordAnswer,               // Needed for regular quizzes
@@ -25,20 +25,31 @@ let sessionStartXP = 0;
 let questionStartTime = 0;
 let currentQuizType = 'regular';
 
-// Fetch questions from CSV
+// Replace the OLD fetchQuestionBank function with this NEW one:
 async function fetchQuestionBank() {
-  return new Promise((resolve, reject) => {
-    Papa.parse(csvUrl, {
-      download: true,
-      header: true,
-      complete: function(results) {
-        resolve(results.data);
-      },
-      error: function(error) {
-        reject(error);
-      }
+  console.log("Fetching question bank from Firestore...");
+  try {
+    // Get a reference to the 'questions' collection in Firestore
+    const questionsCollectionRef = collection(db, 'questions');
+
+    // Fetch all documents from the collection
+    const querySnapshot = await getDocs(questionsCollectionRef);
+
+    // Map the Firestore documents to an array of question objects
+    // This ensures the data structure matches what the rest of the app expects
+    const questionsArray = querySnapshot.docs.map(doc => {
+      // doc.data() returns the fields of the document
+      return doc.data();
     });
-  });
+
+    console.log(`Successfully fetched ${questionsArray.length} questions from Firestore.`);
+    return questionsArray; // Return the array of question objects
+
+  } catch (error) {
+    console.error("Error fetching question bank from Firestore:", error);
+    // Rethrow the error or return an empty array so calling functions know there was a problem
+    throw error; // Or return [];
+  }
 }
 
 // Load questions according to quiz options (handles regular and CME quizzes)
