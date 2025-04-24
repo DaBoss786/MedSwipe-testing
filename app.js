@@ -1,7 +1,7 @@
 // app.js - Top of file
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
-import { updateUserXP, updateUserMenu,calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
+import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
@@ -1934,45 +1934,50 @@ async function getDueQuestionIds() {
   }
 }
 
-// Function to load only specific questions by ID
+// NEW version - uses fetchQuestionBank (Firestore)
 async function loadSpecificQuestions(questionIds) {
   if (!questionIds || questionIds.length === 0) {
     alert("No questions to review.");
     return;
   }
-  
   console.log("Loading specific review questions:", questionIds.length);
-  
-  // Fetch all questions from CSV
-  Papa.parse(csvUrl, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      console.log("All questions loaded:", results.data.length);
-      
-      // Filter only the questions that are due for review
-      const reviewQuestions = results.data.filter(q => 
-        questionIds.includes(q["Question"].trim())
-      );
-      
-      console.log("Filtered review questions:", reviewQuestions.length);
-      
-      if (reviewQuestions.length === 0) {
-        alert("No review questions found. This might be because questions have been removed from the question bank.");
-        return;
-      }
-      
-      // Shuffle the review questions for a better learning experience
-      const shuffledReviewQuestions = shuffleArray([...reviewQuestions]);
-      
-      // Initialize the quiz with only these specific review questions
-      initializeQuiz(shuffledReviewQuestions);
-    },
-    error: function(error) {
-      console.error("Error parsing CSV:", error);
-      alert("Error loading questions. Please try again later.");
+
+  try {
+    // 1. Fetch the entire question bank from Firestore
+    // Ensure fetchQuestionBank is imported from quiz.js at the top of app.js
+    console.log("Fetching full question bank from Firestore for review queue...");
+    const allQuestions = await fetchQuestionBank(); // Uses the updated function from quiz.js
+    console.log("Full question bank loaded:", allQuestions.length);
+
+    // 2. Filter the fetched questions based on the provided IDs
+    const reviewQuestions = allQuestions.filter(q => {
+      // Ensure the question object and the 'Question' field exist before trimming
+      const questionText = q && q["Question"] ? q["Question"].trim() : null;
+      return questionText && questionIds.includes(questionText);
+    });
+    console.log("Filtered review questions:", reviewQuestions.length);
+
+    // 3. Handle cases where no matching questions are found
+    if (reviewQuestions.length === 0) {
+      alert("Could not find the specific questions scheduled for review. They might have been updated or removed from the question bank.");
+      // Optionally, navigate back to the dashboard or show a message
+      document.getElementById("mainOptions").style.display = "flex"; // Example fallback
+      return;
     }
-  });
+
+    // 4. Shuffle the review questions
+    const shuffledReviewQuestions = shuffleArray([...reviewQuestions]);
+
+    // 5. Initialize the quiz with only these specific review questions
+    // Ensure initializeQuiz is imported from quiz.js at the top of app.js
+    initializeQuiz(shuffledReviewQuestions); // Pass the filtered & shuffled questions
+
+  } catch (error) {
+    console.error("Error loading specific questions for review:", error);
+    alert("Error loading review questions. Please try again later.");
+    // Optionally, navigate back or show an error message
+    document.getElementById("mainOptions").style.display = "flex"; // Example fallback
+  }
 }
 
 // Then call this function when showing the dashboard after auth
