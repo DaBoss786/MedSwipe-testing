@@ -3221,179 +3221,182 @@ async function populateCmeCategoryDropdown() {
 
 // --- Step 9: Load and Display CME Dashboard Data ---
 
+// --- Step 9: Load and Display CME Dashboard Data (MODIFIED for Unique Counts & Remaining) ---
+
 async function loadCmeDashboardData() {
-    console.log("Loading CME dashboard data...");
-    const trackerContent = document.getElementById("cmeTrackerContent");
-    const historyContent = document.getElementById("cmeHistoryContent");
-    const claimButton = document.getElementById("claimCmeBtn");
+  console.log("Loading CME dashboard data...");
+  const trackerContent = document.getElementById("cmeTrackerContent");
+  const historyContent = document.getElementById("cmeHistoryContent");
+  const claimButton = document.getElementById("claimCmeBtn");
 
-    // Ensure elements exist
-    if (!trackerContent || !historyContent || !claimButton) {
-        console.error("Required CME dashboard elements not found.");
-        return;
-    }
-
-    // Reset display while loading
-    trackerContent.innerHTML = "<p>Loading tracker data...</p>";
-    historyContent.innerHTML = "<p>Loading history...</p>";
-    claimButton.disabled = true; // Disable button while loading/if no credits
-
-    // Ensure user is logged in and registered
-    if (!window.authState || !window.authState.user || window.authState.user.isAnonymous) {
-        trackerContent.innerHTML = "<p>Please log in as a registered user to view CME data.</p>";
-        historyContent.innerHTML = "<p>Login required.</p>";
-        console.log("User not logged in/registered for CME data.");
-        return;
-    }
-
-    const uid = window.authState.user.uid;
-    const userDocRef = doc(db, 'users', uid);
-
-    try {
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (!userDocSnap.exists()) {
-            trackerContent.innerHTML = "<p>No CME data found for this user.</p>";
-            historyContent.innerHTML = "<p>No claim history.</p>";
-            console.log("User document not found for CME data.");
-            return;
-        }
-
-        const data = userDocSnap.data();
-        const cmeStats = data.cmeStats || { // Default to zeros if cmeStats doesn't exist
-            totalAnswered: 0,
-            totalCorrect: 0,
-            eligibleAnswerCount: 0,
-            creditsEarned: 0.00,
-            creditsClaimed: 0.00
-        };
-        const cmeHistory = data.cmeClaimHistory || []; // Default to empty array
-
-        // --- Update Tracker Card ---
-        const cmeAccuracy = cmeStats.totalAnswered > 0
-            ? Math.round((cmeStats.totalCorrect / cmeStats.totalAnswered) * 100)
-            : 0;
-        // Ensure credits are formatted to 2 decimal places
-        const creditsEarned = parseFloat(cmeStats.creditsEarned || 0).toFixed(2);
-        const creditsClaimed = parseFloat(cmeStats.creditsClaimed || 0).toFixed(2);
-        const creditsAvailable = Math.max(0, creditsEarned - creditsClaimed).toFixed(2); // Ensure not negative
-
-        trackerContent.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
-                <div style="text-align: center;">
-                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalAnswered || 0}</div>
-                    <div style="font-size: 0.8em; color: #555;">Questions Answered</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalCorrect || 0}</div>
-                    <div style="font-size: 0.8em; color: #555;">Correct Answers</div>
-                </div>
-                 <div style="text-align: center;">
-                    <div style="font-size: 1.4em; font-weight: bold; color: ${cmeAccuracy >= 70 ? '#28a745' : '#dc3545'};">${cmeAccuracy}%</div>
-                    <div style="font-size: 0.8em; color: #555;">Overall Accuracy</div>
-                </div>
-                 <div style="text-align: center;">
-                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${creditsEarned}</div>
-                    <div style="font-size: 0.8em; color: #555;">Total Credits Earned</div>
-                </div>
-                 <div style="text-align: center;">
-                    <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${creditsAvailable}</div>
-                    <div style="font-size: 0.8em; color: #555;">Available to Claim</div>
-                </div>
-            </div>
-            ${cmeAccuracy < 70 && cmeStats.totalAnswered > 0 ? '<p style="color: #dc3545; font-size: 0.85rem; text-align: center; margin-top: 10px;">Note: Accuracy must be >= 70% to earn credits.</p>' : ''}
-        `;
-
-        // Enable/disable claim button
-        if (parseFloat(creditsAvailable) >= 0.25) {
-            claimButton.disabled = false;
-            claimButton.textContent = `Claim ${creditsAvailable} Credits`;
-        } else {
-            claimButton.disabled = true;
-            claimButton.textContent = "Claim CME Credits"; // Reset text
-        }
-
-            // --- Update History Card (MODIFIED Display) ---
-        if (cmeHistory.length > 0) {
-          cmeHistory.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0)); // Sort newest first
-
-          // Add a new column header for the download link/button
-          let historyHtml = `
-              <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                  <thead>
-                      <tr style="border-bottom: 1px solid #ddd; text-align: left;">
-                          <th style="padding: 8px 5px;">Date Claimed</th>
-                          <th style="padding: 8px 5px; text-align: right;">Credits</th>
-                          <th style="padding: 8px 5px; text-align: center;">Certificate</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-          `;
-
-          cmeHistory.forEach(claim => {
-              const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
-              let claimDate = 'Unknown Date';
-              if (claim.timestamp && typeof claim.timestamp.toDate === 'function') {
-                  claimDate = claim.timestamp.toDate().toLocaleDateString();
-              } else if (claim.timestamp instanceof Date) { // Handle potential client-side Date objects if any exist
-                  claimDate = claim.timestamp.toLocaleDateString();
-              }
-
-              // --- Check for downloadUrl and add button/link ---
-              let downloadCellContent = '-'; // Default if no link
-              if (claim.downloadUrl) {
-                  // Use an anchor tag styled as a small button
-                  downloadCellContent = `
-                      <a href="${claim.downloadUrl}" target="_blank" download="${claim.pdfFileName || 'CME_Certificate.pdf'}" class="cme-download-btn" title="Download PDF">
-                          ⬇️ PDF
-                      </a>
-                  `;
-              }
-              // --- End of download link check ---
-
-              historyHtml += `
-                  <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 8px 5px;">${claimDate}</td>
-                      <td style="padding: 8px 5px; text-align: right;">${credits}</td>
-                      <td style="padding: 8px 5px; text-align: center;">${downloadCellContent}</td>
-                  </tr>
-              `;
-          });
-
-          historyHtml += `
-                  </tbody>
-              </table>
-              <style>
-                .cme-download-btn {
-                  display: inline-block;
-                  padding: 3px 8px;
-                  font-size: 0.8em;
-                  color: white;
-                  background-color: #007bff; /* Blue */
-                  border: none;
-                  border-radius: 4px;
-                  text-decoration: none;
-                  cursor: pointer;
-                  transition: background-color 0.2s;
-                }
-                .cme-download-btn:hover {
-                  background-color: #0056b3; /* Darker blue */
-                }
-              </style>
-          `;
-          historyContent.innerHTML = historyHtml;
-
-      } else {
-          historyContent.innerHTML = "<p style='text-align: center; color: #666;'>No credits claimed yet.</p>";
-      }
-      // --- End of History Card Update ---
-
-      console.log("CME dashboard data loaded and displayed.");
-
-  } catch (error) {
-      console.error("Error loading CME dashboard data:", error);
-      // ... (error display logic) ...
+  // Ensure elements exist
+  if (!trackerContent || !historyContent || !claimButton) {
+      console.error("Required CME dashboard elements not found.");
+      return;
   }
+
+  // Reset display while loading
+  trackerContent.innerHTML = "<p>Loading tracker data...</p>";
+  historyContent.innerHTML = "<p>Loading history...</p>";
+  claimButton.disabled = true; // Disable button while loading/if no credits
+
+  // Ensure user is logged in and registered
+  if (!window.authState || !window.authState.user || window.authState.user.isAnonymous) {
+      trackerContent.innerHTML = "<p>Please log in as a registered user to view CME data.</p>";
+      historyContent.innerHTML = "<p>Login required.</p>";
+      console.log("User not logged in/registered for CME data.");
+      return;
+  }
+
+  const uid = window.authState.user.uid;
+  const userDocRef = doc(db, 'users', uid);
+
+  try {
+      // --- Fetch User Data and Question Bank Concurrently (Slightly Faster) ---
+      const [userDocSnap, allQuestions] = await Promise.all([
+          getDoc(userDocRef),
+          fetchQuestionBank() // Fetch the full question bank
+      ]);
+      // --- End Concurrent Fetch ---
+
+      if (!userDocSnap.exists()) {
+          trackerContent.innerHTML = "<p>No CME data found for this user.</p>";
+          historyContent.innerHTML = "<p>No claim history.</p>";
+          console.log("User document not found for CME data.");
+          return;
+      }
+
+      // --- Process User Data ---
+      const data = userDocSnap.data();
+      const cmeStats = data.cmeStats || { // Default to zeros if cmeStats doesn't exist
+          totalAnswered: 0,       // Now unique answered
+          totalCorrect: 0,        // Now unique correct
+          eligibleAnswerCount: 0,
+          creditsEarned: 0.00,
+          creditsClaimed: 0.00
+      };
+      const cmeHistory = data.cmeClaimHistory || []; // Default to empty array
+      const cmeAnsweredQuestionsMap = data.cmeAnsweredQuestions || {}; // Get the map of answered questions
+      const uniqueCmeAnsweredCount = Object.keys(cmeAnsweredQuestionsMap).length; // Count unique answered
+
+      // --- Process Question Bank Data ---
+      const cmeEligibleQuestions = allQuestions.filter(q =>
+          q["CME Eligible"] && q["CME Eligible"].trim().toLowerCase() === 'yes'
+      );
+      const totalCmeEligibleInBank = cmeEligibleQuestions.length;
+
+      // --- Calculate Remaining Questions ---
+      const remainingCmeQuestions = Math.max(0, totalCmeEligibleInBank - uniqueCmeAnsweredCount);
+
+      // --- Update Tracker Card ---
+      // Accuracy is now based on unique counts
+      const uniqueCmeAccuracy = cmeStats.totalAnswered > 0
+          ? Math.round((cmeStats.totalCorrect / cmeStats.totalAnswered) * 100)
+          : 0;
+      // Ensure credits are formatted to 2 decimal places
+      const creditsEarned = parseFloat(cmeStats.creditsEarned || 0).toFixed(2);
+      const creditsClaimed = parseFloat(cmeStats.creditsClaimed || 0).toFixed(2);
+      const creditsAvailable = Math.max(0, creditsEarned - creditsClaimed).toFixed(2); // Ensure not negative
+
+      // Update the HTML structure to include "Remaining"
+      trackerContent.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
+              <div style="text-align: center;">
+                  <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalAnswered}</div>
+                  <div style="font-size: 0.8em; color: #555;">Unique Questions Answered</div>
+              </div>
+              <div style="text-align: center;">
+                  <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalCorrect}</div>
+                  <div style="font-size: 0.8em; color: #555;">Unique Correct Answers</div>
+              </div>
+               <div style="text-align: center;">
+                  <div style="font-size: 1.4em; font-weight: bold; color: ${uniqueCmeAccuracy >= 70 ? '#28a745' : '#dc3545'};">${uniqueCmeAccuracy}%</div>
+                  <div style="font-size: 0.8em; color: #555;">Unique Accuracy</div>
+              </div>
+               <div style="text-align: center;">
+                  <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${remainingCmeQuestions}</div>
+                  <div style="font-size: 0.8em; color: #555;">Remaining Questions</div>
+              </div>
+               <div style="text-align: center;">
+                  <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${creditsEarned}</div>
+                  <div style="font-size: 0.8em; color: #555;">Total Credits Earned</div>
+              </div>
+               <div style="text-align: center;">
+                  <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${creditsAvailable}</div>
+                  <div style="font-size: 0.8em; color: #555;">Available to Claim</div>
+              </div>
+          </div>
+          ${uniqueCmeAccuracy < 70 && cmeStats.totalAnswered > 0 ? '<p style="color: #dc3545; font-size: 0.85rem; text-align: center; margin-top: 10px;">Note: Unique Accuracy must be >= 70% to earn credits.</p>' : ''}
+      `;
+
+      // Enable/disable claim button (logic remains the same)
+      if (parseFloat(creditsAvailable) >= 0.25) {
+          claimButton.disabled = false;
+          claimButton.textContent = `Claim ${creditsAvailable} Credits`;
+      } else {
+          claimButton.disabled = true;
+          claimButton.textContent = "Claim CME Credits"; // Reset text
+      }
+
+      // --- Update History Card (No changes needed here) ---
+      if (cmeHistory.length > 0) {
+        cmeHistory.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0)); // Sort newest first
+        let historyHtml = `
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #ddd; text-align: left;">
+                        <th style="padding: 8px 5px;">Date Claimed</th>
+                        <th style="padding: 8px 5px; text-align: right;">Credits</th>
+                        <th style="padding: 8px 5px; text-align: center;">Certificate</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        cmeHistory.forEach(claim => {
+            const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
+            let claimDate = 'Unknown Date';
+            if (claim.timestamp && typeof claim.timestamp.toDate === 'function') {
+                claimDate = claim.timestamp.toDate().toLocaleDateString();
+            } else if (claim.timestamp instanceof Date) {
+                claimDate = claim.timestamp.toLocaleDateString();
+            }
+            let downloadCellContent = '-';
+            if (claim.downloadUrl) {
+                downloadCellContent = `
+                    <a href="${claim.downloadUrl}" target="_blank" download="${claim.pdfFileName || 'CME_Certificate.pdf'}" class="cme-download-btn" title="Download PDF">
+                        ⬇️ PDF
+                    </a>
+                `;
+            }
+            historyHtml += `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 5px;">${claimDate}</td>
+                    <td style="padding: 8px 5px; text-align: right;">${credits}</td>
+                    <td style="padding: 8px 5px; text-align: center;">${downloadCellContent}</td>
+                </tr>
+            `;
+        });
+        historyHtml += `
+                </tbody>
+            </table>
+            <style>
+              .cme-download-btn { display: inline-block; padding: 3px 8px; font-size: 0.8em; color: white; background-color: #007bff; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; transition: background-color 0.2s; }
+              .cme-download-btn:hover { background-color: #0056b3; }
+            </style>
+        `;
+        historyContent.innerHTML = historyHtml;
+    } else {
+        historyContent.innerHTML = "<p style='text-align: center; color: #666;'>No credits claimed yet.</p>";
+    }
+    // --- End of History Card Update ---
+
+    console.log("CME dashboard data loaded and displayed with unique counts and remaining.");
+
+} catch (error) {
+    console.error("Error loading CME dashboard data:", error);
+    trackerContent.innerHTML = "<p style='color: red;'>Error loading tracker data.</p>";
+    historyContent.innerHTML = "<p style='color: red;'>Error loading history.</p>";
+}
 }
 
 // --- Function to Show the CME Info/Paywall Screen ---
