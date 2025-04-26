@@ -361,8 +361,11 @@ async function initializeQuiz(questions, quizType = 'regular') {
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
     questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
     
+    const isCME = question["CME Eligible"] && question["CME Eligible"].trim().toLowerCase() === 'yes';
+
     questionSlide.innerHTML = `
       <div class="card">
+        ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''} {/* <-- This line adds the tag conditionally */}
         <div class="question">${question["Question"]}</div>
         ${question["Image URL"] && question["Image URL"].trim() !== ""
           ? `<img src="${question["Image URL"].trim()}" class="question-image">`

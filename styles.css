@@ -669,6 +669,25 @@ html, body {
   text-align: center;
 }
 
+/* --- NEW --- CME Eligible Tag Styles */
+.cme-tag {
+  position: absolute; /* Position relative to the card */
+  top: 0;             /* Stick to the top */
+  left: 0;            /* Stick to the left */
+  background-color: #0C72D3; /* Your theme's blue */
+  color: white;       /* White text */
+  padding: 4px 10px;  /* Space inside the tag (top/bottom, left/right) */
+  font-size: 0.7rem;  /* Small font size */
+  font-weight: bold;  /* Bold text */
+  /* Creates the ribbon-like corner cut */
+  border-radius: 6px 0 6px 0; /* Top-left, top-right, bottom-right, bottom-left */
+  z-index: 5;         /* Ensure it's above card content if needed */
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* Optional subtle shadow */
+  text-transform: uppercase; /* Optional: Makes text all caps */
+  letter-spacing: 0.5px;  /* Optional: Spacing between letters */
+}
+/* --- End of NEW Styles --- */
+
 .question {
   white-space: pre-line;
   font-size: 1.1rem;

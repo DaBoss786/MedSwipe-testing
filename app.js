@@ -3303,15 +3303,15 @@ async function loadCmeDashboardData() {
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
               <div style="text-align: center;">
                   <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalAnswered}</div>
-                  <div style="font-size: 0.8em; color: #555;">Unique Questions Answered</div>
+                  <div style="font-size: 0.8em; color: #555;">Questions Answered</div>
               </div>
               <div style="text-align: center;">
                   <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${cmeStats.totalCorrect}</div>
-                  <div style="font-size: 0.8em; color: #555;">Unique Correct Answers</div>
+                  <div style="font-size: 0.8em; color: #555;">Correct Answers</div>
               </div>
                <div style="text-align: center;">
                   <div style="font-size: 1.4em; font-weight: bold; color: ${uniqueCmeAccuracy >= 70 ? '#28a745' : '#dc3545'};">${uniqueCmeAccuracy}%</div>
-                  <div style="font-size: 0.8em; color: #555;">Unique Accuracy</div>
+                  <div style="font-size: 0.8em; color: #555;">Accuracy</div>
               </div>
                <div style="text-align: center;">
                   <div style="font-size: 1.4em; font-weight: bold; color: #0C72D3;">${remainingCmeQuestions}</div>
