@@ -365,7 +365,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
 
     questionSlide.innerHTML = `
       <div class="card">
-        ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''} {/* <-- This line adds the tag conditionally */}
+        ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''}
         <div class="question">${question["Question"]}</div>
         ${question["Image URL"] && question["Image URL"].trim() !== ""
           ? `<img src="${question["Image URL"].trim()}" class="question-image">`
