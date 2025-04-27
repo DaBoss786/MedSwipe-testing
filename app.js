@@ -1850,31 +1850,17 @@ if (startQuizBtn) {
 // Leaderboard Preview Card click - go to Leaderboard
 const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
 if (leaderboardPreviewCard) {
-    console.log("[DEBUG] Found Leaderboard Card Element. Preparing listener."); // Log 1
-
-    // --- REMOVED CLONE/REPLACE PATTERN ---
-
     // Add listener directly to the found element
     leaderboardPreviewCard.addEventListener('click', function() {
-        console.log("[DEBUG] Leaderboard Preview card CLICKED!"); // Log 3
-
-        // --- TEMPORARY TEST ---
-        alert('Leaderboard card click detected!');
-        // --- END TEMPORARY TEST ---
-
-        /* --- Original Logic (Commented out for testing) ---
         if (typeof showLeaderboard === 'function') {
             showLeaderboard(); // Call the function to show the leaderboard
         } else {
             console.error("showLeaderboard function not found!");
             alert("Error navigating to leaderboard.");
         }
-        */
     });
-    console.log("[DEBUG] Click listener ADDED directly to Leaderboard Card."); // Log 4 (Changed message slightly)
-    // --- END: Simplified Listener Attachment ---
 } else {
-     console.warn("[DEBUG] Leaderboard Preview Card (#leaderboardPreviewCard) not found in DOM during listener setup."); // Log 5
+     console.warn("Leaderboard Preview Card (#leaderboardPreviewCard) not found in DOM during listener setup.");
 }
   
   // Review Queue card click
