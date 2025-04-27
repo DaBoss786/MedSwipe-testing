@@ -3907,99 +3907,101 @@ html, body {
 
 /* styles.css */
 
-/* --- Base Modal Form Styles (Keep As Is) --- */
+/* === REVISED CME Claim Modal Styles === */
+
+/* Ensure the base modal form has a solid background */
 .modalForm {
   display: none;
-  position: fixed; /* Use fixed positioning for centering */
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #fff;
-  padding: 20px; /* Default padding */
-  z-index: 2100; /* Base z-index */
-  border-radius: 10px; /* Consistent radius */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* Consistent shadow */
+  background: #fff; /* <<< CRUCIAL: Ensure solid white background */
+  padding: 20px;
+  z-index: 2100;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   width: 90%;
   max-width: 400px; /* Default max-width */
-  /* No max-height or overflow by default */
 }
 
-/* --- Styling Overrides SPECIFICALLY for CME Claim Modal --- */
+/* --- Overrides SPECIFICALLY for CME Claim Modal --- */
 #cmeClaimModal {
-  max-width: 580px; /* Wider than login, good for form layout */
+  /* Inherits position, transform, border-radius, shadow from .modalForm */
+  background-color: #fff !important; /* FORCE solid white background again */
+  max-width: 580px; /* Wider for the form */
   max-height: 88vh; /* Limit height */
-  overflow-y: auto;  /* Enable vertical scrolling */
-  padding: 30px 35px; /* More generous padding */
-  z-index: 2200;      /* Ensure it's above other modals if needed */
-  /* It already has position:fixed, top, left, transform from .modalForm */
+  overflow-y: auto;  /* Enable vertical scrolling INSIDE the modal */
+  padding: 30px 35px; /* Adjust padding */
+  z-index: 2200;      /* Set a high z-index for the modal BOX */
+  /* display: none; is handled by JS */
 }
 
 /* Add the dark overlay using a pseudo-element */
 #cmeClaimModal::before {
   content: '';
-  position: fixed; /* Cover the whole viewport */
+  position: fixed; /* Cover the entire viewport */
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.65); /* Dark overlay */
-  z-index: -1; /* Place it behind the modal content */
-  /* Prevent pseudo-element from blocking clicks on the modal itself */
-  pointer-events: none;
+  width: 100%; /* Cover full width */
+  height: 100%; /* Cover full height */
+  background-color: rgba(0, 0, 0, 0.65); /* Dark semi-transparent overlay */
+  z-index: 2199; /* IMPORTANT: Set z-index JUST BELOW the modal's z-index (2200) */
+  display: block; /* Make sure it's displayed */
+  /* This ensures the overlay is behind the modal box but covers the page */
 }
 
 /* Style the close button */
 #cmeClaimModal .auth-close-btn {
-    position: absolute; /* Position relative to the modal box */
-    top: 15px;
-    right: 18px;
-    z-index: 10; /* Above modal content */
-    font-size: 1.6rem;
-    padding: 5px;
-    line-height: 1;
-    background: none;
-    border: none;
-    color: #aaa; /* Lighter close button */
-    cursor: pointer;
-    transition: color 0.2s ease;
+  position: absolute; /* Relative to the modal box */
+  top: 15px;
+  right: 18px;
+  z-index: 2201; /* Above the modal content */
+  font-size: 1.6rem;
+  padding: 5px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: #aaa; /* Lighter close button */
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 #cmeClaimModal .auth-close-btn:hover { color: #555; }
 
 /* --- Form Element Styling within CME Claim Modal --- */
-/* (Ensure consistency with login/auth modals) */
+/* (Keep these consistent with your other modals) */
 
 #cmeClaimModal h2 {
   margin-top: 0;
   margin-bottom: 25px;
-  color: #0C72D3; /* Match login title color */
+  color: #0C72D3;
   text-align: center;
-  font-size: 1.6rem; /* Match login title size */
-  font-weight: 600; /* Match login title weight */
+  font-size: 1.6rem;
+  font-weight: 600;
 }
 
 #cmeClaimModal .formGroup {
-  margin-bottom: 20px; /* Consistent spacing */
+  margin-bottom: 20px;
 }
 
 #cmeClaimModal .formGroup label {
   display: block;
-  font-size: 0.95rem; /* Match login label */
+  font-size: 0.95rem;
   font-weight: 500;
   color: #333;
   margin-bottom: 8px;
 }
 
-/* Style inputs, textareas to match login */
 #cmeClaimModal .formGroup input[type="number"],
 #cmeClaimModal .formGroup input[type="text"],
 #cmeClaimModal .formGroup textarea,
 #cmeClaimModal .formGroup select {
   width: 100%;
   box-sizing: border-box;
-  padding: 12px 15px; /* Match login input padding */
+  padding: 12px 15px;
   font-size: 1rem;
-  border: 1px solid #e0e0e0; /* Match login input border */
-  border-radius: 8px; /* Match login input border-radius */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   transition: border-color 0.3s, box-shadow 0.3s;
 }
  #cmeClaimModal .formGroup input:focus,
@@ -4009,21 +4011,21 @@ html, body {
    box-shadow: 0 0 0 2px rgba(12, 114, 211, 0.2);
    outline: none;
  }
-/* Specific input width */
+
 #cmeClaimModal #creditsToClaimInput {
     max-width: 100px;
     display: inline-block;
     margin-left: 10px;
-    vertical-align: middle; /* Align with label */
+    vertical-align: middle;
 }
 
-/* Radio/Checkbox Groups - simpler vertical layout */
+/* Radio/Checkbox Groups - Vertical Layout */
 #cmeClaimModal .radio-group,
 #cmeClaimModal .checkbox-group {
    margin-top: 10px;
    display: flex;
-   flex-direction: column; /* Stack options */
-   gap: 12px; /* Space between options */
+   flex-direction: column;
+   gap: 12px;
 }
  #cmeClaimModal .radio-group label,
  #cmeClaimModal .checkbox-group label {
@@ -4031,19 +4033,19 @@ html, body {
     font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 10px; /* Space between input and text */
+    gap: 10px;
     cursor: pointer;
-    padding: 3px 0; /* Add slight vertical padding for easier clicking */
+    padding: 3px 0;
  }
  #cmeClaimModal .radio-group input[type="radio"],
  #cmeClaimModal .checkbox-group input[type="checkbox"] {
-    width: auto; /* Let browser size */
-    margin: 0; /* Reset default margins */
-    flex-shrink: 0; /* Prevent shrinking */
-    transform: scale(1.1); /* Slightly larger */
-    accent-color: #0C72D3; /* Color the check/radio */
+    width: auto;
+    margin: 0;
+    flex-shrink: 0;
+    transform: scale(1.1);
+    accent-color: #0C72D3;
  }
- /* Special layout for 'Other' checkbox + text input */
+ /* 'Other' checkbox + text input layout */
  #cmeClaimModal .checkbox-group div:has(input[value="Other"]) {
      display: flex;
      align-items: center;
@@ -4051,45 +4053,44 @@ html, body {
      margin-top: 5px;
  }
  #cmeClaimModal .checkbox-group div label {
-     white-space: nowrap; /* Prevent 'Other:' text wrap */
-     margin-bottom: 0; /* Reset default label margin */
+     white-space: nowrap;
+     margin-bottom: 0;
  }
  #cmeClaimModal .checkbox-group div input[type="text"] {
      flex-grow: 1;
-     padding: 6px 8px; /* Smaller padding for inline text */
+     padding: 6px 8px;
      font-size: 0.9rem;
-     border-radius: 5px; /* Slightly less rounded */
+     border-radius: 5px;
  }
 
-/* Helper Text */
 #cmeClaimModal .formHelper {
-  font-size: 0.85rem; /* Match login helper */
+  font-size: 0.85rem;
   color: #666;
   margin-top: 5px;
-  display: block; /* Ensure it takes full width */
+  display: block;
 }
 
-/* Buttons - Match login modal style */
+/* Buttons - Stacked Vertically */
 #cmeClaimModal .btnRow {
    display: flex;
-   flex-direction: column; /* Stack buttons vertically */
-   gap: 12px; /* Space between buttons */
+   flex-direction: column;
+   gap: 12px;
    margin-top: 30px;
  }
  #cmeClaimModal .btnRow button {
-   width: 100%; /* Full width */
-   padding: 14px; /* Match login button padding */
+   width: 100%;
+   padding: 14px;
    font-size: 1rem;
    font-weight: 500;
-   border-radius: 8px; /* Match login button radius */
+   border-radius: 8px;
    border: none;
    cursor: pointer;
    transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
  }
  #cmeClaimModal .btnRow button#submitCmeClaimBtn {
-   background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%); /* Match primary */
+   background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
    color: white;
-   order: 1; /* Submit button first */
+   order: 1;
  }
   #cmeClaimModal .btnRow button#submitCmeClaimBtn:hover:not(:disabled) {
     background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
@@ -4097,7 +4098,7 @@ html, body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
   #cmeClaimModal .btnRow button#submitCmeClaimBtn:disabled {
-    background: #cccccc; /* Match disabled login button */
+    background: #cccccc;
     cursor: not-allowed;
     opacity: 0.7;
     transform: none;
@@ -4105,13 +4106,13 @@ html, body {
   }
 
  #cmeClaimModal .btnRow button#cancelCmeClaimBtn {
-    background-color: transparent; /* Match secondary button */
+    background-color: transparent;
     color: #0C72D3;
     border: 1px solid #0C72D3;
-    order: 2; /* Cancel button second */
+    order: 2;
  }
   #cmeClaimModal .btnRow button#cancelCmeClaimBtn:hover {
-     background-color: #f0f7ff; /* Match secondary button hover */
+     background-color: #f0f7ff;
   }
 
 /* Error Message Styling */
@@ -4119,30 +4120,31 @@ html, body {
   color: #dc3545;
   background-color: rgba(220, 53, 69, 0.1);
   border: 1px solid rgba(220, 53, 69, 0.2);
-  padding: 10px 15px; /* Adjust padding */
+  padding: 10px 15px;
   border-radius: 5px;
   margin-bottom: 20px;
   font-size: 0.9rem;
   text-align: center;
-  display: none; /* Hidden by default, shown by JS */
+  display: none; /* Hidden by default */
   line-height: 1.4;
 }
  #cmeClaimModal #claimModalError:not(:empty) {
-    display: block; /* Show only if it has content */
+    display: block;
  }
 
  /* Loading Indicator */
 #cmeClaimModal #claimLoadingIndicator {
-    display: none; /* Hidden by default */
+    display: none;
     text-align: center;
-    margin: 20px 0 10px 0; /* Adjust spacing */
+    margin: 20px 0 10px 0;
 }
 #cmeClaimModal #claimLoadingIndicator .spinner {
-    width: 30px; /* Smaller spinner */
+    width: 30px;
     height: 30px;
-    border-width: 3px; /* Thinner border */
+    border-width: 3px;
     margin: 0 auto 10px;
-    border-top-color: #0C72D3; /* Spinner color */
+    border-top-color: #0C72D3;
+    /* animation: spin 1s linear infinite; already defined globally */
 }
  #cmeClaimModal #claimLoadingIndicator p {
    color: #0C72D3;
@@ -4155,34 +4157,33 @@ html, body {
     text-align: center;
     margin: 25px 0 10px 0;
     padding-top: 20px;
-    border-top: 1px solid #eee; /* Separator */
-    display: none; /* Hidden by default, shown by JS */
+    border-top: 1px solid #eee;
+    display: none; /* Hidden by default */
 }
- #cmeClaimModal #claimModalLink p:first-child { /* Success message */
+ #cmeClaimModal #claimModalLink p:first-child {
     color: #28a745;
     font-weight: bold;
     margin-bottom: 15px;
     font-size: 1.1rem;
  }
- #cmeClaimModal #claimModalLink .auth-primary-btn { /* Download button */
-   display: inline-block; /* Allows centering */
-   width: auto; /* Don't force full width */
-   padding: 12px 30px; /* Good padding */
+ #cmeClaimModal #claimModalLink .auth-primary-btn {
+   display: inline-block;
+   width: auto;
+   padding: 12px 30px;
    text-decoration: none;
    margin-top: 5px;
    font-size: 1rem;
-   background: #28a745; /* Green download button */
+   background: #28a745;
    border: none;
  }
  #cmeClaimModal #claimModalLink .auth-primary-btn:hover {
-     background: #218838; /* Darker green hover */
+     background: #218838;
      transform: translateY(-1px);
      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
  }
- #cmeClaimModal #claimModalLink p:last-child { /* Help text */
+ #cmeClaimModal #claimModalLink p:last-child {
    font-size: 0.85rem;
    color: #666;
    margin-top: 15px;
  }
-
-/* --- End of CME Claim Modal Specific Styles --- */
+/* === End of REVISED CME Claim Modal Styles === */
