@@ -1574,6 +1574,57 @@ async function initializeDashboard() {
 
         console.log("Displayed CME card on dashboard for registered user.");
 
+                // --- START: Add Click Listener for Dashboard CME Card ---
+        // First, remove any potentially existing listener to prevent duplicates if dashboard re-initializes
+        const newCard = dashboardCmeCard.cloneNode(true); // Clone the card
+        dashboardCmeCard.parentNode.replaceChild(newCard, dashboardCmeCard); // Replace old card with clone
+
+        // Add listener to the new card (the clone)
+        newCard.addEventListener('click', async () => {
+            console.log("Dashboard CME card clicked.");
+
+            // Show a temporary loading state (optional, but good UX)
+            newCard.style.opacity = '0.7';
+            newCard.style.cursor = 'wait';
+
+            try {
+                // Check subscription status (ensure function is available)
+                if (typeof checkUserCmeSubscriptionStatus === 'function') {
+                    const isSubscribed = await checkUserCmeSubscriptionStatus();
+                    console.log("User CME subscription status:", isSubscribed);
+
+                    if (isSubscribed) {
+                        // User IS subscribed - go to CME Dashboard
+                        if (typeof showCmeDashboard === 'function') {
+                            showCmeDashboard();
+                        } else {
+                            console.error("showCmeDashboard function not found!");
+                            alert("Error navigating to CME module.");
+                        }
+                    } else {
+                        // User is NOT subscribed - go to Info/Paywall screen
+                        if (typeof showCmeInfoScreen === 'function') {
+                            showCmeInfoScreen();
+                        } else {
+                            console.error("showCmeInfoScreen function not found!");
+                            alert("Error showing CME information.");
+                        }
+                    }
+                } else {
+                     console.error("checkUserCmeSubscriptionStatus function not found!");
+                     alert("Error checking subscription status.");
+                }
+            } catch (error) {
+                console.error("Error during CME card click handling:", error);
+                alert("An error occurred. Please try again.");
+            } finally {
+                // Remove loading state
+                newCard.style.opacity = '1';
+                newCard.style.cursor = 'pointer';
+            }
+        });
+        // --- END: Add Click Listener for Dashboard CME Card ---
+
     } else if (dashboardCmeCard) {
         // User is anonymous or elements not found, ensure card is hidden
         dashboardCmeCard.style.display = "none";
