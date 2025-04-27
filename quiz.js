@@ -521,6 +521,21 @@ function addOptionListeners() {
                     if (typeof updateQuestionStats === 'function') {
                          await updateQuestionStats(qId, isCorrect);
                     } else { console.error("updateQuestionStats not found"); }
+                    // --- START: ADDED CME TRACKING FOR LAST REGULAR QUESTION ---
+            const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
+            if (isCmeEligible) {
+                console.log(`FINAL Regular quiz question ${qId} is CME Eligible. Recording CME stats...`);
+                if (typeof recordCmeAnswer === 'function') {
+                    // Call recordCmeAnswer even for the last regular question if eligible
+                    await recordCmeAnswer(qId, category, isCorrect, timeSpent);
+                    console.log(`Recorded parallel CME stats for FINAL regular quiz question ${qId}`);
+                } else {
+                    console.error("recordCmeAnswer function not found for final parallel tracking.");
+                }
+            }
+            // --- END: ADDED CME TRACKING FOR LAST REGULAR QUESTION ---
+
+        }
                 }
                 // --- End of processing final answer ---
 
@@ -667,6 +682,20 @@ function addOptionListeners() {
                      if (typeof updateQuestionStats === 'function') {
                          await updateQuestionStats(qId, isCorrect);
                     } else { console.error("updateQuestionStats not found"); }
+
+                    // --- START: ADDED CME TRACKING FOR REGULAR QUIZ ---
+            const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
+            if (isCmeEligible) {
+                console.log(`Regular quiz question ${qId} is CME Eligible. Recording CME stats...`);
+                if (typeof recordCmeAnswer === 'function') {
+                    // Call recordCmeAnswer even for regular quizzes if eligible
+                    await recordCmeAnswer(qId, category, isCorrect, timeSpent);
+                    console.log(`Recorded parallel CME stats for regular quiz question ${qId}`);
+                } else {
+                    console.error("recordCmeAnswer function not found for parallel tracking.");
+                }
+            }
+            // --- END: ADDED CME TRACKING FOR REGULAR QUIZ ---
                 }
                 // --- End of logic for NON-last questions ---
             } // End of if/else for last question check
