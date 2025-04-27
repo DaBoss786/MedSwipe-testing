@@ -3204,6 +3204,9 @@ if (result.data.success === true && typeof result.data.publicUrl === 'string' &&
             </a>
             <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab. You might need to allow pop-ups.)</p>
         `;
+        // Make sure the link container is visible
+        linkContainer.style.display = 'block';
+        
         // Hide the submit/cancel buttons after success
         if (submitButton) submitButton.style.display = 'none';
         if (cancelButton) cancelButton.style.display = 'none';

@@ -4169,7 +4169,10 @@ html, body {
     margin: 25px 0 10px 0;
     padding-top: 20px;
     border-top: 1px solid #eee;
-    display: none; /* Hidden by default */
+    display: none; /* Hidden by default, shown via JavaScript */
+    width: 100%; /* Ensure it takes full width of the modal */
+    position: relative; /* Ensure proper positioning */
+    z-index: 2201; /* Above other modal elements */
 }
  #cmeClaimModal #claimModalLink p:first-child {
     color: #28a745;
