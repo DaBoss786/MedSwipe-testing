@@ -3928,14 +3928,20 @@ html, body {
 /* --- Overrides SPECIFICALLY for CME Claim Modal --- */
 #cmeClaimModal {
   /* Inherits position, transform, border-radius, shadow from .modalForm */
+  position: fixed;
+  top: 50px; /* Position it near the top of the screen instead of center */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally only */
   background-color: #fff !important; /* FORCE solid white background again */
   max-width: 580px; /* Wider for the form */
   max-height: 88vh; /* Limit height */
   overflow-y: auto;  /* Enable vertical scrolling INSIDE the modal */
   padding: 30px 35px; /* Adjust padding */
   z-index: 2200;      /* Set a high z-index for the modal BOX */
-  position: relative; /* Ensure the modal has a stacking context */
   /* display: none; is handled by JS */
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  margin: 0 auto; /* Add auto margin for better horizontal centering */
 }
 
 /* Add the dark overlay using a separate element instead of a pseudo-element */
