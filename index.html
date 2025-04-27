@@ -205,6 +205,46 @@
       <span class="arrow-icon">→</span>
     </div>
   </div>
+
+      <!-- Review Queue Card (Existing) -->
+      <div class="dashboard-card review-queue-card" id="reviewQueueCard" style="width: 100%; margin-bottom: 20px;">
+        <!-- ... content of review queue card ... -->
+    </div> <!-- <<< END OF REVIEW QUEUE CARD -->
+
+    <!-- START: New CME Tracker Card for Dashboard -->
+    <div class="dashboard-card cme-tracker-dashboard-card" id="dashboardCmeCard" style="width: 100%; margin-bottom: 20px; display: none;"> <!-- Start hidden -->
+        <div class="card-header">
+            <h3>CME Tracker</h3>
+        </div>
+        <div class="card-content">
+            <div class="quick-stats-container" style="justify-content: space-around;"> <!-- Re-using quick-stats style -->
+                <div class="stats-item">
+                    <div class="stats-value" id="dashboardCmeAnswered">0</div>
+                    <div class="stats-label">CME Questions Answered</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-value" id="dashboardCmeAccuracy">0%</div>
+                    <div class="stats-label">Accuracy</div>
+                </div>
+                <div class="stats-item">
+                    <!-- Changed to show AVAILABLE credits -->
+                    <div class="stats-value" id="dashboardCmeAvailable">0.00</div>
+                    <div class="stats-label">CME Credits Earned</div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <!-- Footer text as requested, acts as the button -->
+            <span>Claim CME Credits</span>
+            <span class="arrow-icon">→</span>
+        </div>
+    </div>
+    <!-- END: New CME Tracker Card for Dashboard -->
+
+    <!-- Leaderboard Preview Card (Existing) -->
+    <div class="dashboard-card leaderboard-card" id="leaderboardPreviewCard" style="width: 100%; margin-bottom: 20px;">
+       <!-- ... content of leaderboard card ... -->
+    </div>
   
   <!-- Second Row: Leaderboard Preview Card (full width) -->
   <div class="dashboard-card leaderboard-card" id="leaderboardPreviewCard" style="width: 100%; margin-bottom: 20px;">
