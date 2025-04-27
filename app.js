@@ -1847,27 +1847,37 @@ if (startQuizBtn) {
     });
   }
   
-  // Leaderboard Preview Card click - go to Leaderboard
+// Leaderboard Preview Card click - go to Leaderboard
 const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
 if (leaderboardPreviewCard) {
-    console.log("Ensuring robust listener for Leaderboard Preview card.");
+    console.log("[DEBUG] Found Leaderboard Card Element. Preparing listener."); // Log 1
+
     // --- START: Apply Clone/Replace Pattern ---
     const newLeaderboardCard = leaderboardPreviewCard.cloneNode(true); // Clone the card
     leaderboardPreviewCard.parentNode.replaceChild(newLeaderboardCard, leaderboardPreviewCard); // Replace old with clone
+    console.log("[DEBUG] Leaderboard Card cloned and replaced."); // Log 2
 
     // Add listener to the NEW card (the clone)
-    newLeaderboardCard.addEventListener("click", function() {
-        console.log("Leaderboard Preview card clicked");
+    newLeaderboardCard.addEventListener('click', function() {
+        console.log("[DEBUG] Leaderboard Preview card CLICKED!"); // Log 3
+
+        // --- TEMPORARY TEST ---
+        alert('Leaderboard card click detected!');
+        // --- END TEMPORARY TEST ---
+
+        /* --- Original Logic (Commented out for testing) ---
         if (typeof showLeaderboard === 'function') {
             showLeaderboard(); // Call the function to show the leaderboard
         } else {
             console.error("showLeaderboard function not found!");
             alert("Error navigating to leaderboard.");
         }
+        */
     });
+    console.log("[DEBUG] Click listener ADDED to new Leaderboard Card."); // Log 4
     // --- END: Apply Clone/Replace Pattern ---
 } else {
-     console.warn("Leaderboard Preview Card (#leaderboardPreviewCard) not found in DOM during listener setup.");
+     console.warn("[DEBUG] Leaderboard Preview Card (#leaderboardPreviewCard) not found in DOM during listener setup."); // Log 5
 }
   
   // Review Queue card click
