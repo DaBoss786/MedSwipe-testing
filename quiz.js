@@ -525,20 +525,26 @@ function addOptionListeners() {
                           await updateQuestionStats(qId, isCorrect);
                       } else { console.error("updateQuestionStats not found"); }
 
-                      // 3. *** ADDED: Parallel CME Tracking for Eligible Regular Questions ***
-                      const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
-                      if (isCmeEligible) {
-                          console.log(`FINAL Regular quiz question ${qId} is CME Eligible. Recording parallel CME stats...`);
-                          if (typeof recordCmeAnswer === 'function') {
-                              await recordCmeAnswer(qId, category, isCorrect, timeSpent);
-                              console.log(`Recorded parallel CME stats for FINAL regular quiz question ${qId}`);
-                          } else {
-                              console.error("recordCmeAnswer function not found for final parallel tracking.");
-                          }
-                      }
-                      // *** END: Parallel CME Tracking ***
-                  }
-                  // --- End of processing final answer ---
+                                                      // 3. *** ADDED: Parallel CME Tracking for Eligible Regular Questions ***
+                const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
+                if (isCmeEligible) {
+                     // --- ADD CHECK FOR AUTHENTICATED USER ---
+                    if (auth && auth.currentUser && !auth.currentUser.isAnonymous) {
+                        console.log(`FINAL Regular quiz question ${qId} is CME Eligible. Recording parallel CME stats for logged-in user...`);
+                        if (typeof recordCmeAnswer === 'function') {
+                            await recordCmeAnswer(qId, category, isCorrect, timeSpent);
+                            console.log(`Recorded parallel CME stats for FINAL regular quiz question ${qId}`);
+                        } else {
+                            console.error("recordCmeAnswer function not found for final parallel tracking.");
+                        }
+                    } else {
+                        console.log(`FINAL Regular quiz question ${qId} is CME Eligible, but user is anonymous. Skipping parallel CME recording.`);
+                    }
+                    // --- END CHECK FOR AUTHENTICATED USER ---
+                }
+                // *** END: Parallel CME Tracking ***
+            }
+            // --- End of processing final answer ---
 
 
                   // --- Set up the final explanation slide content ---
@@ -678,20 +684,26 @@ function addOptionListeners() {
                           await updateQuestionStats(qId, isCorrect);
                       } else { console.error("updateQuestionStats not found"); }
 
-                      // 3. *** ADDED: Parallel CME Tracking for Eligible Regular Questions ***
-                      const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
-                      if (isCmeEligible) {
-                          console.log(`Regular quiz question ${qId} is CME Eligible. Recording parallel CME stats...`);
-                          if (typeof recordCmeAnswer === 'function') {
-                              await recordCmeAnswer(qId, category, isCorrect, timeSpent);
-                              console.log(`Recorded parallel CME stats for regular quiz question ${qId}`);
-                          } else {
-                              console.error("recordCmeAnswer function not found for parallel tracking.");
-                          }
-                      }
-                      // *** END: Parallel CME Tracking ***
-                  }
-                  // --- End of logic for NON-last questions ---
+                                      // 3. *** ADDED: Parallel CME Tracking for Eligible Regular Questions ***
+                const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
+                if (isCmeEligible) {
+                    // --- ADD CHECK FOR AUTHENTICATED USER ---
+                    if (auth && auth.currentUser && !auth.currentUser.isAnonymous) {
+                        console.log(`Regular quiz question ${qId} is CME Eligible. Recording parallel CME stats for logged-in user...`);
+                        if (typeof recordCmeAnswer === 'function') {
+                            await recordCmeAnswer(qId, category, isCorrect, timeSpent);
+                            console.log(`Recorded parallel CME stats for regular quiz question ${qId}`);
+                        } else {
+                            console.error("recordCmeAnswer function not found for parallel tracking.");
+                        }
+                    } else {
+                        console.log(`Regular quiz question ${qId} is CME Eligible, but user is anonymous. Skipping parallel CME recording.`);
+                    }
+                    // --- END CHECK FOR AUTHENTICATED USER ---
+                }
+                // *** END: Parallel CME Tracking ***
+            }
+            // --- End of logic for NON-last questions ---
               } // End of if/else for last question check
 
           } // End of if(answerSlide)
