@@ -1852,13 +1852,10 @@ const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard")
 if (leaderboardPreviewCard) {
     console.log("[DEBUG] Found Leaderboard Card Element. Preparing listener."); // Log 1
 
-    // --- START: Apply Clone/Replace Pattern ---
-    const newLeaderboardCard = leaderboardPreviewCard.cloneNode(true); // Clone the card
-    leaderboardPreviewCard.parentNode.replaceChild(newLeaderboardCard, leaderboardPreviewCard); // Replace old with clone
-    console.log("[DEBUG] Leaderboard Card cloned and replaced."); // Log 2
+    // --- REMOVED CLONE/REPLACE PATTERN ---
 
-    // Add listener to the NEW card (the clone)
-    newLeaderboardCard.addEventListener('click', function() {
+    // Add listener directly to the found element
+    leaderboardPreviewCard.addEventListener('click', function() {
         console.log("[DEBUG] Leaderboard Preview card CLICKED!"); // Log 3
 
         // --- TEMPORARY TEST ---
@@ -1874,8 +1871,8 @@ if (leaderboardPreviewCard) {
         }
         */
     });
-    console.log("[DEBUG] Click listener ADDED to new Leaderboard Card."); // Log 4
-    // --- END: Apply Clone/Replace Pattern ---
+    console.log("[DEBUG] Click listener ADDED directly to Leaderboard Card."); // Log 4 (Changed message slightly)
+    // --- END: Simplified Listener Attachment ---
 } else {
      console.warn("[DEBUG] Leaderboard Preview Card (#leaderboardPreviewCard) not found in DOM during listener setup."); // Log 5
 }
