@@ -329,6 +329,7 @@ if (claimCmeBtn && cmeClaimModal) {
         if (!claimCmeBtn.disabled) {
             console.log("Claim CME button clicked, opening modal.");
             prepareClaimModal(); // Call helper to set available credits etc.
+            document.getElementById('cmeModalOverlay').style.display = 'block';
             cmeClaimModal.style.display = 'block'; // Use 'block' or 'flex' based on your final CSS
         } else {
             console.log("Claim CME button clicked, but disabled (not enough credits).");
@@ -342,6 +343,7 @@ if (claimCmeBtn && cmeClaimModal) {
 if (closeCmeClaimModalBtn && cmeClaimModal) {
     closeCmeClaimModalBtn.addEventListener('click', function() {
         console.log("Close claim modal button clicked.");
+        document.getElementById('cmeModalOverlay').style.display = 'none';
         cmeClaimModal.style.display = 'none';
     });
 }
@@ -350,6 +352,7 @@ if (closeCmeClaimModalBtn && cmeClaimModal) {
 if (cancelCmeClaimBtn && cmeClaimModal) {
     cancelCmeClaimBtn.addEventListener('click', function() {
         console.log("Cancel claim modal button clicked.");
+        document.getElementById('cmeModalOverlay').style.display = 'none';
         cmeClaimModal.style.display = 'none';
     });
 }
@@ -3207,6 +3210,14 @@ if (result.data.success === true && typeof result.data.publicUrl === 'string' &&
         // Show the close button clearly
         const closeButton = document.getElementById('closeCmeClaimModal');
         if(closeButton) closeButton.style.display = 'block'; // Make sure close is visible
+        
+        // Add click handler specifically for the close button after success
+        if(closeButton) {
+            closeButton.addEventListener('click', function() {
+                document.getElementById('cmeModalOverlay').style.display = 'none';
+                cmeClaimModal.style.display = 'none';
+            });
+        }
 
     } else {
         console.error("CRITICAL: Could not find the element with id='claimModalLink' in your HTML to display the download link!");

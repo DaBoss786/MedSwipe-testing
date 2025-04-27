@@ -3934,11 +3934,12 @@ html, body {
   overflow-y: auto;  /* Enable vertical scrolling INSIDE the modal */
   padding: 30px 35px; /* Adjust padding */
   z-index: 2200;      /* Set a high z-index for the modal BOX */
+  position: relative; /* Ensure the modal has a stacking context */
   /* display: none; is handled by JS */
 }
 
-/* Add the dark overlay using a pseudo-element */
-#cmeClaimModal::before {
+/* Add the dark overlay using a separate element instead of a pseudo-element */
+#cmeModalOverlay {
   content: '';
   position: fixed; /* Cover the entire viewport */
   top: 0;
@@ -3946,9 +3947,13 @@ html, body {
   width: 100%; /* Cover full width */
   height: 100%; /* Cover full height */
   background-color: rgba(0, 0, 0, 0.65); /* Dark semi-transparent overlay */
-  z-index: 2199; /* IMPORTANT: Set z-index JUST BELOW the modal's z-index (2200) */
+  z-index: 2199; /* IMPORTANT: Below the modal z-index */
   display: block; /* Make sure it's displayed */
-  /* This ensures the overlay is behind the modal box but covers the page */
+}
+
+/* Remove the problematic ::before pseudo-element */
+#cmeClaimModal::before {
+  display: none;
 }
 
 /* Style the close button */
