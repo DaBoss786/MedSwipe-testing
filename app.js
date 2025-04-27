@@ -1538,7 +1538,50 @@ async function initializeDashboard() {
 
       // Also load review queue data
       updateReviewQueue();
+          // --- START: Logic for Dashboard CME Card ---
+    const dashboardCmeCard = document.getElementById("dashboardCmeCard");
+    const dashboardCmeAnswered = document.getElementById("dashboardCmeAnswered");
+    const dashboardCmeAccuracy = document.getElementById("dashboardCmeAccuracy");
+    const dashboardCmeAvailable = document.getElementById("dashboardCmeAvailable");
+
+    // Check if the user is registered (not anonymous)
+    const isRegisteredUser = auth.currentUser && !auth.currentUser.isAnonymous;
+
+    if (isRegisteredUser && dashboardCmeCard && dashboardCmeAnswered && dashboardCmeAccuracy && dashboardCmeAvailable) {
+        // User is registered, try to show the card and load data
+        const cmeStats = data.cmeStats || { // Get CME stats, default to zeros
+            totalAnswered: 0,
+            totalCorrect: 0,
+            creditsEarned: 0.00,
+            creditsClaimed: 0.00
+        };
+
+        // Calculate values needed for the card
+        const uniqueAnswered = cmeStats.totalAnswered || 0;
+        const uniqueCorrect = cmeStats.totalCorrect || 0;
+        const uniqueAccuracy = uniqueAnswered > 0 ? Math.round((uniqueCorrect / uniqueAnswered) * 100) : 0;
+        const creditsEarned = parseFloat(cmeStats.creditsEarned || 0);
+        const creditsClaimed = parseFloat(cmeStats.creditsClaimed || 0);
+        const availableCredits = Math.max(0, creditsEarned - creditsClaimed).toFixed(2); // Format to 2 decimal places
+
+        // Update the card's content
+        dashboardCmeAnswered.textContent = uniqueAnswered;
+        dashboardCmeAccuracy.textContent = `${uniqueAccuracy}%`;
+        dashboardCmeAvailable.textContent = availableCredits;
+
+        // Make the card visible
+        dashboardCmeCard.style.display = "block"; // Or "flex" depending on your CSS for dashboard-card
+
+        console.log("Displayed CME card on dashboard for registered user.");
+
+    } else if (dashboardCmeCard) {
+        // User is anonymous or elements not found, ensure card is hidden
+        dashboardCmeCard.style.display = "none";
+        console.log("Hiding CME card on dashboard (user is anonymous or elements missing).");
     }
+    // --- END: Logic for Dashboard CME Card ---
+
+  } // End of if (userDocSnap.exists())
   } catch (error) {
     console.error("Error loading dashboard data:", error);
   }
