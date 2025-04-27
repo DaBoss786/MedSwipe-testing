@@ -1847,13 +1847,28 @@ if (startQuizBtn) {
     });
   }
   
-  // Leaderboard Preview card click - go to Leaderboard
-  const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
-  if (leaderboardPreviewCard) {
-    leaderboardPreviewCard.addEventListener("click", function() {
-      showLeaderboard();
+  // Leaderboard Preview Card click - go to Leaderboard
+const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
+if (leaderboardPreviewCard) {
+    console.log("Ensuring robust listener for Leaderboard Preview card.");
+    // --- START: Apply Clone/Replace Pattern ---
+    const newLeaderboardCard = leaderboardPreviewCard.cloneNode(true); // Clone the card
+    leaderboardPreviewCard.parentNode.replaceChild(newLeaderboardCard, leaderboardPreviewCard); // Replace old with clone
+
+    // Add listener to the NEW card (the clone)
+    newLeaderboardCard.addEventListener("click", function() {
+        console.log("Leaderboard Preview card clicked");
+        if (typeof showLeaderboard === 'function') {
+            showLeaderboard(); // Call the function to show the leaderboard
+        } else {
+            console.error("showLeaderboard function not found!");
+            alert("Error navigating to leaderboard.");
+        }
     });
-  }
+    // --- END: Apply Clone/Replace Pattern ---
+} else {
+     console.warn("Leaderboard Preview Card (#leaderboardPreviewCard) not found in DOM during listener setup.");
+}
   
   // Review Queue card click
 const reviewQueueCard = document.getElementById("reviewQueueCard");
