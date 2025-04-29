@@ -4201,3 +4201,23 @@ html, body {
    margin-top: 15px;
  }
 /* === End of REVISED CME Claim Modal Styles === */
+
+/* === Reduce Top Padding on Explanation/Answer Slides === */
+
+/* Target the card element specifically within the EVEN slides
+   in the Swiper wrapper. Since question slides are odd (1, 3, 5...)
+   and answer slides are even (2, 4, 6...), this targets only
+   the answer/explanation slides. */
+   .swiper-wrapper .swiper-slide:nth-child(even) .card {
+    padding-top: 10px; /* Significantly reduce top padding from the default 30px */
+    /* Optional: You might want to slightly reduce bottom padding too */
+    /* padding-bottom: 10px; */
+  }
+  
+  /* Optional: If the text STILL seems too low, reduce the top margin
+     of the first element inside the answer card (the .answer div) */
+  .swiper-wrapper .swiper-slide:nth-child(even) .card .answer {
+     margin-top: 0; /* Remove any default top margin if present */
+  }
+  
+  /* === End of Explanation Slide Padding Adjustment === */
