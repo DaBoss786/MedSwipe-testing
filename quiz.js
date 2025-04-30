@@ -579,6 +579,10 @@ function addOptionListeners() {
                           returnButton.textContent = "Return to CME Dashboard";
                           returnButton.style.display = "block";
                           returnButton.style.margin = "20px auto";
+                          // Add smaller size styling
+                          returnButton.style.width = "180px";
+                          returnButton.style.fontSize = "0.9rem";
+                          returnButton.style.padding = "10px 15px";
                           lastCard.appendChild(returnButton);
                           returnButton.addEventListener('click', function() {
                               console.log("Return to CME Dashboard button clicked.");
