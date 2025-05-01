@@ -34,5 +34,25 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+
+  // Add these lines after the existing event listeners
+  const tosMenuItem = document.getElementById('tosMenuItem');
+  const privacyMenuItem = document.getElementById('privacyMenuItem');
+
+  // Open TOS Modal from side menu
+  tosMenuItem.addEventListener('click', function() {
+    termsOfServiceModal.style.display = 'flex';
+    // Close the side menu after clicking
+    const sideMenu = document.getElementById("sideMenu");
+    if (sideMenu) sideMenu.classList.remove("open");
+  });
+
+  // Open Privacy Policy Modal from side menu
+  privacyMenuItem.addEventListener('click', function() {
+    privacyPolicyModal.style.display = 'flex';
+    // Close the side menu after clicking
+    const sideMenu = document.getElementById("sideMenu");
+    if (sideMenu) sideMenu.classList.remove("open");
+  });
 });
 
