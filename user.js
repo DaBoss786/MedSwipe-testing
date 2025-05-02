@@ -168,6 +168,13 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       
       // ===== ACHIEVEMENT BONUSES =====
       
+      // First correct answer bonus (one-time)
+if (isCorrect && data.stats.totalCorrect === 1 && !data.stats.achievements.firstCorrectAnswer) {
+  bonusXP += 5;
+  bonusMessages.push("First correct answer: +5 XP");
+  data.stats.achievements.firstCorrectAnswer = true;
+}
+
       // First 10 questions answered bonus (one-time)
       if (data.stats.totalAnswered === 10 && !data.stats.achievements.first10Questions) {
         bonusXP += 50;
