@@ -163,33 +163,85 @@ function startOnboardingQuiz() {
 }
 // --- Step 3: CME Module Button Logic ---
 
+// --- MORE DEBUGGING Step 3: CME Module Button Logic ---
+
 const cmeModuleBtn = document.getElementById("cmeModuleBtn");
 if (cmeModuleBtn) {
-    cmeModuleBtn.addEventListener("click", function() {
-        console.log("CME Module button clicked."); // For debugging
+    // Make the event listener async to use await
+    cmeModuleBtn.addEventListener("click", async function() {
+        console.log("--- CME Module Button Click Handler START ---");
 
-        // --- PAYWALL INTEGRATION POINT ---
-        // The check below now runs for ALL users (guests and registered)
+        // 1. Check Authentication State
+        if (!auth || !auth.currentUser) {
+            console.error("DEBUG: Auth object or currentUser is missing!");
+            alert("Authentication error. Please refresh and log in again.");
+            return;
+        }
+        if (auth.currentUser.isAnonymous) {
+            console.log("DEBUG: User is anonymous. Showing info screen.");
+            showCmeInfoScreen();
+            return;
+        }
 
-        // 2. Check if the user has an active CME subscription
-        // Using await here as the check might be async
-        checkUserCmeSubscriptionStatus().then(hasActiveCmeSubscription => {
-          if (hasActiveCmeSubscription) {
-              // User has paid, show the CME dashboard
-              showCmeDashboard();
-          } else {
-              // User has NOT paid (or is guest), show the informational/paywall screen
-              console.log("User not subscribed to CME or is guest. Showing info screen.");
-              showCmeInfoScreen(); // Call the function to show the new screen
-          }
-      }).catch(error => {
-           console.error("Error during subscription check:", error);
-           alert("Could not verify subscription status. Please try again.");
-      });
-  });
+        const uid = auth.currentUser.uid;
+        console.log(`DEBUG: Authenticated User UID: ${uid}`);
+        const userDocRef = doc(db, 'users', uid);
+
+        try {
+            // 2. Fetch the LATEST user data directly from Firestore
+            console.log(`DEBUG: Attempting to fetch Firestore doc: users/${uid}`);
+            const userDocSnap = await getDoc(userDocRef); // Use await
+
+            let hasActiveAnnualSub = false;
+            let availableCredits = 0;
+            let rawCreditsValue; // Variable to store the raw value
+
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                console.log("DEBUG: Successfully fetched userData:", JSON.stringify(userData)); // Log the entire data object
+
+                // 3. Read the relevant fields from the FRESH data
+                hasActiveAnnualSub = userData.cmeSubscriptionActive === true;
+                // *** CRITICAL: Read the raw value first ***
+                rawCreditsValue = userData.cmeCreditsAvailable;
+                availableCredits = userData.cmeCreditsAvailable || 0; // Default to 0
+
+                console.log(`DEBUG: Raw cmeCreditsAvailable value from Firestore:`, rawCreditsValue);
+                console.log(`DEBUG: Type of cmeCreditsAvailable: ${typeof rawCreditsValue}`);
+                console.log(`DEBUG: Parsed availableCredits value (used in check): ${availableCredits}`);
+                console.log(`DEBUG: Parsed hasActiveAnnualSub value: ${hasActiveAnnualSub}`);
+
+            } else {
+                console.warn(`DEBUG: User document not found in Firestore for UID: ${uid} during access check.`);
+                showCmeInfoScreen();
+                return;
+            }
+
+            // 4. The Decision Logic - Check BOTH conditions
+            console.log(`DEBUG: Evaluating condition: (${hasActiveAnnualSub} || ${availableCredits} > 0)`);
+            if (hasActiveAnnualSub || availableCredits > 0) {
+                // User HAS access
+                console.log("DEBUG: Access GRANTED. Calling showCmeDashboard().");
+                showCmeDashboard(); // Show the actual CME content
+            } else {
+                // User does NOT have access
+                console.log("DEBUG: Access DENIED. Calling showCmeInfoScreen().");
+                showCmeInfoScreen(); // Show the purchase/info screen
+            }
+
+        } catch (err) {
+            // Handle errors during Firestore fetch
+            console.error("DEBUG: Error during Firestore fetch or processing:", err);
+            alert("Could not verify your CME access status. Please try again later.");
+        } finally {
+             console.log("--- CME Module Button Click Handler END ---");
+        }
+    });
+    console.log("DEBUG: Event listener attached to cmeModuleBtn."); // Confirm listener attachment
 } else {
-  console.error("CME Module button (#cmeModuleBtn) not found."); // Error if button doesn't exist
+    console.error("DEBUG: CME Module button (#cmeModuleBtn) not found during listener setup.");
 }
+// --- End of MORE DEBUGGING Step 3 ---
 
 // Add event listener for the CME Dashboard's back button
 const cmeDashboardBackBtn = document.getElementById("cmeDashboardBackBtn");
