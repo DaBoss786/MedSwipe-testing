@@ -256,45 +256,98 @@ exports.stripeWebhookHandler = onRequest(
     try {
       if (event.type === "checkout.session.completed") {
         const session = event.data.object;
-        logger.info(`Processing checkout.session.completed for session: ${session.id}`);
-
-        // --- Use client_reference_id ---
+        logger.info(`Processing checkout.session.completed for session: ${session.id}, Mode: ${session.mode}`);
+    
         const uid = session.client_reference_id;
-        // --- End Use client_reference_id ---
-        const subsId = session.subscription;
-        const custId = session.customer;
+        const custId = session.customer; // Customer ID is useful regardless of mode
         const paid = session.payment_status === "paid";
-        // Attempt to get plan name from metadata if passed during session creation
-        const planName = session.metadata?.planName || (session.mode === 'subscription' ? 'subscription' : 'unknown');
-
-        logger.info(`Session details: UID=${uid}, SubID=${subsId}, CustID=${custId}, Paid=${paid}, Plan=${planName}`);
-
-        if (paid && uid && subsId && custId) {
-          logger.info(`Updating Firestore for user: ${uid}`);
-          const subscriptionStartDate = admin.firestore.FieldValue.serverTimestamp();
-
-          await admin.firestore()
-            .collection("users")
-            .doc(uid)
-            .set({
-              stripeCustomerId: custId,
-              stripeSubscriptionId: subsId,
-              cmeSubscriptionActive: true,
-              cmeSubscriptionPlan: planName, // Store the plan name
-              cmeSubscriptionStartDate: subscriptionStartDate,
-            }, { merge: true });
-
-          logger.info(`Firestore update successful for user: ${uid}`);
+    
+        if (paid && uid && custId) { // Basic checks: paid, user ID exists, customer ID exists
+            const userRef = admin.firestore().collection("users").doc(uid);
+    
+            // --- CHECK THE MODE ---
+            if (session.mode === 'subscription') {
+                // --- EXISTING SUBSCRIPTION LOGIC ---
+                const subsId = session.subscription;
+                if (subsId) {
+                    logger.info(`Handling SUBSCRIPTION completion for user: ${uid}, SubID: ${subsId}`);
+                    const subscriptionStartDate = admin.firestore.FieldValue.serverTimestamp();
+                    const planName = session.metadata?.planName || 'subscription'; // Get plan name if available
+    
+                    await userRef.set({
+                        stripeCustomerId: custId,
+                        stripeSubscriptionId: subsId,
+                        cmeSubscriptionActive: true,
+                        cmeSubscriptionPlan: planName,
+                        cmeSubscriptionStartDate: subscriptionStartDate,
+                    }, { merge: true });
+                    logger.info(`Firestore updated for SUBSCRIPTION user: ${uid}`);
+                } else {
+                    logger.warn(`Skipping Firestore update for subscription session ${session.id}. Missing subscription ID.`);
+                }
+                // --- END EXISTING SUBSCRIPTION LOGIC ---
+    
+            } else if (session.mode === 'payment') {
+                // --- NEW ONE-TIME PAYMENT LOGIC ---
+                logger.info(`Handling PAYMENT completion for user: ${uid}`);
+    
+                // Get the quantity purchased from the line items
+                // Note: This assumes only one line item (the credits)
+                let purchasedQuantity = 0;
+                if (session.line_items && session.line_items.data && session.line_items.data.length > 0) {
+                    purchasedQuantity = session.line_items.data[0].quantity || 0;
+                }
+    
+                if (purchasedQuantity > 0) {
+                    logger.info(`User ${uid} purchased ${purchasedQuantity} credits.`);
+                    // Atomically increment the user's available credits
+                    await userRef.set({
+                        stripeCustomerId: custId, // Store customer ID even for one-time
+                        cmeCreditsAvailable: admin.firestore.FieldValue.increment(purchasedQuantity)
+                    }, { merge: true }); // Use merge:true to add/update the field
+                    logger.info(`Firestore updated for PAYMENT user: ${uid}. Incremented cmeCreditsAvailable by ${purchasedQuantity}.`);
+                } else {
+                    logger.warn(`Skipping Firestore update for payment session ${session.id}. Purchased quantity is zero or line items missing.`);
+                }
+                // --- END NEW ONE-TIME PAYMENT LOGIC ---
+    
+            } else {
+                logger.warn(`Unhandled session mode: ${session.mode} for session ${session.id}`);
+            }
         } else {
-          logger.warn(`Skipping Firestore update for session ${session.id}. Conditions not met (Paid=${paid}, UID=${uid}, SubID=${subsId}, CustID=${custId}).`);
+            logger.warn(`Skipping Firestore update for session ${session.id}. Conditions not met (Paid=${paid}, UID=${uid}, CustID=${custId}).`);
         }
-      } else {
+    } else if (event.type === 'customer.subscription.deleted') {
+        // --- HANDLE SUBSCRIPTION CANCELLATION ---
+        const subscription = event.data.object;
+        const customerId = subscription.customer;
+        logger.info(`Processing customer.subscription.deleted for CustID: ${customerId}, SubID: ${subscription.id}`);
+        // Find the user by Stripe Customer ID
+        const usersRef = admin.firestore().collection('users');
+        const querySnapshot = await usersRef.where('stripeCustomerId', '==', customerId).limit(1).get();
+    
+        if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            logger.info(`Found user ${userDoc.id} for subscription cancellation.`);
+            await userDoc.ref.update({
+                cmeSubscriptionActive: false,
+                // Optionally clear stripeSubscriptionId or add cancellation date
+                // cmeSubscriptionEndDate: admin.firestore.FieldValue.serverTimestamp()
+            });
+            logger.info(`Set cmeSubscriptionActive to false for user ${userDoc.id}.`);
+        } else {
+            logger.warn(`Could not find user with Stripe Customer ID ${customerId} to handle subscription deletion.`);
+        }
+        // --- END HANDLE SUBSCRIPTION CANCELLATION ---
+    
+    } else {
         logger.info(`Received unhandled event type: ${event.type}`);
-      }
+    }
+    
+    // Acknowledge receipt (keep this)
+    logger.info(`Acknowledging webhook event: ${event.id}`);
+    res.status(200).json({ received: true, eventId: event.id });
 
-      // Acknowledge receipt
-      logger.info(`Acknowledging webhook event: ${event.id}`);
-      res.status(200).json({ received: true, eventId: event.id });
     } catch (dbErr) {
       logger.error(`Firestore update failed for session ${event?.data?.object?.id}: ${dbErr.message}`, { error: dbErr });
       res.status(500).send("Webhook Error: Internal database error.");
@@ -323,11 +376,18 @@ exports.createStripeCheckoutSession = onCall(
 
     // 2. Validate priceId (using request.data)
     const priceId = request.data.priceId; // Get priceId from request.data
-    if (!priceId || typeof priceId !== "string") {
-      logger.error("Validation failed: Invalid Price ID.", { data: request.data });
-      throw new HttpsError("invalid-argument", "A valid Price ID must be provided.");
-    }
-    logger.log(`Received Price ID: ${priceId}`);
+    const quantity = request.data.quantity || 1;
+
+// Basic validation for quantity (optional but good practice)
+if (typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity < 1) {
+    logger.warn(`Invalid quantity received: ${request.data.quantity}. Defaulting to 1.`);
+    quantity = 1; // Reset to 1 if invalid data received
+}
+if (!priceId || typeof priceId !== "string") {
+  logger.error("Validation failed: Invalid Price ID.", { data: request.data });
+  throw new HttpsError("invalid-argument", "A valid Price ID must be provided.");
+}
+logger.log(`Received Price ID: ${priceId}, Quantity: ${quantity}`); 
 
     // 3. Initialize Stripe Client using environment variable populated by 'secrets'
     const secretKey = process.env.STRIPE_SECRET_KEY; // Access the secret
@@ -342,14 +402,26 @@ exports.createStripeCheckoutSession = onCall(
     const YOUR_APP_BASE_URL = "https://daboss786.github.io/MedSwipe-testing"; // <<< Double-check this URL is correct
     const successUrl = `${YOUR_APP_BASE_URL}/checkout-success.html`; // Example success page
     const cancelUrl = `${YOUR_APP_BASE_URL}/checkout-cancel.html`;   // Example cancel page
+    let sessionMode = 'subscription'; // Default to subscription mode
+
+    // IMPORTANT: Replace 'price_xxxxxxxxxxxxxxx' below with your ACTUAL $8 credit price ID
+    const creditPriceIdFromStripe = 'price_1RKXlYR9wwfN8hwyGznI4iXS'; // <<< PASTE YOUR $8 PRICE ID HERE
+    
+    if (priceId === creditPriceIdFromStripe) {
+        sessionMode = 'payment'; // Set mode to 'payment' for the one-time credit purchase
+        logger.info(`Detected Credit Price ID (${priceId}), setting mode to 'payment'.`);
+    } else {
+        logger.info(`Detected Subscription Price ID (${priceId}), setting mode to 'subscription'.`);
+    }
 
     // 5. Create session
     try {
       logger.log(`Creating Stripe session for user ${uid} with price ${priceId}`);
       const session = await stripeClient.checkout.sessions.create({
         payment_method_types: ["card"],
-        mode: "subscription",
-        line_items: [{ price: priceId, quantity: 1 }],
+        mode: sessionMode, // Use the dynamic mode ('payment' or 'subscription')
+        // --- CHANGE THIS LINE ---
+        line_items: [{ price: priceId, quantity: quantity }], // Use the dynamic quantity
         client_reference_id: uid, // Use client_reference_id for passing UID
         success_url: successUrl,
         cancel_url: cancelUrl,

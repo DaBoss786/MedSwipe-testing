@@ -1067,7 +1067,6 @@
       <!-- Annual/Monthly Toggle -->
       <div class="cme-pricing-toggle" style="margin-bottom: 30px;">
           <button id="cmeAnnualBtn" class="toggle-btn active">ANNUAL</button>
-          <button id="cmeMonthlyBtn" class="toggle-btn">MONTHLY</button>
       </div>
 
       <!-- Price Display -->
@@ -1082,19 +1081,25 @@
           <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Unlimited access to 300 CME questions</li>
           <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
       </ul>
-      <!-- Monthly Feature List (Initially Hidden) -->
-      <ul id="cmeMonthlyFeatureList" style="list-style: none; padding: 0; margin-bottom: 35px; text-align: left; display: none;">
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> 1 CME credit per 12 questions</li>
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Unlimited access to 300 CME questions</li>
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
-        <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Cancel anytime</li>
+      
     </ul>
 
       <!-- Checkout Button -->
       <div>
           <!-- Reusing auth-primary-btn style, adding specific ID -->
-          <button id="cmeCheckoutBtn" class="auth-primary-btn" style="width: 80%; max-width: 300px; padding: 15px; font-size: 1.2rem; font-weight: bold;">Checkout</button>
+          <button id="cmeCheckoutAnnualBtn" class="auth-primary-btn" style="width: 80%; max-width: 300px; padding: 15px; font-size: 1.2rem; font-weight: bold;">Subscribe Annually</button>
       </div>
+      <!-- START: Add this section for purchasing credits -->
+<div class="cme-credit-purchase" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+  <h3 style="color: #333; font-size: 1.4rem; margin-bottom: 15px;">Or Purchase Credits</h3>
+  <p style="font-size: 1.1rem; color: #555; margin-bottom: 10px;">$8.00 per credit</p>
+  <div class="form-group" style="max-width: 200px; margin: 15px auto;">
+      <label for="creditQty" style="display: block; margin-bottom: 5px; font-weight: 500;">Number of Credits (1-25):</label>
+      <input type="number" id="creditQty" name="creditQty" min="1" max="25" value="1" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; text-align: center;">
+  </div>
+  <button id="cmeBuyCreditsBtn" class="auth-primary-btn" style="width: 80%; max-width: 300px; padding: 12px; font-size: 1.1rem; font-weight: bold; margin-top: 10px;">Buy Credits</button>
+</div>
+<!-- END: Add this section -->
 
   </div> <!-- End Content Area -->
 
