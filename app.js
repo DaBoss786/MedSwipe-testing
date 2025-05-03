@@ -3909,6 +3909,46 @@ if (cmeAnnualBtn) {
   console.error("CME Annual button (#cmeAnnualBtn) not found.");
 }
 
+// --- Logic for Pricing Screen Tab Switching ---
+
+const annualTabBtn = document.getElementById('cmeAnnualBtn');
+const payPerCreditTabBtn = document.getElementById('cmePayPerCreditBtn');
+const annualContent = document.getElementById('cmeAnnualContent');
+const payPerCreditContent = document.getElementById('cmePayPerCreditContent');
+
+// Listener for Annual Tab
+if (annualTabBtn && annualContent && payPerCreditContent) {
+    annualTabBtn.addEventListener('click', () => {
+        console.log("Annual tab clicked");
+        // Update button states
+        annualTabBtn.classList.add('active');
+        if (payPerCreditTabBtn) payPerCreditTabBtn.classList.remove('active');
+
+        // Update content visibility
+        annualContent.style.display = 'block'; // Or 'flex' if you prefer
+        payPerCreditContent.style.display = 'none';
+    });
+} else {
+     console.error("Missing elements for Annual tab functionality.");
+}
+
+// Listener for Pay-Per-Credit Tab
+if (payPerCreditTabBtn && annualContent && payPerCreditContent) {
+    payPerCreditTabBtn.addEventListener('click', () => {
+        console.log("Pay-Per-Credit tab clicked");
+        // Update button states
+        payPerCreditTabBtn.classList.add('active');
+        if (annualTabBtn) annualTabBtn.classList.remove('active');
+
+        // Update content visibility
+        payPerCreditContent.style.display = 'block'; // Or 'flex'
+        annualContent.style.display = 'none';
+    });
+} else {
+     console.error("Missing elements for Pay-Per-Credit tab functionality.");
+}
+// --- End Pricing Screen Tab Switching ---
+
 
 // --- Add your Stripe Price IDs (Test Mode) ---
 const STRIPE_ANNUAL_PRICE_ID = 'price_1RFkDtR9wwfN8hwye6csyxWu'; // Replace with your actual Annual Price ID (price_...)

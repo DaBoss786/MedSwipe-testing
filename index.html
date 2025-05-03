@@ -1046,7 +1046,7 @@
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Jointly provided by <strong>CME Consultants</strong> and <strong>MedSwipe</strong></li>
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Earn up to 25 AMA PRA Category 1 Credits™</li>
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Printable certificates on demand</li>
-          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Credit for doing what you're already doing</li>
+          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Get credit for questions you've already answered</li>
       </ul>
 
       <!-- Sample Certificate Preview -->
@@ -1069,54 +1069,70 @@
 <!-- ========================== -->
 <!-- == CME Pricing Screen == -->
 <!-- ========================== -->
+<!-- Inside index.html -->
+<!-- ========================== -->
+<!-- == CME Pricing Screen == -->
+<!-- ========================== -->
 <div id="cmePricingScreen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f8f9fa; z-index: 2150; padding: 20px; box-sizing: border-box; overflow-y: auto; flex-direction: column; align-items: center; text-align: center;">
 
-  <!-- Back Button (Top Left) -->
-  <button id="cmePricingBackBtn" class="cme-back-btn">← Back</button> <!-- Reusing the back button style -->
+  <!-- Back Button (Keep As Is) -->
+  <button id="cmePricingBackBtn" class="cme-back-btn">← Back</button>
 
   <!-- Content Area -->
-  <div style="max-width: 500px; width: 100%; margin-top: 50px;"> <!-- Added margin-top for back button space -->
+  <div style="max-width: 500px; width: 100%; margin-top: 50px;"> <!-- Added margin-top -->
 
       <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" style="max-width: 150px; margin-bottom: 15px;">
 
-      <h1 style="color: #333; font-size: 1.8rem; margin-bottom: 25px;">CME Pricing</h1>
+      <h1 style="color: #333; font-size: 1.8rem; margin-bottom: 25px;">CME Access Options</h1>
 
-      <!-- Annual/Monthly Toggle -->
+      <!-- *** START: Restored Tab Toggle *** -->
       <div class="cme-pricing-toggle" style="margin-bottom: 30px;">
           <button id="cmeAnnualBtn" class="toggle-btn active">ANNUAL</button>
+          <button id="cmePayPerCreditBtn" class="toggle-btn">PAY-PER-CREDIT</button>
       </div>
+      <!-- *** END: Restored Tab Toggle *** -->
 
-      <!-- Price Display -->
-      <div id="cmePriceDisplay" style="font-size: 2.8rem; font-weight: bold; color: #333; margin-bottom: 25px;">
-          $149/year
+      <!-- *** START: Annual Content Container (Initially Visible) *** -->
+      <div id="cmeAnnualContent" style="display: block;"> <!-- Use block or flex -->
+          <div id="cmeAnnualPriceDisplay" style="font-size: 2.8rem; font-weight: bold; color: #333; margin-bottom: 25px;">
+              $149/year
+          </div>
+          <ul id="cmeAnnualFeatureList" style="list-style: none; padding: 0; margin-bottom: 35px; text-align: left; display: inline-block;">
+              <!-- Keep your existing annual features -->
+              <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Over 60% less than other CME providers</li>
+              <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> 1 CME credit per 12 questions (≥70% accuracy)</li>
+              <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Claim up to 25 AMA PRA Category 1 Credits™</li>
+              <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
+              <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Auto-renews yearly (cancel anytime)</li>
+          </ul>
+          <div>
+              <!-- Keep the renamed Annual button -->
+              <button id="cmeCheckoutAnnualBtn" class="auth-primary-btn" style="width: 80%; max-width: 300px; padding: 15px; font-size: 1.2rem; font-weight: bold;">Subscribe Annually</button>
+          </div>
       </div>
+      <!-- *** END: Annual Content Container *** -->
 
-      <!-- Feature List -->
-      <ul id="cmeFeatureList" style="list-style: none; padding: 0; margin-bottom: 35px; text-align: left; display: inline-block;">
-          <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Over 60% cheaper than other CME providers</li>
-          <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> 1 CME credit per 12 questions</li>
-          <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Unlimited access to 300 CME questions</li>
-          <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
-      </ul>
-      
-    </ul>
-
-      <!-- Checkout Button -->
-      <div>
-          <!-- Reusing auth-primary-btn style, adding specific ID -->
-          <button id="cmeCheckoutAnnualBtn" class="auth-primary-btn" style="width: 80%; max-width: 300px; padding: 15px; font-size: 1.2rem; font-weight: bold;">Subscribe Annually</button>
+      <!-- *** START: Pay-Per-Credit Content Container (Initially Hidden) *** -->
+      <div id="cmePayPerCreditContent" style="display: none;">
+          <div id="cmeCreditPriceDisplay" style="font-size: 1.8rem; font-weight: bold; color: #333; margin-bottom: 15px;">
+              $8.00 <span style="font-size: 1rem; font-weight: normal; color: #555;">per Credit</span>
+          </div>
+           <p style="font-size: 0.9rem; color: #666; margin-bottom: 25px;">Purchase credits for claiming CME certificates.</p>
+          <ul id="cmeCreditFeatureList" style="list-style: none; padding: 0; margin-bottom: 35px; text-align: left; display: inline-block;">
+              <!-- Add the new features -->
+              <li style="margin-bottom: 12px; font-size: 1.0rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Purchase 1–25 CME credits as you need them</li>
+              <li style="margin-bottom: 12px; font-size: 1.0rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> 1 CME credit per 12 questions (≥70% accuracy)</li>
+              <li style="margin-bottom: 12px; font-size: 1.0rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Pay only for what you use—no commitment</li>
+              <li style="margin-bottom: 12px; font-size: 1.0rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
+          </ul>
+          <!-- Keep the quantity input and Buy Credits button -->
+          <div class="form-group" style="max-width: 200px; margin: 15px auto;">
+              <label for="creditQty" style="display: block; margin-bottom: 5px; font-weight: 500;">Number of Credits (1-25):</label>
+              <input type="number" id="creditQty" name="creditQty" min="1" max="25" value="1" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; text-align: center;">
+          </div>
+          <button id="cmeBuyCreditsBtn" class="auth-primary-btn" style="width: 80%; max-width: 300px; padding: 12px; font-size: 1.1rem; font-weight: bold; margin-top: 10px;">Buy Credits</button>
       </div>
-      <!-- START: Add this section for purchasing credits -->
-<div class="cme-credit-purchase" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-  <h3 style="color: #333; font-size: 1.4rem; margin-bottom: 15px;">Or Purchase Credits</h3>
-  <p style="font-size: 1.1rem; color: #555; margin-bottom: 10px;">$8.00 per credit</p>
-  <div class="form-group" style="max-width: 200px; margin: 15px auto;">
-      <label for="creditQty" style="display: block; margin-bottom: 5px; font-weight: 500;">Number of Credits (1-25):</label>
-      <input type="number" id="creditQty" name="creditQty" min="1" max="25" value="1" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; text-align: center;">
-  </div>
-  <button id="cmeBuyCreditsBtn" class="auth-primary-btn" style="width: 80%; max-width: 300px; padding: 12px; font-size: 1.1rem; font-weight: bold; margin-top: 10px;">Buy Credits</button>
-</div>
-<!-- END: Add this section -->
+      <!-- *** END: Pay-Per-Credit Content Container *** -->
 
   </div> <!-- End Content Area -->
 
