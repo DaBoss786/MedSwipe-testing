@@ -777,6 +777,18 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
     });
   }
 
+  // --- Listener for View CME History Menu Item ---
+const cmeHistoryMenuItem = document.getElementById("cmeHistoryMenuItem");
+if (cmeHistoryMenuItem) {
+    cmeHistoryMenuItem.addEventListener("click", function() {
+        console.log("View CME Claim History menu item clicked.");
+        closeUserMenu(); // Close the user menu first
+        showCmeHistoryModal(); // Call the function to fetch data and show the modal
+    });
+} else {
+    console.error("CME History Menu Item (#cmeHistoryMenuItem) not found.");
+}
+
   // --- Manage Subscription Button ---
 const manageSubBtn = document.getElementById('manageSubscriptionBtn');
 if (manageSubBtn) {
@@ -1692,6 +1704,137 @@ async function initializeDashboard() {
     console.error("Error loading dashboard data:", error);
   }
 }
+
+// --- Function to Show CME Claim History Modal ---
+async function showCmeHistoryModal() {
+  console.log("Executing showCmeHistoryModal...");
+
+  const historyModal = document.getElementById("cmeHistoryModal");
+  const historyBody = document.getElementById("cmeHistoryModalBody");
+  const closeButton = historyModal ? historyModal.querySelector('.close-modal') : null;
+
+  if (!historyModal || !historyBody || !closeButton) {
+      console.error("CME History Modal elements not found!");
+      return;
+  }
+
+  // 1. Check Authentication
+  if (!auth.currentUser || auth.currentUser.isAnonymous) {
+      alert("Please log in to view your CME claim history.");
+      return;
+  }
+  const uid = auth.currentUser.uid;
+
+  // 2. Show Modal & Loading State
+  historyBody.innerHTML = "<p>Loading history...</p>"; // Set loading message
+  historyModal.style.display = "flex"; // Show the modal
+
+  // 3. Add Close Logic (ensure it works)
+  // Using onclick assignment here for simplicity, ensures only one listener
+  closeButton.onclick = () => {
+      historyModal.style.display = "none";
+  };
+  historyModal.onclick = (event) => {
+      if (event.target === historyModal) { // Clicked on background overlay
+          historyModal.style.display = "none";
+      }
+  };
+
+  // 4. Fetch Data from Firestore
+  try {
+      const userDocRef = doc(db, 'users', uid);
+      console.log(`Fetching history for user: ${uid}`);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          // Get history, default to empty array if null/undefined
+          const cmeHistory = userData.cmeClaimHistory || [];
+          console.log(`Fetched ${cmeHistory.length} history entries.`);
+
+          // 5. Generate HTML Table
+          if (cmeHistory.length > 0) {
+              // Sort history by timestamp, newest first
+              cmeHistory.sort((a, b) => {
+                  const dateA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(0);
+                  const dateB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(0);
+                  return dateB - dateA; // Descending order
+              });
+
+              let tableHtml = `
+                  <table>
+                      <thead>
+                          <tr>
+                              <th>Date Claimed</th>
+                              <th>Credits</th>
+                              <th>Certificate</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+              `;
+
+              cmeHistory.forEach(claim => {
+                  const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
+                  let claimDate = 'Invalid Date';
+                  // Handle both Firestore Timestamp and potential Date objects
+                  if (claim.timestamp) {
+                       try {
+                           const dateObj = claim.timestamp.toDate ? claim.timestamp.toDate() : new Date(claim.timestamp);
+                           if (!isNaN(dateObj)) { // Check if date is valid
+                                claimDate = dateObj.toLocaleDateString(); // Format as MM/DD/YYYY (or locale default)
+                           }
+                       } catch (dateError) {
+                           console.error("Error parsing date from history:", claim.timestamp, dateError);
+                       }
+                  }
+
+
+                  // Create download link/button if URL exists
+                  let downloadCellContent = '-'; // Default if no URL
+                  if (claim.downloadUrl) {
+                      const fileName = claim.pdfFileName || 'CME_Certificate.pdf';
+                      downloadCellContent = `
+                          <a href="${claim.downloadUrl}"
+                             target="_blank"
+                             download="${fileName}"
+                             class="cme-history-download-btn"
+                             title="Download ${fileName}">
+                              ⬇️ PDF
+                          </a>`;
+                  }
+
+                  tableHtml += `
+                      <tr>
+                          <td>${claimDate}</td>
+                          <td>${credits}</td>
+                          <td>${downloadCellContent}</td>
+                      </tr>
+                  `;
+              });
+
+              tableHtml += `
+                      </tbody>
+                  </table>
+              `;
+              historyBody.innerHTML = tableHtml; // Inject the table
+
+          } else {
+              // No history found
+              historyBody.innerHTML = `<p class="no-history-message">No CME claim history found.</p>`;
+          }
+
+      } else {
+          // User document doesn't exist
+          console.warn(`User document not found for UID: ${uid} when fetching history.`);
+          historyBody.innerHTML = `<p class="no-history-message">Could not find user data.</p>`;
+      }
+
+  } catch (error) {
+      console.error("Error fetching or displaying CME history:", error);
+      historyBody.innerHTML = `<p style="color: red; text-align: center;">Error loading history. Please try again.</p>`;
+  }
+}
+// --- End of showCmeHistoryModal Function ---
 
 // Function to count questions due for review today
 async function countDueReviews() {

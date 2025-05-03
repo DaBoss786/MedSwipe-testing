@@ -396,6 +396,7 @@
     <ul id="userMenuList">
       <li id="performanceItemUser">Performance</li>
       <li><a href="#" id="bookmarksFilterUser">Bookmarks</a></li>
+      <li id="cmeHistoryMenuItem">View CME Claim History</li>
       <li id="manageSubscriptionBtn" style="display: none;">Manage Subscription</li>
       <li><a href="#" id="resetProgressUser">Reset Progress</a></li>
     </ul>
@@ -657,6 +658,22 @@
     </div>
   </div>
 </div>
+
+<!-- *** ADD THIS ENTIRE MODAL STRUCTURE *** -->
+<!-- CME Claim History Modal -->
+<div id="cmeHistoryModal" class="modal"> <!-- Use the existing 'modal' class -->
+  <div class="modal-content"> <!-- Use existing 'modal-content' class -->
+    <div class="modal-header"> <!-- Use existing 'modal-header' class -->
+      <h2>CME Claim History</h2>
+      <span class="close-modal">×</span> <!-- Standard close button -->
+    </div>
+    <div class="modal-body" id="cmeHistoryModalBody" style="max-height: 60vh; overflow-y: auto;">
+      <!-- History content will be loaded here by JavaScript -->
+      <p>Loading history...</p>
+    </div>
+  </div>
+</div>
+<!-- *** END OF NEW MODAL STRUCTURE *** -->
 
  <!-- Forgot Password Modal -->
 <div id="forgotPasswordModal" class="modal">
@@ -1076,7 +1093,7 @@
 
       <!-- Feature List -->
       <ul id="cmeFeatureList" style="list-style: none; padding: 0; margin-bottom: 35px; text-align: left; display: inline-block;">
-          <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Best Value - save 17%</li>
+          <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Over 60% cheaper than other CME providers</li>
           <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> 1 CME credit per 12 questions</li>
           <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Unlimited access to 300 CME questions</li>
           <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
