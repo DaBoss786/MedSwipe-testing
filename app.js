@@ -3042,6 +3042,7 @@ async function prepareClaimModal() {
 }
 
 // --- End of Step 12b ---
+// In app.js
 
 async function handleCmeClaimSubmission(event) {
   event.preventDefault(); // Prevent default form submission
@@ -3088,240 +3089,271 @@ async function handleCmeClaimSubmission(event) {
   const uid = auth.currentUser.uid;
   const userDocRef = doc(db, 'users', uid);
   const claimTimestamp = new Date(); // Capture timestamp for potential history update
-  const claimTimestampISO = claimTimestamp.toISOString();
+  const claimTimestampISO = claimTimestamp.toISOString(); // Use ISO string for reliable history matching
 
   try {
       // --- 1. Get Form Data & Validate ---
       const formData = new FormData(form);
       const creditsToClaim = parseFloat(creditsInput.value);
       const certificateFullName = formData.get('certificateFullName')?.trim() || '';
-      const evaluationData = { /* ... (keep your existing evaluation data extraction) ... */
-          certificateFullName: certificateFullName, // Make sure name is here
+      // --- Extract Evaluation Data ---
+      const evaluationData = {
+          certificateFullName: certificateFullName, // Include name here
           objectivesMet: formData.get('evalObjectivesMet'),
           confidence: formData.get('evalConfidence'),
-          usefulness: formData.get('evalUsefulness') || 'N/A',
-          practiceChange: formData.getAll('evalPracticeChange'),
+          usefulness: formData.get('evalUsefulness') || 'N/A', // Default if not applicable
+          practiceChange: formData.getAll('evalPracticeChange'), // Gets all checked values
           practiceChangeOtherText: formData.get('evalPracticeChangeOtherText')?.trim() || '',
-          biasChange: formData.getAll('evalBiasChange'),
+          biasChange: formData.getAll('evalBiasChange'), // Gets all checked values
           biasChangeOtherText: formData.get('evalBiasChangeOtherText')?.trim() || '',
           delivery: formData.get('evalDelivery'),
           commercialBias: formData.get('evalCommercialBias'),
           commercialBiasComment: formData.get('evalCommercialBiasComment')?.trim() || '',
           additionalComments: formData.get('evalAdditionalComments')?.trim() || ''
       };
+      // --- End Evaluation Data Extraction ---
 
-      // --- Keep your existing validation logic here ---
+      // --- Form Validation ---
       if (!certificateFullName) throw new Error("Please enter your full name.");
-      if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) throw new Error("Invalid credits amount.");
-      if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) throw new Error("Please complete required evaluation questions (1, 2, 6, 7).");
-      if (evaluationData.practiceChange.length === 0) throw new Error("Please select Practice Change Areas (Question 4).");
-      if (evaluationData.biasChange.length === 0) throw new Error("Please select Implicit Bias Change Areas (Question 5).");
-      if (evaluationData.commercialBias === 'No' && !evaluationData.commercialBiasComment) throw new Error("Please comment if commercial bias was present.");
+      if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
+           throw new Error("Invalid credits amount. Must be positive and in increments of 0.25.");
+      }
+      if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) {
+           throw new Error("Please complete required evaluation questions (1, 2, 6, 7).");
+      }
+      if (evaluationData.practiceChange.length === 0) {
+           throw new Error("Please select at least one Practice Change Area (Question 4).");
+      }
+      if (evaluationData.biasChange.length === 0) {
+           throw new Error("Please select at least one Implicit Bias Change Area (Question 5).");
+      }
+      if (evaluationData.commercialBias === 'No' && !evaluationData.commercialBiasComment) {
+           throw new Error("Please comment if you indicated commercial bias was present (Question 7).");
+      }
       // --- End Validation ---
 
 
-      // --- 2. Firestore Transaction (Save Claim Data) ---
+      // --- 2. Firestore Transaction (Save Claim Data AND Deduct Credits) ---
       await runTransaction(db, async (transaction) => {
           console.log("Starting Firestore transaction for claim...");
           const userDoc = await transaction.get(userDocRef);
-          if (!userDoc.exists()) throw new Error("User data not found.");
-
-          const data = userDoc.data();
-          const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
-          const currentEarned = parseFloat(cmeStats.creditsEarned || 0);
-          const currentClaimed = parseFloat(cmeStats.creditsClaimed || 0);
-          const currentAvailable = Math.max(0, currentEarned - currentClaimed);
-
-          if (creditsToClaim.toFixed(2) > currentAvailable.toFixed(2)) {
-              throw new Error(`Insufficient credits. Available: ${currentAvailable.toFixed(2)}`);
+          if (!userDoc.exists()) {
+              throw new Error("User data not found. Cannot process claim.");
           }
 
-          const newCreditsClaimed = currentClaimed + creditsToClaim;
-          const updatedCmeStats = { ...cmeStats, creditsClaimed: parseFloat(newCreditsClaimed.toFixed(2)) };
-          const newHistoryEntry = {
-              timestamp: claimTimestamp, // Use Date object
-              creditsClaimed: creditsToClaim,
-              evaluationData: evaluationData,
-              // downloadUrl and pdfFileName will be added later if needed
+          const data = userDoc.data();
+          // Read values needed INSIDE the transaction for consistency
+          const hasActiveAnnualSub = data.cmeSubscriptionActive === true;
+          const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
+          const availableOneTimeCredits = data.cmeCreditsAvailable || 0; // Read one-time credits balance
+
+          console.log(`Transaction Check: hasActiveAnnualSub=${hasActiveAnnualSub}, availableOneTimeCredits=${availableOneTimeCredits}`);
+
+          // Re-validate available credits INSIDE the transaction
+          // This check is only relevant if the user DOES NOT have an active subscription
+          if (!hasActiveAnnualSub && availableOneTimeCredits < creditsToClaim) {
+              throw new Error(`Insufficient credits within transaction. Available: ${availableOneTimeCredits.toFixed(2)}, Trying to claim: ${creditsToClaim}`);
+          }
+
+          // Prepare updates object
+          const currentClaimedInStats = parseFloat(cmeStats.creditsClaimed || 0);
+          const newCreditsClaimedInStats = currentClaimedInStats + creditsToClaim;
+          // Update the cmeStats object
+          const updatedCmeStats = {
+              ...cmeStats, // Keep existing stats like totalAnswered, totalCorrect, creditsEarned
+              creditsClaimed: parseFloat(newCreditsClaimedInStats.toFixed(2)) // Update only claimed credits
           };
+
+          // Create the new history entry
+          const newHistoryEntry = {
+              timestamp: claimTimestamp, // Use the Date object captured earlier
+              creditsClaimed: creditsToClaim,
+              evaluationData: evaluationData, // Store the collected evaluation data
+              // downloadUrl and pdfFileName will be added later if needed after function call
+          };
+          // Add the new entry to the existing history array (or create one)
           const updatedHistory = [...(data.cmeClaimHistory || []), newHistoryEntry];
 
-          transaction.set(userDocRef, {
-              cmeStats: updatedCmeStats,
-              cmeClaimHistory: updatedHistory
-          }, { merge: true });
+          // Initialize the object containing all updates for the transaction.set call
+          let updates = {
+              cmeStats: updatedCmeStats, // Include the updated stats
+              cmeClaimHistory: updatedHistory // Include the updated history
+          };
+
+          // --- *** CREDIT DEDUCTION LOGIC *** ---
+          if (!hasActiveAnnualSub) {
+              // Only deduct if NO active annual sub (meaning they are using one-time credits)
+              const newAvailableCredits = availableOneTimeCredits - creditsToClaim;
+              // Safety check (though validation above should prevent this)
+              if (newAvailableCredits < 0) {
+                  throw new Error("Credit balance calculation resulted in negative value. Transaction aborted.");
+              }
+              // Add the deduction of one-time credits to the 'updates' object
+              updates.cmeCreditsAvailable = newAvailableCredits;
+              console.log(`DEDUCTING ${creditsToClaim} credits from cmeCreditsAvailable for user ${uid}. New balance will be: ${newAvailableCredits}`);
+          } else {
+              // Log if deduction is skipped due to active subscription
+              console.log(`User ${uid} has active annual sub. Skipping deduction from cmeCreditsAvailable.`);
+          }
+          // --- *** END CREDIT DEDUCTION LOGIC *** ---
+
+          // Apply all updates gathered in the 'updates' object atomically
+          console.log("Applying Firestore updates within transaction:", updates);
+          transaction.set(userDocRef, updates, { merge: true }); // Use merge: true to avoid overwriting other user fields
           console.log("Firestore Transaction successful.");
       });
       // --- End of Firestore Transaction ---
 
 
-      // --- 3. Call the Cloud Function ---
-      if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...'; // Update loader text
-
+      // --- 3. Call the Cloud Function to Generate PDF ---
+      if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...';
       console.log("Calling Firebase Function 'generateCmeCertificate'...");
-      // Use the globally defined function reference
 
-      // ******** ADD THIS DEBUGGING BLOCK ********
-if (!auth.currentUser) {
-  console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
-  // Display error to user and stop
-  if (errorDiv) {
-      errorDiv.textContent = "Authentication error. Please reload the page and try again.";
-      errorDiv.style.color = '#dc3545'; // Error styling
-      // Apply other error styles if needed
-  }
-  cleanup(true, false); // Re-enable buttons, hide loader
-  return; // Stop execution
-} else {
-  console.log(`DEBUG: User confirmed before call. UID: ${auth.currentUser.uid}, Email: ${auth.currentUser.email}, Anonymous: ${auth.currentUser.isAnonymous}`);
-  // Optionally force token refresh (usually not needed, but can help diagnose)
-  try {
-      const idTokenResult = await auth.currentUser.getIdTokenResult(true); // Pass true to force refresh
-      console.log("DEBUG: Forced token refresh successful. New token acquired.");
-  } catch (tokenError) {
-      console.error("DEBUG: Error forcing token refresh:", tokenError);
-      // Don't necessarily stop, but log the error
-  }
-}
-// ******** END DEBUGGING BLOCK ********
-      
+      // --- Keep the User Check / Token Refresh Block ---
+      if (!auth.currentUser) {
+        console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
+        if (errorDiv) { errorDiv.textContent = "Authentication error. Please reload and try again."; }
+        cleanup(true, false);
+        return;
+      } else {
+        console.log(`DEBUG: User confirmed before call. UID: ${auth.currentUser.uid}, Email: ${auth.currentUser.email}, Anonymous: ${auth.currentUser.isAnonymous}`);
+        try {
+            const idTokenResult = await auth.currentUser.getIdTokenResult(true);
+            console.log("DEBUG: Forced token refresh successful.");
+        } catch (tokenError) {
+            console.error("DEBUG: Error forcing token refresh:", tokenError);
+        }
+      }
+      // --- End User Check / Token Refresh Block ---
+
       const result = await generateCmeCertificateFunction({
-          certificateFullName: certificateFullName, // Pass the validated name
-          creditsToClaim: creditsToClaim // Pass the validated credits
+          certificateFullName: certificateFullName,
+          creditsToClaim: creditsToClaim
       });
       console.log("Cloud Function result received:", result);
+      // --- End Cloud Function Call ---
 
-  // --- 4. Handle Cloud Function Response ---
-cleanup(false, false); // hide loader
 
-console.log("Detailed Check - Success value:", result.data.success, "(Type:", typeof result.data.success + ")");
-console.log("Detailed Check - Public URL value:", result.data.publicUrl, "(Type:", typeof result.data.publicUrl + ")");
+      // --- 4. Handle Cloud Function Response (Update History with Link) ---
+      cleanup(false, false); // Hide loader, keep buttons disabled until modal is closed
 
-// Check if the function reported success AND provided a public URL string
-if (result.data.success === true && typeof result.data.publicUrl === 'string' && result.data.publicUrl.length > 0) {
-    // ✅ Success!
-    const publicUrl = result.data.publicUrl;
-    // Try to get a filename, default if not provided by function
-    const pdfFileName = result.data.fileName || `CME_Certificate_${certificateFullName.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
-    console.log("Certificate generated successfully. Public URL:", publicUrl);
+      console.log("Detailed Check - Success value:", result.data.success, "(Type:", typeof result.data.success + ")");
+      console.log("Detailed Check - Public URL value:", result.data.publicUrl, "(Type:", typeof result.data.publicUrl + ")");
 
-    // --- ADD CODE HERE TO SAVE LINK TO FIRESTORE HISTORY ---
-    try {
-      console.log("Attempting to update Firestore history with certificate URL..."); // Use logger if available, else console.log
-      const userDoc = await getDoc(userDocRef); // Get the latest user doc data again
-      if (userDoc.exists()) {
-          let history = userDoc.data().cmeClaimHistory || [];
-          // Find the specific history entry we just added.
-          // We'll match based on the timestamp we created earlier.
-          // Convert both to ISO strings for reliable comparison.
-          const historyIndex = history.findIndex(entry =>
-              entry.timestamp && typeof entry.timestamp.toDate === 'function' &&
-              entry.timestamp.toDate().toISOString() === claimTimestamp.toISOString()
-          );
+      if (result.data.success === true && typeof result.data.publicUrl === 'string' && result.data.publicUrl.length > 0) {
+          // ✅ Success!
+          const publicUrl = result.data.publicUrl;
+          const pdfFileName = result.data.fileName || `CME_Certificate_${certificateFullName.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+          console.log("Certificate generated successfully. Public URL:", publicUrl);
 
-          if (historyIndex > -1) {
-              // Update the found entry
-              history[historyIndex].downloadUrl = publicUrl; // Use downloadUrl key to match display logic
-              history[historyIndex].pdfFileName = pdfFileName;
+          // --- Update History Entry with URL ---
+          try {
+              console.log("Attempting to update Firestore history with certificate URL...");
+              const userDoc = await getDoc(userDocRef); // Get the latest user doc data again
+              if (userDoc.exists()) {
+                  let history = userDoc.data().cmeClaimHistory || [];
+                  // Find the specific history entry using the ISO timestamp string for matching
+                  const historyIndex = history.findIndex(entry =>
+                      entry.timestamp && typeof entry.timestamp.toDate === 'function' &&
+                      entry.timestamp.toDate().toISOString() === claimTimestampISO
+                  );
 
-              // Update the document with the modified history array
-              await updateDoc(userDocRef, { cmeClaimHistory: history });
-              console.log(`Successfully updated history entry at index ${historyIndex} with URL.`); // Use logger if available, else console.log
-          } else {
-               console.warn("Could not find the exact history entry to update with URL based on timestamp.", { claimTimestampISO: claimTimestamp.toISOString() }); // Use logger if available, else console.warn
+                  if (historyIndex > -1) {
+                      // Update the found entry
+                      history[historyIndex].downloadUrl = publicUrl;
+                      history[historyIndex].pdfFileName = pdfFileName;
+                      // Update the document with the modified history array
+                      await updateDoc(userDocRef, { cmeClaimHistory: history });
+                      console.log(`Successfully updated history entry at index ${historyIndex} with URL.`);
+                  } else {
+                      console.warn("Could not find the exact history entry to update with URL based on timestamp.", { claimTimestampISO: claimTimestampISO });
+                  }
+              } else {
+                  console.warn("User document doesn't exist while trying to update history with URL.");
+              }
+          } catch (updateError) {
+              console.error("Error updating Firestore history with certificate URL:", updateError);
+              // Log error, but don't block user from seeing the link below
           }
-        } else {
-          console.warn("User document doesn't exist while trying to update history."); // Added check
+          // --- End Update History Entry ---
+
+          // --- Display Download Link ---
+          const linkContainer = document.getElementById("claimModalLink");
+          if (linkContainer) {
+              console.log("Found link container (claimModalLink). Injecting link.");
+              linkContainer.innerHTML = `
+                  <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
+                    🎉 Your CME certificate is ready!
+                  </p>
+                  <a href="${publicUrl}"
+                     target="_blank"
+                     download="${pdfFileName}"
+                     class="auth-primary-btn"
+                     style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px; background-color: #28a745; border: none;">
+                    📄 Download Certificate
+                  </a>
+                  <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab. You might need to allow pop-ups.)</p>
+              `;
+              linkContainer.style.display = 'block'; // Make the link section visible
+
+              // Hide the submit/cancel buttons, show only close button
+              if (submitButton) submitButton.style.display = 'none';
+              if (cancelButton) cancelButton.style.display = 'none';
+              const closeButton = document.getElementById('closeCmeClaimModal');
+              if(closeButton) {
+                   closeButton.style.display = 'block'; // Ensure close button is visible
+                   // Re-attach listener just in case (though it should persist)
+                   closeButton.onclick = function() { // Use simple assignment
+                       document.getElementById('cmeModalOverlay').style.display = 'none';
+                       cmeClaimModal.style.display = 'none';
+                   };
+              }
+
+          } else {
+              console.error("CRITICAL: Could not find #claimModalLink element to display download link!");
+              if (errorDiv) errorDiv.textContent = "Internal error: Cannot display download link.";
+              if (errorDiv && publicUrl) { // Show URL as fallback
+                   errorDiv.innerHTML += `<br>URL (Copy): <input type='text' value='${publicUrl}' readonly style='width: 80%;'>`;
+              }
+              cleanup(true, false); // Re-enable buttons if link injection failed
+          }
+          // --- End Display Download Link ---
+
+      } else {
+          // --- Handle Cloud Function Failure ---
+          console.error("Cloud function failed to return success or valid URL. Result data:", result.data);
+          let failureReason = "Certificate generation failed in the cloud function.";
+          if (!result.data.success) {
+              failureReason += ` Error: ${result.data.error || 'Unknown cloud error'}`;
+          } else {
+              failureReason += " Missing public URL in response.";
+          }
+          throw new Error(failureReason);
+          // --- End Handle Cloud Function Failure ---
       }
-  } catch (updateError) {
-       console.error("Error updating Firestore history with certificate URL:", updateError); // Use logger if available, else console.error
-       // Don't stop the user flow, but log the error. The link is still available in the modal.
-  }
-  // --- END OF CODE TO SAVE LINK TO FIRESTORE HISTORY ---
-
-    // 📌 Inject the download link into your modal
-    const linkContainer = document.getElementById("claimModalLink");
-    if (linkContainer) {
-        console.log("Found link container (claimModalLink). Injecting link.");
-        linkContainer.innerHTML = `
-            <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-              🎉 Your CME certificate is ready!
-            </p>
-            <a href="${publicUrl}"
-               target="_blank"  
-               download="${pdfFileName}"
-               class="auth-primary-btn"
-               style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px;">
-              📄 Download Certificate
-            </a>
-            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab. You might need to allow pop-ups.)</p>
-        `;
-        // Make sure the link container is visible
-        linkContainer.style.display = 'block';
-        
-        // Hide the submit/cancel buttons after success
-        if (submitButton) submitButton.style.display = 'none';
-        if (cancelButton) cancelButton.style.display = 'none';
-        // Show the close button clearly
-        const closeButton = document.getElementById('closeCmeClaimModal');
-        if(closeButton) closeButton.style.display = 'block'; // Make sure close is visible
-        
-        // Add click handler specifically for the close button after success
-        if(closeButton) {
-            closeButton.addEventListener('click', function() {
-                document.getElementById('cmeModalOverlay').style.display = 'none';
-                cmeClaimModal.style.display = 'none';
-            });
-        }
-
-    } else {
-        console.error("CRITICAL: Could not find the element with id='claimModalLink' in your HTML to display the download link!");
-        if (errorDiv) errorDiv.textContent = "Internal error: Cannot display download link (missing HTML element).";
-        // Still show the URL in the error div as a fallback
-         if (errorDiv) {
-             errorDiv.innerHTML += `<br>Certificate URL (Copy manually): <input type='text' value='${publicUrl}' readonly style='width: 80%; font-size: 0.8em;'>`;
-         }
-         cleanup(true, false); // Re-enable buttons if link injection failed
-    }
-
-} else {
-    // ❌ Failure
-    console.error("Condition for success failed. Result data:", result.data);
-    // Construct a more informative error message
-    let failureReason = "Cloud function failed.";
-    if (!result.data.success) {
-        failureReason = `Cloud function reported failure (success flag is not true). Error: ${result.data.error || 'Unknown error'}`;
-    } else if (typeof result.data.publicUrl !== 'string' || result.data.publicUrl.length === 0) {
-        failureReason = "Cloud function succeeded but did not return a valid public URL string.";
-    } else {
-         failureReason = `Unexpected state. Success: ${result.data.success}, URL: ${result.data.publicUrl}`;
-    }
-
-    // Throw the specific error based on our checks
-    throw new Error(failureReason);
-}
-
-// --- 5. Refresh Dashboard Data (if you have that) ---
-if (typeof loadCmeDashboardData === 'function') {
-    setTimeout(loadCmeDashboardData, 500); // Refresh dashboard after a short delay
-}
+      // --- End Handle Cloud Function Response ---
 
 
-  } catch (error) { // Catch errors from Validation, Firestore Transaction, or Cloud Function Call
+      // --- 5. Refresh Dashboard Data ---
+      if (typeof loadCmeDashboardData === 'function') {
+          console.log("Scheduling dashboard data refresh...");
+          setTimeout(loadCmeDashboardData, 500); // Refresh dashboard after a short delay
+      }
+
+  } catch (error) { // Catch errors from Validation, Transaction, or Cloud Function Call
       console.error("Error during claim processing:", error);
       cleanup(true, false); // Re-enable buttons, hide loader on error
 
       if (errorDiv) {
-          // Display specific HttpsError messages if available
           let displayMessage = `Claim failed: ${error.message}`;
-          if (error.code && error.details) { // Check if it's likely an HttpsError
-               displayMessage = `Claim failed: ${error.message} (Details: ${error.details})`;
-          } else if (error.message.includes("Insufficient credits")) {
-               displayMessage = error.message; // Show specific credit error
-          } else if (error.message.includes("required evaluation questions")) {
-               displayMessage = error.message; // Show specific validation error
-          }
           // Add more specific error checks if needed
+          if (error.message.includes("Insufficient credits")) {
+               displayMessage = error.message;
+          } else if (error.message.includes("required evaluation questions")) {
+               displayMessage = error.message;
+          } else if (error.code && error.details) { // Firebase HttpsError
+               displayMessage = `Claim failed: ${error.message} (Details: ${error.details})`;
+          }
 
           errorDiv.textContent = displayMessage;
           // Apply error styling
@@ -3330,10 +3362,12 @@ if (typeof loadCmeDashboardData === 'function') {
           errorDiv.style.backgroundColor = '#f8d7da';
           errorDiv.style.padding = '10px';
           errorDiv.style.borderRadius = '5px';
-          errorDiv.style.textAlign = 'left';
+          errorDiv.style.textAlign = 'left'; // Keep error text aligned left
       } else {
           alert(`Claim failed: ${error.message}`); // Fallback alert
       }
+  } finally {
+       console.log("--- CME Claim Form Submission Handler END ---");
   }
 }
 // --- End of handleCmeClaimSubmission Function ---
