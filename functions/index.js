@@ -200,7 +200,8 @@ exports.generateCmeCertificate = onCall({
 });
 
 
-// --- Stripe Webhook Handler (Keep As Is - Already using v2 onRequest and process.env) ---
+// --- Stripe Webhook Handler (Corrected Version) ---
+// --- Stripe Webhook Handler (Corrected Version) ---
 exports.stripeWebhookHandler = onRequest(
   {
     region: "us-central1", // Or your preferred region
@@ -219,7 +220,8 @@ exports.stripeWebhookHandler = onRequest(
         res.status(500).send("Webhook Error: Server configuration error (SK).");
         return;
     }
-    const stripeClient = stripe(secretKeyValue); // Initialize with the key
+    // Initialize Stripe client here, inside the handler scope
+    const stripeClient = stripe(secretKeyValue);
 
     if (!webhookSecretValue) {
         logger.error("CRITICAL: Webhook secret is missing from environment.");
@@ -257,23 +259,24 @@ exports.stripeWebhookHandler = onRequest(
       if (event.type === "checkout.session.completed") {
         const session = event.data.object;
         logger.info(`Processing checkout.session.completed for session: ${session.id}, Mode: ${session.mode}`);
-    
+
         const uid = session.client_reference_id;
-        const custId = session.customer; // Customer ID is useful regardless of mode
         const paid = session.payment_status === "paid";
-    
-        if (paid && uid && custId) { // Basic checks: paid, user ID exists, customer ID exists
+
+        // --- CORRECTED CONDITION: Check only essential 'paid' and 'uid' first ---
+        if (paid && uid) {
             const userRef = admin.firestore().collection("users").doc(uid);
-    
-            // --- CHECK THE MODE ---
+            const custId = session.customer; // Get customer ID (might be null)
+
+            // --- Check the mode ---
             if (session.mode === 'subscription') {
-                // --- EXISTING SUBSCRIPTION LOGIC ---
+                // --- Subscription Logic (Requires Customer ID and Subscription ID) ---
                 const subsId = session.subscription;
-                if (subsId) {
-                    logger.info(`Handling SUBSCRIPTION completion for user: ${uid}, SubID: ${subsId}`);
+                if (subsId && custId) { // <<< Keep custId check HERE for subscriptions
+                    logger.info(`Handling SUBSCRIPTION completion for user: ${uid}, SubID: ${subsId}, CustID: ${custId}`);
                     const subscriptionStartDate = admin.firestore.FieldValue.serverTimestamp();
                     const planName = session.metadata?.planName || 'subscription'; // Get plan name if available
-    
+
                     await userRef.set({
                         stripeCustomerId: custId,
                         stripeSubscriptionId: subsId,
@@ -283,77 +286,102 @@ exports.stripeWebhookHandler = onRequest(
                     }, { merge: true });
                     logger.info(`Firestore updated for SUBSCRIPTION user: ${uid}`);
                 } else {
-                    logger.warn(`Skipping Firestore update for subscription session ${session.id}. Missing subscription ID.`);
+                    logger.warn(`Skipping Firestore update for subscription session ${session.id}. Missing subscription ID (${subsId}) or customer ID (${custId}).`);
                 }
-                // --- END EXISTING SUBSCRIPTION LOGIC ---
-    
+                // --- End Subscription Logic ---
+
             } else if (session.mode === 'payment') {
-                // --- NEW ONE-TIME PAYMENT LOGIC ---
-                logger.info(`Handling PAYMENT completion for user: ${uid}`);
-    
-                // Get the quantity purchased from the line items
-                // Note: This assumes only one line item (the credits)
+                // --- One-Time Payment Logic (Customer ID is optional) ---
+                logger.info(`Handling PAYMENT completion for user: ${uid}, CustID: ${custId || 'N/A'}`); // Log if CustID exists
+
                 let purchasedQuantity = 0;
+                // Try to get quantity from webhook payload first
                 if (session.line_items && session.line_items.data && session.line_items.data.length > 0) {
                     purchasedQuantity = session.line_items.data[0].quantity || 0;
+                    logger.info(`Extracted purchased quantity: ${purchasedQuantity} from webhook line items.`);
+                } else {
+                     // Fallback: Retrieve session to expand line_items if not included
+                     logger.warn(`Line items data missing or empty in webhook for session ${session.id}. Attempting to retrieve session...`);
+                     try {
+                         const retrievedSession = await stripeClient.checkout.sessions.retrieve(session.id, { expand: ['line_items'] });
+                         if (retrievedSession.line_items && retrievedSession.line_items.data && retrievedSession.line_items.data.length > 0) {
+                             purchasedQuantity = retrievedSession.line_items.data[0].quantity || 0;
+                             logger.info(`Successfully retrieved quantity ${purchasedQuantity} after re-fetching session.`);
+                         } else {
+                             logger.warn(`Still could not retrieve line items/quantity after re-fetching session ${session.id}.`);
+                         }
+                     } catch (retrieveError) {
+                         logger.error(`Error re-fetching session ${session.id} to get line items:`, retrieveError);
+                         // Decide if you want to throw an error here or just log and potentially skip the update
+                     }
                 }
-    
+
+                // Proceed only if we have a valid quantity
                 if (purchasedQuantity > 0) {
                     logger.info(`User ${uid} purchased ${purchasedQuantity} credits.`);
-                    // Atomically increment the user's available credits
-                    await userRef.set({
-                        stripeCustomerId: custId, // Store customer ID even for one-time
+                    // Prepare data to save - include customerId *if* it exists
+                    let firestoreUpdateData = {
                         cmeCreditsAvailable: admin.firestore.FieldValue.increment(purchasedQuantity)
-                    }, { merge: true }); // Use merge:true to add/update the field
+                    };
+                    if (custId) { // <<< Only add customerId if it's not null/undefined
+                        firestoreUpdateData.stripeCustomerId = custId;
+                        logger.info(`Saving stripeCustomerId (${custId}) for one-time payment user ${uid}.`);
+                    }
+                    // Atomically increment credits and potentially save customer ID
+                    await userRef.set(firestoreUpdateData, { merge: true });
                     logger.info(`Firestore updated for PAYMENT user: ${uid}. Incremented cmeCreditsAvailable by ${purchasedQuantity}.`);
                 } else {
-                    logger.warn(`Skipping Firestore update for payment session ${session.id}. Purchased quantity is zero or line items missing.`);
+                    logger.warn(`Skipping Firestore update for payment session ${session.id}. Calculated purchased quantity is zero.`);
                 }
-                // --- END NEW ONE-TIME PAYMENT LOGIC ---
-    
+                // --- End One-Time Payment Logic ---
+
             } else {
                 logger.warn(`Unhandled session mode: ${session.mode} for session ${session.id}`);
             }
         } else {
-            logger.warn(`Skipping Firestore update for session ${session.id}. Conditions not met (Paid=${paid}, UID=${uid}, CustID=${custId}).`);
+            // --- Log why the main condition failed ---
+            // Use the original custId variable from the outer scope for logging here
+            const originalCustIdForLog = session.customer;
+            logger.warn(`Skipping Firestore update for session ${session.id}. Conditions not met (Paid=${paid}, UID=${uid}). CustID was: ${originalCustIdForLog}`);
         }
-    } else if (event.type === 'customer.subscription.deleted') {
-        // --- HANDLE SUBSCRIPTION CANCELLATION ---
-        const subscription = event.data.object;
-        const customerId = subscription.customer;
-        logger.info(`Processing customer.subscription.deleted for CustID: ${customerId}, SubID: ${subscription.id}`);
-        // Find the user by Stripe Customer ID
-        const usersRef = admin.firestore().collection('users');
-        const querySnapshot = await usersRef.where('stripeCustomerId', '==', customerId).limit(1).get();
-    
-        if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
-            logger.info(`Found user ${userDoc.id} for subscription cancellation.`);
-            await userDoc.ref.update({
-                cmeSubscriptionActive: false,
-                // Optionally clear stripeSubscriptionId or add cancellation date
-                // cmeSubscriptionEndDate: admin.firestore.FieldValue.serverTimestamp()
-            });
-            logger.info(`Set cmeSubscriptionActive to false for user ${userDoc.id}.`);
-        } else {
-            logger.warn(`Could not find user with Stripe Customer ID ${customerId} to handle subscription deletion.`);
-        }
-        // --- END HANDLE SUBSCRIPTION CANCELLATION ---
-    
-    } else {
-        logger.info(`Received unhandled event type: ${event.type}`);
-    }
-    
-    // Acknowledge receipt (keep this)
-    logger.info(`Acknowledging webhook event: ${event.id}`);
-    res.status(200).json({ received: true, eventId: event.id });
+        // --- END CORRECTED CONDITION ---
+
+      } else if (event.type === 'customer.subscription.deleted') {
+          // --- HANDLE SUBSCRIPTION CANCELLATION (Keep As Is) ---
+          const subscription = event.data.object;
+          const customerId = subscription.customer;
+          logger.info(`Processing customer.subscription.deleted for CustID: ${customerId}, SubID: ${subscription.id}`);
+          const usersRef = admin.firestore().collection('users');
+          const querySnapshot = await usersRef.where('stripeCustomerId', '==', customerId).limit(1).get();
+
+          if (!querySnapshot.empty) {
+              const userDoc = querySnapshot.docs[0];
+              logger.info(`Found user ${userDoc.id} for subscription cancellation.`);
+              await userDoc.ref.update({
+                  cmeSubscriptionActive: false,
+              });
+              logger.info(`Set cmeSubscriptionActive to false for user ${userDoc.id}.`);
+          } else {
+              logger.warn(`Could not find user with Stripe Customer ID ${customerId} to handle subscription deletion.`);
+          }
+          // --- END HANDLE SUBSCRIPTION CANCELLATION ---
+
+      } else {
+          logger.info(`Received unhandled event type: ${event.type}`);
+      }
+
+      // Acknowledge receipt (keep this)
+      logger.info(`Acknowledging webhook event: ${event.id}`);
+      res.status(200).json({ received: true, eventId: event.id });
 
     } catch (dbErr) {
-      logger.error(`Firestore update failed for session ${event?.data?.object?.id}: ${dbErr.message}`, { error: dbErr });
-      res.status(500).send("Webhook Error: Internal database error.");
+      // Log Firestore or other processing errors
+      logger.error(`Webhook handler error for event ${event?.id}, type ${event?.type}: ${dbErr.message}`, { error: dbErr });
+      res.status(500).send(`Webhook Error: Internal error processing event ${event?.id}.`);
     }
   }
 );
+// --- End Stripe Webhook Handler ---
 
 
 // --- createStripeCheckoutSession (Updated to v2 and using process.env) ---
