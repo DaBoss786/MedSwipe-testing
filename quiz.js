@@ -86,11 +86,14 @@ async function loadQuestions(options = {}) {
 
         // 1. Filter for CME Eligible if it's a CME quiz
         if (options.quizType === 'cme') {
-            filteredQuestions = filteredQuestions.filter(q =>
-                q["CME Eligible"] && q["CME Eligible"].trim().toLowerCase() === 'yes'
-            );
-            console.log("Questions after CME Eligible filter:", filteredQuestions.length);
-        }
+          filteredQuestions = filteredQuestions.filter(q => {
+              const cmeEligibleValue = q["CME Eligible"];
+              // Handle both boolean true and string "yes" (case-insensitive)
+              return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
+                     (typeof cmeEligibleValue === 'string' && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
+          });
+          console.log("Questions after CME Eligible filter:", filteredQuestions.length);
+      }
 
         // 2. Filter by Bookmarks (only if specified, overrides other filters except CME eligibility)
         if (options.bookmarksOnly) {
@@ -360,10 +363,10 @@ async function initializeQuiz(questions, quizType = 'regular') {
     questionSlide.dataset.explanation = question["Explanation"];
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
     questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
-    questionSlide.dataset.cmeEligible = (question["CME Eligible"] && question["CME Eligible"].trim().toLowerCase() === 'yes') ? "true" : "false";
-
-    const isCME = question["CME Eligible"] && question["CME Eligible"].trim().toLowerCase() === 'yes';
-
+    const cmeEligibleValue = question["CME Eligible"];
+  const isCME = typeof cmeEligibleValue === 'boolean' ? cmeEligibleValue : (cmeEligibleValue && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
+  
+  questionSlide.dataset.cmeEligible = isCME ? "true" : "false";
     questionSlide.innerHTML = `
       <div class="card">
         ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''}
